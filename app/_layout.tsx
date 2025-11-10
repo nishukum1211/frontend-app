@@ -1,56 +1,29 @@
-import { FontAwesome } from "@expo/vector-icons";
-import { Tabs } from "expo-router";
+import { Stack } from "expo-router";
+import React, { useEffect, useState } from "react";
+import { SafeAreaProvider } from "react-native-safe-area-context";
+import LoginScreen from "./components/screens/LoginScreen";
 
 export default function RootLayout() {
+  const [isLoggedIn, setIsLoggedIn] = useState(false);
+
+  useEffect(() => {
+    // Check login status (this is a placeholder, replace with actual logic)
+    const userLoggedIn = false; // Set to true for testing
+    setIsLoggedIn(userLoggedIn);
+  }, []);
+
+  // If the user is not logged in, render the Login screen directly instead of
+  // attempting to navigate. This avoids calling navigation before the root
+  // navigator has mounted.
+  if (!isLoggedIn) {
+    return <LoginScreen onClose={() => setIsLoggedIn(true)} />;
+  }
+
   return (
-    <Tabs
-      screenOptions={{
-        tabBarActiveTintColor: "#007AFF",
-        tabBarInactiveTintColor: "#8E8E93",
-        tabBarStyle: {
-          backgroundColor: "#FFFFFF",
-          borderTopWidth: 1,
-          borderTopColor: "#E5E5EA",
-        },
-      }}
-    >
-      <Tabs.Screen
-        name="index"
-        options={{
-          title: "Home",
-          tabBarIcon: ({ color, size }) => (
-            <FontAwesome name="home" size={size} color={color} />
-          ),
-        }}
-      />
-      <Tabs.Screen
-        name="profile"
-        options={{
-          title: "Profile",
-          tabBarIcon: ({ color, size }) => (
-            <FontAwesome name="user" size={size} color={color} />
-          ),
-        }}
-      />
-      <Tabs.Screen
-        name="notifications"
-        options={{
-          title: "Notifications",
-          tabBarIcon: ({ color, size }) => (
-            <FontAwesome name="bell" size={size} color={color} />
-          ),
-          tabBarBadge: "3",
-        }}
-      />
-      <Tabs.Screen
-        name="settings"
-        options={{
-          title: "Settings",
-          tabBarIcon: ({ color, size }) => (
-            <FontAwesome name="cog" size={size} color={color} />
-          ),
-        }}
-      />
-    </Tabs>
+    <SafeAreaProvider>
+      <Stack screenOptions={{ headerShown: false }}>
+        <Stack.Screen name="(tabs)" options={{ headerShown: false }} />
+      </Stack>
+    </SafeAreaProvider>
   );
 }
