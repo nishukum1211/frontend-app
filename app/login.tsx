@@ -8,12 +8,12 @@ import {
   TouchableOpacity,
   View,
 } from "react-native";
-import styles from "./LoginScreenStyles";
+import styles from "./loginStyle";
 type Props = {
   onClose?: () => void;
 };
 
-const LoginScreen: React.FC<Props> = ({ onClose }) => {
+const Login: React.FC<Props> = ({ onClose }) => {
   const [step, setStep] = useState<1 | 2>(1);
   const [phoneNumber, setPhoneNumber] = useState<string>("");
   const [otp, setOtp] = useState<string>("");
@@ -94,4 +94,4 @@ const LoginScreen: React.FC<Props> = ({ onClose }) => {
   );
 };
 
-export default LoginScreen;
+export default Login;
