@@ -1,6 +1,5 @@
-import { FontAwesome } from "@expo/vector-icons";
+import { FontAwesome, Ionicons } from "@expo/vector-icons";
 import { Tabs } from "expo-router";
-import React from "react";
 
 export default function TabsLayout() {
   return (
@@ -19,21 +18,22 @@ export default function TabsLayout() {
       <Tabs.Screen
         name="index"
         options={{
-          title: "Home",
           tabBarIcon: ({ color, size }) => (
             <FontAwesome name="home" size={size} color={color} />
           ),
         }}
       />
+
       <Tabs.Screen
-        name="profile"
+        name="chat"
         options={{
-          title: "Profile",
+          title: "Chat",
           tabBarIcon: ({ color, size }) => (
-            <FontAwesome name="user" size={size} color={color} />
+            <Ionicons name="chatbubble-ellipses" size={size} color={color} />
           ),
         }}
       />
+
       <Tabs.Screen
         name="notifications"
         options={{
@@ -44,12 +44,13 @@ export default function TabsLayout() {
           tabBarBadge: "3",
         }}
       />
+
       <Tabs.Screen
-        name="settings"
+        name="profile"
         options={{
-          title: "Settings",
+          title: "Profile",
           tabBarIcon: ({ color, size }) => (
-            <FontAwesome name="cog" size={size} color={color} />
+            <FontAwesome name="user" size={size} color={color} />
           ),
         }}
       />

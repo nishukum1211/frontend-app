@@ -1,5 +1,5 @@
 import { useRouter } from "expo-router";
-import React, { useState } from "react";
+import { useState } from "react";
 import {
   ActivityIndicator,
   Alert,
@@ -83,33 +83,62 @@ export default function Signup() {
   // ✅ Submit handler
   const handleSignup = async () => {
     if (loading) return;
-    if (!validateForm()) return;
+
+    // Basic front-end validation
+    if (!formData.name || formData.name.length < 2) {
+      Alert.alert("Invalid name", "Name must be at least 2 characters long");
+      return;
+    }
+    if (!formData.email_id) {
+      Alert.alert("Invalid email", "Email is required");
+      return;
+    }
+    if (!/^\+91\d{10}$/.test(formData.mobile_number)) {
+      Alert.alert(
+        "Invalid number",
+        "Mobile number must be in +91XXXXXXXXXX format"
+      );
+      return;
+    }
+    if (!formData.password || formData.password.length < 8) {
+      Alert.alert(
+        "Invalid password",
+        "Password must be at least 8 characters long"
+      );
+      return;
+    }
 
     try {
       setLoading(true);
+
+      const payload = {
+        name: formData.name,
+        email_id: formData.email_id,
+        mobile_number: formData.mobile_number,
+        password: formData.password,
+      };
+
+      console.log("📤 Sending payload:", payload);
 
       const response = await fetch(
         "https://dev-backend-py-23809827867.us-east1.run.app/user/create",
         {
           method: "POST",
           headers: { "Content-Type": "application/json" },
-          body: JSON.stringify(formData),
+          body: JSON.stringify(payload),
         }
       );
 
-      if (!response.ok) {
-        const errorText = await response.text();
-        console.error("Signup failed:", errorText);
-        router.replace("/login");
-        // throw new Error("Signup failed. Please try again.");
-      }
+      const text = await response.text();
+      console.log("📥 Raw backend response:", text);
 
-      const data = await response.json();
-      console.log("✅ User Created:", data);
+      if (!response.ok) {
+        Alert.alert("Signup Failed", text || "Invalid input data");
+        return;
+      }
 
       router.replace("/login");
 
-      // Reset form fields
       setFormData({
         name: "",
         email_id: "",
@@ -117,7 +146,8 @@ export default function Signup() {
         mobile_number: "",
       });
     } catch (error: any) {
-      Alert.alert("Error", error.message || "Something went wrong.");
+      console.error("Signup error:", error);
+      Alert.alert("Signup failed", error.message);
     } finally {
       setLoading(false);
     }
