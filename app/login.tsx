@@ -1,60 +1,99 @@
-import { FontAwesome } from "@expo/vector-icons";
+import AsyncStorage from "@react-native-async-storage/async-storage";
+import { useRouter } from "expo-router";
+import { jwtDecode } from "jwt-decode";
 import React, { useState } from "react";
 import {
   Alert,
+  KeyboardAvoidingView,
   Modal,
+  Platform,
   Text,
   TextInput,
   TouchableOpacity,
+  TouchableWithoutFeedback,
   View,
 } from "react-native";
 import styles from "./loginStyle";
+
 type Props = {
-  onClose?: () => void;
+  onClose?: () => void; // This is how the parent will show home screen
 };
 
 const Login: React.FC<Props> = ({ onClose }) => {
-  const [step, setStep] = useState<1 | 2>(1);
+  const router = useRouter();
   const [phoneNumber, setPhoneNumber] = useState<string>("");
-  const [otp, setOtp] = useState<string>("");
+  const [password, setPassword] = useState<string>("");
+  const [loading, setLoading] = useState<boolean>(false);
+  const [formData, setFormData] = useState({
+    mobile_number: "",
+    password: "",
+  });
 
-  const handleSendOTP = () => {
-    if (phoneNumber.trim().length < 10) {
-      Alert.alert("Invalid Number", "Please enter a valid phone number");
+  const handleLogin = async () => {
+    if (!phoneNumber || !password) {
+      Alert.alert("Missing Info", "Enter both phone number and password");
       return;
     }
-    setStep(2);
+
+    try {
+      setLoading(true);
+
+      const payload = {
+        mobile_number: phoneNumber,
+        password: password,
+      };
+
+      const response = await fetch(
+        "https://dev-backend-py-23809827867.us-east1.run.app/user/auth",
+        {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify(payload),
+        }
+      );
+
+      const data = await response.json();
+
+      if (response.ok && data.token) {
+        // ✅ Save JWT token locally
+        await AsyncStorage.setItem("jwtToken", data.token);
+
+        // (Optional) Decode to check info
+        const decoded = jwtDecode(data.token);
+        console.log("Decoded User:", decoded);
+
+        // Navigate to profile or main tabs
+        router.replace("/(tabs)/profile");
+      } else {
+        Alert.alert("Login Failed", data.message || "Invalid credentials");
+      }
+    } catch (error: any) {
+      console.error("Login error:", error);
+      Alert.alert("Login failed", error.message);
+    } finally {
+      setLoading(false);
+    }
   };
 
-  const handleVerifyOTP = () => {
-    if (otp.trim().length < 4) {
-      Alert.alert("Invalid OTP", "Please enter the correct OTP");
-      return;
-    }
-    Alert.alert("Success", "OTP Verified ✅");
-    // Consider user logged in — notify parent to show home
-    if (onClose) onClose();
+  // When user taps outside the popup
+  const handleOutsidePress = () => {
+    if (onClose) onClose(); // close modal and show home
   };
 
   return (
     <Modal visible transparent animationType="fade">
-      <View style={styles.modalOverlay}>
-        <View style={styles.modalContent}>
-          <TouchableOpacity
-            style={styles.closeButton}
-            onPress={() => {
-              if (onClose) onClose();
-            }}
-            accessibilityLabel="Close login"
-          >
-            <FontAwesome name="close" size={20} color="#374151" />
-          </TouchableOpacity>
+      {/* Outer touch closes modal */}
+      <TouchableWithoutFeedback onPress={handleOutsidePress}>
+        <View style={styles.modalOverlay}>
+          {/* Prevent inner press from closing modal */}
+          <TouchableWithoutFeedback onPress={() => {}}>
+            <KeyboardAvoidingView
+              behavior={Platform.OS === "ios" ? "padding" : "height"}
+              style={styles.modalContent}
+            >
+              <Text style={styles.title}>Login</Text>
 
-          <Text style={styles.title}>Login via OTP</Text>
-
-          {step === 1 ? (
-            <>
-              <Text style={styles.label}>Enter Mobile Number</Text>
+              <Text style={styles.label}>Mobile Number</Text>
               <TextInput
                 style={styles.input}
                 placeholder="e.g. +91 9876543210"
@@ -62,34 +101,30 @@ const Login: React.FC<Props> = ({ onClose }) => {
                 value={phoneNumber}
                 onChangeText={setPhoneNumber}
               />
-              <TouchableOpacity style={styles.button} onPress={handleSendOTP}>
-                <Text style={styles.buttonText}>Send OTP</Text>
-              </TouchableOpacity>
-            </>
-          ) : (
-            <>
-              <Text style={styles.label}>Enter OTP</Text>
+
+              <Text style={styles.label}>Password</Text>
               <TextInput
                 style={styles.input}
-                placeholder="4 or 6 digit code"
-                keyboardType="number-pad"
-                value={otp}
-                onChangeText={setOtp}
+                placeholder="Enter your password"
+                secureTextEntry
+                value={password}
+                onChangeText={setPassword}
               />
-              <TouchableOpacity style={styles.button} onPress={handleVerifyOTP}>
-                <Text style={styles.buttonText}>Verify OTP</Text>
+
+              <TouchableOpacity style={styles.button} onPress={handleLogin}>
+                <Text style={styles.buttonText}>Login</Text>
               </TouchableOpacity>
 
               <TouchableOpacity
-                onPress={() => setStep(1)}
+                onPress={() => Alert.alert("Feature coming soon!")}
                 style={styles.resendContainer}
               >
-                <Text style={styles.resendText}>Change number?</Text>
+                <Text style={styles.resendText}>Forgot password?</Text>
               </TouchableOpacity>
-            </>
-          )}
+            </KeyboardAvoidingView>
+          </TouchableWithoutFeedback>
         </View>
-      </View>
+      </TouchableWithoutFeedback>
     </Modal>
   );
 };
