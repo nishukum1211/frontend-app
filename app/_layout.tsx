@@ -33,6 +33,10 @@ export default function RootLayout() {
               name="phoneLoginScreen"
               options={{ headerShown: false }}
             />
+            <Stack.Screen
+              name="agentDetails"
+              options={{ headerShown: false }}
+            />
           </>
         )}
       </Stack>
