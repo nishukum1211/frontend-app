@@ -120,7 +120,7 @@ export default function Profile() {
 
         <TouchableOpacity
           style={styles.authButton}
-          onPress={() => router.replace("../login")}
+          onPress={() => router.replace("../phoneLoginScreen")}
         >
           <Text style={styles.authButtonText}>Login</Text>
         </TouchableOpacity>

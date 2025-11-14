@@ -1,3 +1,4 @@
+import { useRouter } from "expo-router";
 import * as SecureStore from "expo-secure-store";
 import { jwtDecode } from "jwt-decode"; // npm install jwt-decode
 import { useState } from "react";
@@ -11,6 +12,7 @@ import {
 } from "react-native";
 
 export default function AgentLogin() {
+  const router = useRouter();
   const [mobile_number, setMobileNumber] = useState("");
   const [password, setPassword] = useState("");
   const [loading, setLoading] = useState(false);
@@ -50,11 +52,9 @@ export default function AgentLogin() {
         // Save token securely
         await SecureStore.setItemAsync("agentToken", data.token);
         await SecureStore.setItemAsync("agentData", JSON.stringify(decoded));
+        router.replace("../(tabs)/profile");
 
         Alert.alert("Login Success", "You are logged in as agent.");
-
-        // Navigate to your protected dashboard page
-        //navigation.navigate('AgentDashboard');
       } else {
         Alert.alert("Login Failed", data.message || "Invalid credentials");
       }
