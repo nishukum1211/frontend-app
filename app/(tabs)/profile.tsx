@@ -81,14 +81,6 @@ export default function Profile() {
     }
   };
 
-  // 🛠 Admin Login Button
-  const handleAdminLogin = async () => {
-    await apiCall("https://your-backend.com/api/admin/login", {
-      email: "admin@gmail.com",
-      password: "admin123",
-    });
-  };
-
   // 🚪 Logout
   const handleLogout = async () => {
     await AsyncStorage.removeItem("jwtToken");
@@ -128,7 +120,7 @@ export default function Profile() {
 
         <TouchableOpacity
           style={styles.authButton}
-          onPress={() => router.replace("../login")}
+          onPress={() => router.replace("../phoneLoginScreen")}
         >
           <Text style={styles.authButtonText}>Login</Text>
         </TouchableOpacity>
@@ -140,7 +132,10 @@ export default function Profile() {
           <Text style={styles.authButtonText}>Signup</Text>
         </TouchableOpacity>
 
-        <TouchableOpacity style={styles.adminButton} onPress={handleAdminLogin}>
+        <TouchableOpacity
+          style={styles.adminButton}
+          onPress={() => router.replace("../adminLogin")}
+        >
           <Text style={styles.authButtonText}>Admin Login</Text>
         </TouchableOpacity>
       </View>
