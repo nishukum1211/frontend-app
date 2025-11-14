@@ -3,7 +3,8 @@ import { MaterialCommunityIcons } from "@expo/vector-icons";
 import { useFocusEffect, useNavigation } from "@react-navigation/native";
 import { onAuthStateChanged, User } from "firebase/auth";
 import { useCallback, useEffect, useState } from "react";
-import { Text, TouchableOpacity, View } from "react-native";
+import { TouchableOpacity, View } from "react-native";
+import AgentWidget from "../agentWidget"; // adjust path if needed
 
 export default function Home() {
   const navigation = useNavigation();
@@ -40,15 +41,9 @@ export default function Home() {
   }, [navigation, user]);
 
   return (
-    <View style={{ flex: 1, justifyContent: "center", alignItems: "center" }}>
-      <Text style={{ fontSize: 20, fontWeight: "bold" }}>Home Screen</Text>
-      {user ? (
-        <Text style={{ marginTop: 10, color: "green" }}>
-          👋 Welcome, {user.phoneNumber || "User"}!
-        </Text>
-      ) : (
-        <Text style={{ marginTop: 10, color: "gray" }}>Please log in</Text>
-      )}
+    <View style={{ flex: 1 }}>
+      {/* 👇 Show Agent Widget HERE */}
+      <AgentWidget />
     </View>
   );
 }
