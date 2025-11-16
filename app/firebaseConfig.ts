@@ -1,22 +1,21 @@
-// firebaseConfig.ts
+// lib/firebaseConfig.ts
 import { getApp, getApps, initializeApp } from "firebase/app";
-import { getAuth } from "firebase/auth";
+import { getAuth } from "firebase/auth/react-native"; // 👈 this is the CRUCIAL FIX for Expo
+import { getFirestore } from "firebase/firestore";
 
-// Your Firebase web config
 const firebaseConfig = {
-  apiKey: "AIzaSyDMWM98Npqj-YjkoPvoYfnPNnDWD8r0VZ0",
-  authDomain: "farmer-app-2d096.firebaseapp.com",
-  projectId: "farmer-app-2d096",
-  storageBucket: "farmer-app-2d096.firebasestorage.app",
-  messagingSenderId: "770535423499",
-  appId: "1:770535423499:web:b2138931a8978cec0cd10e",
-  measurementId: "G-PWKSVK45FH",
+  apiKey: "AIzaSyAThHNbGWmmdIhnlzMJWeQ4gZWIRaIbjBE",
+  authDomain: "dev-kishanbhai-app.firebaseapp.com",
+  projectId: "dev-kishanbhai-app",
+  storageBucket: "dev-kishanbhai-app.firebasestorage.app",
+  messagingSenderId: "23809827867",
+  appId: "1:23809827867:web:e36b3a8ae317197da7c4be",
 };
 
-// 🧠 Prevent "No Firebase App" or duplicate initialization
-const app = getApps().length === 0 ? initializeApp(firebaseConfig) : getApp();
-
-// ✅ Always get auth from the initialized app
+// ✅ Prevent duplicate initialization
+const app = getApps().length ? getApp() : initializeApp(firebaseConfig);
 const auth = getAuth(app);
+
+export const db = getFirestore(app);
 
 export { app, auth };
