@@ -18,18 +18,19 @@ export default function Signup() {
   const [formData, setFormData] = useState({
     name: "",
     email_id: "",
-    password: "",
     mobile_number: "",
   });
 
   const [errors, setErrors] = useState({
     name: "",
     email_id: "",
-    password: "",
     mobile_number: "",
   });
 
   const [loading, setLoading] = useState(false);
+
+  const YOUR_JWT_TOKEN =
+    "eyJhbGciOiJSUzI1NiIsImtpZCI6IjM4MDI5MzRmZTBlZWM0NmE1ZWQwMDA2ZDE0YTFiYWIwMWUzNDUwODMiLCJ0eXAiOiJKV1QifQ.eyJpc3MiOiJodHRwczovL3NlY3VyZXRva2VuLmdvb2dsZS5jb20vZGV2LWtpc2hhbmJoYWktYXBwIiwiYXVkIjoiZGV2LWtpc2hhbmJoYWktYXBwIiwiYXV0aF90aW1lIjoxNzYzMjgzNjc4LCJ1c2VyX2lkIjoiREtYdDVCMjBQMVhVMVFoOGgwT3Jhc1NYVDIwMiIsInN1YiI6IkRLWHQ1QjIwUDFYVTFRaDhoME9yYXNTWFQyMDIiLCJpYXQiOjE3NjMyODM2NzgsImV4cCI6MTc2MzI4NzI3OCwicGhvbmVfbnVtYmVyIjoiKzkxNzc2NDAyOTEwMiIsImZpcmViYXNlIjp7ImlkZW50aXRpZXMiOnsicGhvbmUiOlsiKzkxNzc2NDAyOTEwMiJdfSwic2lnbl9pbl9wcm92aWRlciI6InBob25lIn19.b_qjQJTCFjg8HVwWOVntXlL0AxA6wyx_oqVLT3u-TXMZjK6KvSb0C_sSZguD1TN1LQ3OWgQPikvHS5ssDyCa5mam1s14PrnvbNVLTeqBMfp9nXvLyOKW-wvsB0BkA6aCIe4XxYgHhDg-cwIps_zOklm-GaDUmbjxHHzzWMmJGbobZcq2s3fvR32lVUL93cA1Hmfps6DLhzuqW7S7m9YaaQ7SU3nHX3AQWBdcsLt6-icFGGj4cHU_SGvZAnr2NyVXFRGacVAVIKUQ52eOt4ARbdMAmoeEjLWYyEbqDBXty8Xhw1wcprmRKxexGq4FwbbQxSRPh1Ej__xoMC4O1LqKNw";
 
   // ✅ Input change handler
   const handleChange = (key: keyof typeof formData, value: string) => {
@@ -55,15 +56,6 @@ export default function Signup() {
       valid = false;
     } else if (!emailRegex.test(formData.email_id)) {
       newErrors.email_id = "Invalid email address";
-      valid = false;
-    }
-
-    // Password validation
-    if (!formData.password.trim()) {
-      newErrors.password = "Password is required";
-      valid = false;
-    } else if (formData.password.length < 6) {
-      newErrors.password = "Password must be at least 6 characters";
       valid = false;
     }
 
@@ -101,13 +93,6 @@ export default function Signup() {
       );
       return;
     }
-    if (!formData.password || formData.password.length < 8) {
-      Alert.alert(
-        "Invalid password",
-        "Password must be at least 8 characters long"
-      );
-      return;
-    }
 
     try {
       setLoading(true);
@@ -116,16 +101,20 @@ export default function Signup() {
         name: formData.name,
         email_id: formData.email_id,
         mobile_number: formData.mobile_number,
-        password: formData.password,
       };
 
       console.log("📤 Sending payload:", payload);
 
       const response = await fetch(
-        "https://dev-backend-py-23809827867.us-east1.run.app/user/create",
+        "https://dev-backend-py-23809827867.us-east1.run.app/user/ph/create",
         {
           method: "POST",
-          headers: { "Content-Type": "application/json" },
+          headers: {
+            "Content-Type": "application/json",
+            "X-Role": "user", // default role
+            Authorization: `Bearer ${YOUR_JWT_TOKEN}`, // replace with actual token
+            "X-Token-Source": "firebase", // or any appropriate value
+          },
           body: JSON.stringify(payload),
         }
       );
@@ -138,12 +127,11 @@ export default function Signup() {
         return;
       }
 
-      router.replace("/login");
+      router.replace("/phoneLoginScreen");
 
       setFormData({
         name: "",
         email_id: "",
-        password: "",
         mobile_number: "",
       });
     } catch (error: any) {
@@ -191,19 +179,6 @@ export default function Signup() {
         />
         {errors.email_id ? (
           <Text style={styles.errorText}>{errors.email_id}</Text>
-        ) : null}
-
-        {/* Password Field */}
-        <TextInput
-          style={[styles.input, errors.password && styles.errorInput]}
-          placeholder="Password"
-          placeholderTextColor="#888"
-          secureTextEntry
-          value={formData.password}
-          onChangeText={(text) => handleChange("password", text)}
-        />
-        {errors.password ? (
-          <Text style={styles.errorText}>{errors.password}</Text>
         ) : null}
 
         {/* Mobile Field */}

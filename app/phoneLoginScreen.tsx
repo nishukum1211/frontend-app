@@ -24,12 +24,13 @@ export default function PhoneLoginScreen() {
   const [verificationId, setVerificationId] = useState<string | null>(null);
   const [message, setMessage] = useState("");
   const [countryCode, setCountryCode] = useState<CountryCode>("IN");
-  const [callingCode, setCallingCode] = useState("");
+  const [callingCode, setCallingCode] = useState("91");
 
   const sendOtp = async () => {
     try {
       const phoneProvider = new PhoneAuthProvider(auth);
-      const fullPhoneNumber = `+${callingCode}${phone}`;
+      const fullPhoneNumber = phone; // phone already contains +91
+
       const verificationId = await phoneProvider.verifyPhoneNumber(
         fullPhoneNumber,
         recaptchaVerifier.current
@@ -44,7 +45,27 @@ export default function PhoneLoginScreen() {
   const confirmOtp = async () => {
     try {
       const credential = PhoneAuthProvider.credential(verificationId!, otp);
-      await signInWithCredential(auth, credential);
+
+      const userCredential = await signInWithCredential(auth, credential);
+      const user = userCredential.user;
+
+      // 🔍 Check in Firestore if user exists
+      //   const userRef = doc(db, "users", user.uid);
+      //   const userSnap = await getDoc(userRef);
+
+      //   if (userSnap.exists()) {
+      //     console.log("Existing user:", user.uid);
+      //     router.navigate("/(tabs)");
+      //   } else {
+      //     console.log("New user:", user.uid);
+      //     router.navigate("/signup");
+      //     // router.push({ pathname: "/signup", params: { phone: user.phoneNumber }});
+      //   }
+
+      // 🔐 Generate JWT token
+      const token = await user.getIdToken();
+      console.log("JWT Token:", token);
+
       setMessage("Phone authentication successful!");
       router.navigate("/(tabs)");
     } catch (err: any) {
