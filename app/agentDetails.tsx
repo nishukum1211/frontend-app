@@ -1,10 +1,11 @@
 import { MaterialCommunityIcons } from "@expo/vector-icons";
 import { LinearGradient } from "expo-linear-gradient";
-import { useLocalSearchParams } from "expo-router";
+import { useLocalSearchParams, useRouter } from "expo-router";
 import { Image, Text, TouchableOpacity, View } from "react-native";
 
 export default function AgentDetails() {
-  const { name, email_id, mobile_number, bio } = useLocalSearchParams();
+  const router = useRouter();
+  const { name, email_id, mobile_number, bio, role } = useLocalSearchParams();
 
   return (
     <View style={{ flex: 1, backgroundColor: "#F5F7FA" }}>
@@ -17,6 +18,19 @@ export default function AgentDetails() {
           borderBottomRightRadius: 40,
         }}
       >
+        <TouchableOpacity
+          onPress={() => router.replace("../(tabs)")}
+          style={{
+            position: "absolute",
+            top: 50,
+            left: 20,
+            backgroundColor: "rgba(255,255,255,0.3)",
+            padding: 8,
+            borderRadius: 30,
+          }}
+        >
+          <MaterialCommunityIcons name="arrow-left" size={28} color="white" />
+        </TouchableOpacity>
         <Image
           source={{ uri: "https://i.pravatar.cc/300" }}
           style={{

@@ -29,7 +29,7 @@ const styles = StyleSheet.create({
     backgroundColor: "white",
   },
   button: {
-    backgroundColor: "#2563EB",
+    backgroundColor: "#4CAF50",
     paddingVertical: 14,
     borderRadius: 10,
     alignItems: "center",
@@ -77,6 +77,16 @@ const styles = StyleSheet.create({
     alignItems: "center",
     justifyContent: "center",
     backgroundColor: "rgba(0,0,0,0.04)",
+  },
+  agreementText: {
+    textAlign: "center",
+    marginTop: 18,
+    fontSize: 14,
+    color: "#000", // normal text color
+  },
+  linkText: {
+    color: "#4a90e2", // blue color
+    textDecorationLine: "underline", // optional, for a link look
   },
 });
 
