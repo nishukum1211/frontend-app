@@ -3,6 +3,7 @@ import { useState } from "react";
 import {
   ActivityIndicator,
   Alert,
+  Image,
   KeyboardAvoidingView,
   Platform,
   ScrollView,
@@ -155,10 +156,15 @@ export default function Signup() {
 
   return (
     <KeyboardAvoidingView
-      style={{ flex: 1 }}
+      style={{ flex: 1, backgroundColor: "lightgray" }}
       behavior={Platform.OS === "ios" ? "padding" : undefined}
     >
       <ScrollView contentContainerStyle={styles.container}>
+        <Image
+          source={require("../assets/images/logo.png")}
+          style={{ width: 270, height: 270 }}
+        />
+
         <Text style={styles.title}>Create an Account</Text>
 
         {/* Name Field */}
@@ -203,11 +209,22 @@ export default function Signup() {
         {/* Mobile Field */}
         <TextInput
           style={[styles.input, errors.mobile_number && styles.errorInput]}
-          placeholder="Mobile Number"
+          placeholder="Enter your mobile number"
           placeholderTextColor="#888"
           keyboardType="phone-pad"
+          maxLength={13} // +91 + 10 digits
           value={formData.mobile_number}
-          onChangeText={(text) => handleChange("mobile_number", text)}
+          onChangeText={(text) => {
+            // Ensure +91 prefix is always present
+            if (!text.startsWith("+91")) {
+              text = "+91" + text.replace(/^\+?91/, "");
+            }
+            handleChange("mobile_number", text);
+          }}
+          selection={{
+            start: formData.mobile_number.length,
+            end: formData.mobile_number.length,
+          }} // keep cursor at the end
         />
         {errors.mobile_number ? (
           <Text style={styles.errorText}>{errors.mobile_number}</Text>
@@ -217,13 +234,13 @@ export default function Signup() {
         {loading ? (
           <ActivityIndicator
             size="large"
-            color="#007bff"
+            color="#4CAF50"
             style={{ marginTop: 20 }}
           />
         ) : (
           <CustomButton
             title="Submit"
-            backgroundColor="#007bff"
+            backgroundColor="#4CAF50"
             onPress={handleSignup}
             style={{
               paddingHorizontal: 50,
@@ -244,6 +261,7 @@ const styles = StyleSheet.create({
     alignItems: "center",
     padding: 20,
     backgroundColor: "#fff",
+    paddingBottom: 150,
   },
   title: {
     fontSize: 26,
@@ -269,5 +287,20 @@ const styles = StyleSheet.create({
     color: "red",
     marginBottom: 10,
     fontSize: 13,
+  },
+  logo: {
+    width: 350,
+    height: 350,
+    alignSelf: "center",
+  },
+  agreementText: {
+    textAlign: "center",
+    marginTop: 10,
+    fontSize: 14,
+    color: "#000", // normal text color
+  },
+  linkText: {
+    color: "#4a90e2", // blue color
+    textDecorationLine: "underline", // optional, for a link look
   },
 });

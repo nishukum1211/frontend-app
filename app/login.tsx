@@ -121,6 +121,30 @@ const Login: React.FC<Props> = ({ onClose }) => {
               >
                 <Text style={styles.resendText}>Forgot password?</Text>
               </TouchableOpacity>
+
+              <Text style={styles.agreementText}>
+                By proceeding, you agree with our{" "}
+                <Text
+                  style={styles.linkText}
+                  onPress={() => console.log("Terms clicked")}
+                >
+                  Terms of Service
+                </Text>
+                ,{" "}
+                <Text
+                  style={styles.linkText}
+                  onPress={() => console.log("Privacy clicked")}
+                >
+                  Privacy Policy
+                </Text>{" "}
+                &{" "}
+                <Text
+                  style={styles.linkText}
+                  onPress={() => console.log("User Agreement clicked")}
+                >
+                  User Agreement
+                </Text>
+              </Text>
             </KeyboardAvoidingView>
           </TouchableWithoutFeedback>
         </View>

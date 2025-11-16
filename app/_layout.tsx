@@ -26,6 +26,7 @@ export default function RootLayout() {
           <Stack.Screen name="(tabs)" options={{ headerShown: false }} />
         ) : (
           <>
+            <Stack.Screen name="index" options={{ headerShown: false }} />
             <Stack.Screen name="signup" options={{ headerShown: false }} />
             <Stack.Screen name="login" options={{ headerShown: false }} />
             <Stack.Screen name="adminLogin" options={{ headerShown: false }} />
@@ -34,7 +35,7 @@ export default function RootLayout() {
               options={{ headerShown: false }}
             />
             <Stack.Screen
-              name="agentDetails"
+              name="AgentDetails"
               options={{ headerShown: false }}
             />
           </>
