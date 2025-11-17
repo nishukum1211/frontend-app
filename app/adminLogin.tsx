@@ -30,10 +30,10 @@ export default function AgentLogin() {
 
     try {
       const response = await fetch(
-        "https://dev-backend-py-23809827867.us-east1.run.app/agent/auth",
+        "https://dev-backend-py-23809827867.us-east1.run.app/user/pw/auth",
         {
           method: "POST",
-          headers: { "Content-Type": "application/json" },
+          headers: { "Content-Type": "application/json", "X-Role": "agent" },
           body: JSON.stringify({
             mobile_number,
             password,
