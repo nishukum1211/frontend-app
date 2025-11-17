@@ -110,7 +110,7 @@ export default function Chat() {
               style={styles.chatItem}
               onPress={() =>
                 router.push({
-                  pathname: "agentChatDetail",
+                  pathname: "/agentChatDetail",
                   params: {
                     id: item.id,
                     userName: item.userName,

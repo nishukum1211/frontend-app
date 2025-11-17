@@ -29,7 +29,7 @@ export const getUserData = async (): Promise<DecodedToken | null> => {
     name: "Alice Johnson",
     email_id: "alice@example.com",
     mobile_number: "1234567890",
-    role: "chat", // change to "agent" to test agent view
+    role: "agent", // change to "agent" to test agent view
     exp: Math.floor(Date.now() / 1000) + 3600, // expires in 1 hour
   };
 
