@@ -1,5 +1,5 @@
 import { useFocusEffect, useRouter } from "expo-router";
-import { useCallback, useState } from "react";
+import { useCallback, useEffect, useRef, useState } from "react";
 import {
   ActivityIndicator,
   Dimensions,
@@ -18,7 +18,7 @@ import ChatView from "../components/ChatView";
 // Mock agent chat data
 const mockChats = [
   {
-    id: "1",
+    id: "User123",
     userName: "John Doe",
     lastMessage: "I have a question about my policy.",
     avatar: require("@/assets/images/profile_img.jpg"),
@@ -39,13 +39,18 @@ const mockChats = [
 
 const { width } = Dimensions.get("window");
 
+// Hardcoded for demonstration. In a real app, this would come from an API or selection.
+const SUPPORT_AGENT_ID = "Agent123"; 
+
 export default function Chat() {
   const router = useRouter();
   const [user, setUser] = useState<DecodedToken | null>(null);
   const [loading, setLoading] = useState(true);
   const [messages, setMessages] = useState<IMessage[]>([]);
+  const [connectionStatus, setConnectionStatus] = useState("Connecting...");
 
   useFocusEffect(
+    // This effect runs when the screen comes into focus
     useCallback(() => {
       const checkAuthStatus = async () => {
         setLoading(true);
@@ -57,36 +62,96 @@ export default function Chat() {
             router.replace("/profile");
           } else {
             setUser(storedUser);
-            if (storedUser.role !== "agent") {
-              setMessages([
-                {
-                  _id: 1,
-                  text: "Hello! How can I help you today?",
-                  createdAt: new Date(),
-                  user: {
-                    _id: 2,
-                    name: "Support Agent",
-                    avatar: require("@/assets/images/logo.png"),
-                  },
-                },
-              ]);
-            }
-            setLoading(false);
           }
         } else {
           router.replace("/profile");
         }
+        setLoading(false); // Set loading to false after auth check
       };
 
       checkAuthStatus();
     }, [])
   );
 
+  const ws = useRef<WebSocket | null>(null);
+
+  useEffect(() => {
+    if (!user || user.role === "agent") return; // Only connect if it's a regular user
+
+    setConnectionStatus("Connecting...");
+    // Establish WebSocket connection
+    const websocketUrl = `wss://dev-backend-py-23809827867.us-east1.run.app/chat/ws/${user.id}/${SUPPORT_AGENT_ID}/user`;
+    ws.current = new WebSocket(websocketUrl);
+
+    ws.current.onopen = () => {
+      console.log("WebSocket Connected for user:", user.id);
+      setConnectionStatus("Connected");
+    };
+
+    ws.current.onmessage = (event) => {
+      console.log("Received message:", event.data);
+      try {
+        const incomingData = JSON.parse(event.data);
+        console.log("Received data:", incomingData);
+
+        let newMessages: IMessage[] = [];
+        if (incomingData) { // Ensure incomingData is not null or undefined
+          // The backend sends history as an array and subsequent messages as single objects.
+          newMessages = Array.isArray(incomingData)
+            ? incomingData
+            : [incomingData];
+        }
+
+        setMessages((previousMessages) => {
+          // Filter out any messages that are already in the state
+          const uniqueNewMessages = newMessages.filter(
+            // Ensure msg is not null/undefined before accessing its properties
+            (msg) => msg && !previousMessages.some((prevMsg) => prevMsg._id === msg._id)
+          );
+          if (uniqueNewMessages.length === 0) return previousMessages;
+          return GiftedChat.append(previousMessages, uniqueNewMessages);
+        });
+      } catch (e) {
+        console.error("Failed to parse message data:", event.data);
+      }
+    };
+
+    ws.current.onerror = (error) => {
+      console.error("WebSocket Error:", error);
+    };
+
+    ws.current.onclose = (event) => {
+      console.log("WebSocket Disconnected:", event.code, event.reason);
+      setConnectionStatus("Disconnected");
+    };
+
+    // Clean up WebSocket on component unmount
+    return () => {
+      ws.current?.close();
+    };
+  }, [user]); // Reconnect if user changes
+
   const onSend = useCallback((messages: IMessage[] = []) => {
-    setMessages((previousMessages) =>
-      GiftedChat.append(previousMessages, messages)
-    );
-  }, []);
+    if (!user || !ws.current || ws.current.readyState !== WebSocket.OPEN) {
+      console.error("WebSocket not connected or user not available");
+      return;
+    }
+
+    const message = messages[0];
+    const messageToSend = {
+      _id: message._id,
+      text: message.text,
+      createdAt: message.createdAt,
+      user: {
+        _id: user.id,
+        name: user.name,
+      },
+    };
+
+    ws.current.send(JSON.stringify(messageToSend));
+    setMessages((previousMessages) => GiftedChat.append(previousMessages, messages));
+  }, [user]);
+
 
   if (loading) {
     return (
@@ -135,18 +200,46 @@ export default function Chat() {
 
   // Regular User View
   return user ? (
-    <ChatView
-      messages={messages}
-      onSend={onSend}
-      user={{
-        _id: user.id,
-        name: user.name,
-      }}
-    />
+    <View style={{ flex: 1 }}>
+      <View
+        style={[
+          styles.statusBar,
+          connectionStatus === "Connected"
+            ? styles.connected
+            : styles.disconnected,
+        ]}
+      >
+        <Text style={styles.statusText}>{connectionStatus}</Text>
+      </View>
+      <ChatView
+        messages={messages}
+        onSend={onSend}
+        user={{
+          _id: user.id,
+          name: user.name,
+        }}
+      />
+    </View>
   ) : null;
 }
 
 const styles = StyleSheet.create({
+  statusBar: {
+    padding: 5,
+    alignItems: "center",
+    justifyContent: "center",
+  },
+  connected: {
+    backgroundColor: "#4CAF50", // Green for connected
+  },
+  disconnected: {
+    backgroundColor: "#F44336", // Red for disconnected/error
+  },
+  statusText: {
+    color: "white",
+    fontSize: 12,
+    fontWeight: "600",
+  },
   loadingContainer: {
     flex: 1,
     justifyContent: "center",

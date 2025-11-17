@@ -23,6 +23,7 @@ export default function ChatView({ messages, onSend, user }: ChatViewProps) {
       messages={messages}
       onSend={onSend}
       user={user}
+      messageIdGenerator={() => `${Date.now()}-${Math.random()}`}
       textInputProps={{
         style: { color: "#000", flex: 1, marginLeft: 10 },
       }}
