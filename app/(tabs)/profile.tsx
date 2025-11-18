@@ -11,7 +11,7 @@ import {
   TouchableOpacity,
   View
 } from "react-native";
-import { getUserData, removeUserData } from "../auth";
+import { getUserData, removeLoginJwtToken, removeUserData } from "../auth";
 
 type DecodedToken = {
   id: string;
@@ -45,9 +45,10 @@ export default function Profile() {
   //  Logout
   const handleLogout = async () => {
     await removeUserData();
+    await removeLoginJwtToken();
     setUser(null);
     // Optionally, navigate away or show a confirmation
-    router.replace("/phoneLoginScreen");
+    router.replace("/(tabs)/profile");
   };
 
   // 📸 Pick Image

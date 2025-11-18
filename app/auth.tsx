@@ -57,31 +57,37 @@ export const getLoginJwtToken = async (): Promise<string | null> => {
  * This calls the GET /user/fetch endpoint.
  * @returns {Promise<DecodedToken | null>} The user data if successful, otherwise null.
  */
-export const fetchAndSaveUser = async (): Promise<DecodedToken | null> => {
+export const fetchAndSaveUser = async (
+  role: "user" | "agent" = "user",
+  tokenSource: "firebase" | "password" = "firebase"
+): Promise<DecodedToken | null> => {
   try {
     const token = await getLoginJwtToken();
     if (!token) {
       console.log("No auth token found for fetching user.");
       return null;
     }
-
+        console.log(tokenSource, role)
     const response = await fetch(
       "https://dev-backend-py-23809827867.us-east1.run.app/user/fetch",
       {
         method: "GET",
         headers: {
           Authorization: `Bearer ${token}`,
-          "X-Role": "user",
-          "X-Token-Source": "firebase", // As seen in other parts of the app
+          "X-Role": role,
+          "X-Token-Source": tokenSource,
         },
       }
     );
 
+
     if (!response.ok) {
-      const errorData = await response.json();
+      // Try to parse error response, but don't fail if it's not JSON
+      let errorBody = "Could not parse error response.";
+      try { errorBody = await response.json(); } catch (e) { /* ignore */ }
       console.error(
         "Failed to fetch user data:",
-        errorData.message || response.statusText
+        (errorBody as any)?.message || (errorBody as any)?.detail || response.statusText || `HTTP ${response.status}`
       );
       return null;
     }
