@@ -2,6 +2,7 @@ import { useFocusEffect } from "@react-navigation/native";
 import * as ImagePicker from "expo-image-picker";
 import { useRouter } from "expo-router";
 import { useCallback, useState } from "react";
+
 import {
   ActivityIndicator,
   Image,
@@ -73,6 +74,26 @@ export default function Profile() {
     );
   }
 
+  const loadToken = async () => {
+    const token = await AsyncStorage.getItem("jwtToken");
+    const agentToken = await SecureStore.getItemAsync("agentToken");
+
+    const finalToken = token || agentToken;
+
+    if (finalToken) {
+      try {
+        const decoded: DecodedToken = jwtDecode(finalToken);
+        setUser(decoded);
+        setIsLoggedIn(true);
+      } catch {
+        console.log("Invalid Token");
+        setIsLoggedIn(false);
+      }
+    } else {
+      setIsLoggedIn(false);
+    }
+  };
+
   // 🚪 If not logged in: show buttons
   if (!user) {
     return (
@@ -125,9 +146,22 @@ export default function Profile() {
         <Text style={styles.label}>Mobile Number</Text>
         <Text style={styles.value}>{user?.mobile_number}</Text>
 
-        <Text style={styles.label}>Role</Text>
-        <Text style={styles.value}>{user?.role}</Text>
+        {user?.role !== "agent" && (
+          <>
+            <Text style={styles.label}>Role</Text>
+            <Text style={styles.value}>{user?.role}</Text>
+          </>
+        )}
       </View>
+
+      {/* {user?.role === "agent" && ( */}
+      <TouchableOpacity
+        style={styles.uploadButton}
+        onPress={() => router.push("../agentForm/agentUploadForm")}
+      >
+        <Text style={styles.uploadButtonText}>Upload PDF / Sell Item</Text>
+      </TouchableOpacity>
+      {/* )} */}
 
       <TouchableOpacity style={styles.editButton} onPress={handleLogout}>
         <Text style={styles.editButtonText}>Logout</Text>
@@ -187,7 +221,7 @@ const styles = StyleSheet.create({
     marginTop: 2,
   },
   editButton: {
-    marginTop: 40,
+    marginTop: 15,
     backgroundColor: "#007AFF",
     paddingVertical: 14,
     paddingHorizontal: 40,
@@ -215,6 +249,20 @@ const styles = StyleSheet.create({
     marginHorizontal: 5,
     alignItems: "center",
   },
+  uploadButton: {
+    marginTop: 20,
+    backgroundColor: "#10B981", // green
+    paddingVertical: 14,
+    paddingHorizontal: 40,
+    borderRadius: 10,
+    elevation: 3,
+  },
+  uploadButtonText: {
+    color: "#fff",
+    fontSize: 16,
+    fontWeight: "600",
+  },
+
   authButtonText: {
     color: "#fff",
     fontSize: 16,

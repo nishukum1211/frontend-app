@@ -6,6 +6,7 @@ import { Image, Text, TouchableOpacity, View } from "react-native";
 export default function AgentDetails() {
   const router = useRouter();
   const { name, email_id, mobile_number, bio, role } = useLocalSearchParams();
+  const { id } = useLocalSearchParams();
 
   return (
     <View style={{ flex: 1, backgroundColor: "#F5F7FA" }}>
@@ -101,6 +102,12 @@ export default function AgentDetails() {
       <View style={{ marginTop: 30, paddingHorizontal: 20 }}>
         {/* All PDFs */}
         <TouchableOpacity
+          onPress={() =>
+            router.push({
+              pathname: "../pdf/pdfList",
+              params: { agent_id: id as string },
+            })
+          }
           style={{
             backgroundColor: "#4C6EF5",
             padding: 18,
@@ -109,9 +116,6 @@ export default function AgentDetails() {
             flexDirection: "row",
             alignItems: "center",
             justifyContent: "center",
-            shadowColor: "#4C6EF5",
-            shadowOpacity: 0.3,
-            shadowRadius: 8,
             elevation: 4,
           }}
         >
