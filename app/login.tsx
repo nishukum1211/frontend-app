@@ -63,7 +63,7 @@ const Login: React.FC<Props> = ({ onClose }) => {
         console.log("Decoded User:", decoded);
 
         // Navigate to profile or main tabs
-        router.replace("/(tabs)/profile");
+         router.replace("/(tabs)/profile");
       } else {
         Alert.alert("Login Failed", data.message || "Invalid credentials");
       }
@@ -77,7 +77,11 @@ const Login: React.FC<Props> = ({ onClose }) => {
 
   // When user taps outside the popup
   const handleOutsidePress = () => {
-    if (onClose) onClose(); // close modal and show home
+    if (onClose) {
+      onClose(); // close modal and show home
+    } else if (router.canGoBack()) {
+      router.back();
+    }
   };
 
   return (

@@ -1,18 +1,16 @@
-import AsyncStorage from "@react-native-async-storage/async-storage";
 import { useFocusEffect } from "@react-navigation/native";
 import * as ImagePicker from "expo-image-picker";
 import { useRouter } from "expo-router";
-import { jwtDecode } from "jwt-decode";
 import { useCallback, useState } from "react";
 import {
   ActivityIndicator,
-  Alert,
   Image,
   StyleSheet,
   Text,
   TouchableOpacity,
-  View,
+  View
 } from "react-native";
+import { getUserData, removeUserData } from "../auth";
 
 type DecodedToken = {
   id: string;
@@ -27,65 +25,28 @@ export default function Profile() {
   const router = useRouter();
   const [image, setImage] = useState<string | null>(null);
   const [user, setUser] = useState<DecodedToken | null>(null);
-  const [isLoggedIn, setIsLoggedIn] = useState(false);
-  const [loading, setLoading] = useState(false);
+  const [loading, setLoading] = useState(true);
 
-  // ✅ Load token if already logged in
+  // ✅ Load user data from SecureStore
   useFocusEffect(
     useCallback(() => {
-      const loadToken = async () => {
-        const token = await AsyncStorage.getItem("jwtToken");
-        if (token) {
-          try {
-            const decoded: DecodedToken = jwtDecode(token);
-            setUser(decoded);
-            setIsLoggedIn(true);
-          } catch (err) {
-            console.log("Invalid token");
-            await AsyncStorage.removeItem("jwtToken");
-            setIsLoggedIn(false);
-          }
-        } else {
-          setIsLoggedIn(false);
-        }
+      const loadUserData = async () => {
+        setLoading(true);
+        // getUserData now handles fetching if no local user data but a token exists
+        const userFromAuth = await getUserData();
+        setUser(userFromAuth);
+        setLoading(false);
       };
-      loadToken();
+      loadUserData();
     }, [])
   );
 
-  // 📦 Helper function to call backend
-  const apiCall = async (url: string, body: any) => {
-    try {
-      setLoading(true);
-      const response = await fetch(url, {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify(body),
-      });
-
-      const data = await response.json();
-
-      if (response.ok && data.token) {
-        await AsyncStorage.setItem("jwtToken", data.token);
-        const decoded: DecodedToken = jwtDecode(data.token);
-        setUser(decoded);
-        setIsLoggedIn(true);
-      } else {
-        Alert.alert("Login Failed", data.message || "Invalid credentials");
-      }
-    } catch (err) {
-      console.error(err);
-      Alert.alert("Error", "Something went wrong. Please try again.");
-    } finally {
-      setLoading(false);
-    }
-  };
-
-  // 🚪 Logout
+  //  Logout
   const handleLogout = async () => {
-    await AsyncStorage.removeItem("jwtToken");
+    await removeUserData();
     setUser(null);
-    setIsLoggedIn(false);
+    // Optionally, navigate away or show a confirmation
+    router.replace("/phoneLoginScreen");
   };
 
   // 📸 Pick Image
@@ -107,37 +68,36 @@ export default function Profile() {
     return (
       <View style={styles.container}>
         <ActivityIndicator size="large" color="#007AFF" />
-        <Text style={{ marginTop: 10 }}>Processing...</Text>
+        <Text style={{ marginTop: 10 }}>Loading Profile...</Text>
       </View>
     );
   }
 
   // 🚪 If not logged in: show buttons
-  if (!isLoggedIn) {
+  if (!user) {
     return (
       <View style={styles.container}>
-        <Text style={styles.title}>Welcome to Profile Page</Text>
+        <Image
+          source={require("../../assets/images/logo.png")}
+          style={styles.logo}
+        />
+        <Text style={styles.title}>Welcome</Text>
 
-        <TouchableOpacity
-          style={styles.authButton}
-          onPress={() => router.replace("../phoneLoginScreen")}
-        >
-          <Text style={styles.authButtonText}>Login</Text>
-        </TouchableOpacity>
+        <View style={styles.buttonContainer}>
+          <TouchableOpacity
+            style={styles.authButton}
+            onPress={() => router.push("../phoneLoginScreen")}
+          >
+            <Text style={styles.authButtonText}>User Login</Text>
+          </TouchableOpacity>
 
-        <TouchableOpacity
-          style={styles.authButton}
-          onPress={() => router.replace("../signup")}
-        >
-          <Text style={styles.authButtonText}>Signup</Text>
-        </TouchableOpacity>
-
-        <TouchableOpacity
-          style={styles.adminButton}
-          onPress={() => router.replace("../adminLogin")}
-        >
-          <Text style={styles.authButtonText}>Admin Login</Text>
-        </TouchableOpacity>
+          <TouchableOpacity
+            style={styles.adminButton}
+            onPress={() => router.push("../adminLogin")}
+          >
+            <Text style={styles.authButtonText}>Agent Login</Text>
+          </TouchableOpacity>
+        </View>
       </View>
     );
   }
@@ -189,6 +149,11 @@ const styles = StyleSheet.create({
     fontWeight: "700",
     marginBottom: 30,
   },
+  logo: {
+    width: 260,
+    height: 260,
+    marginBottom: 20,
+  },
   avatar: {
     width: 120,
     height: 120,
@@ -235,22 +200,29 @@ const styles = StyleSheet.create({
     fontWeight: "600",
   },
   authButton: {
+    flex: 1,
     backgroundColor: "#007AFF",
     paddingVertical: 14,
-    paddingHorizontal: 40,
     borderRadius: 10,
-    marginVertical: 10,
+    marginHorizontal: 5,
+    alignItems: "center",
   },
   adminButton: {
+    flex: 1,
     backgroundColor: "#EF4444",
     paddingVertical: 14,
-    paddingHorizontal: 40,
     borderRadius: 10,
-    marginVertical: 10,
+    marginHorizontal: 5,
+    alignItems: "center",
   },
   authButtonText: {
     color: "#fff",
     fontSize: 16,
     fontWeight: "600",
+  },
+  buttonContainer: {
+    flexDirection: "row",
+    justifyContent: "space-between",
+    width: "90%",
   },
 });

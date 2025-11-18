@@ -1,4 +1,4 @@
-import { useRouter } from "expo-router";
+import { useLocalSearchParams, useRouter } from "expo-router";
 import { useState } from "react";
 import {
   ActivityIndicator,
@@ -11,14 +11,23 @@ import {
   Text,
   TextInput,
 } from "react-native";
+import { SafeAreaView } from "react-native-safe-area-context";
+import { fetchAndSaveUser, getLoginJwtToken } from "./auth";
 import CustomButton from "./components/Button";
 
 export default function Signup() {
   const router = useRouter(); // ✅ Move it here (top-level)
+  const { mobile_number: raw_mobile_number } =
+    useLocalSearchParams<{ mobile_number?: string }>();
+
+  const initialMobileNumber = (raw_mobile_number || "")
+    .replace(/\s/g, "")
+    .startsWith("+") ? (raw_mobile_number || "").replace(/\s/g, "") : `+${(raw_mobile_number || "").replace(/\s/g, "")}`;
+
   const [formData, setFormData] = useState({
     name: "",
     email_id: "",
-    mobile_number: "",
+    mobile_number: initialMobileNumber || "",
   });
 
   const [errors, setErrors] = useState({
@@ -29,9 +38,6 @@ export default function Signup() {
 
   const [loading, setLoading] = useState(false);
 
-  const YOUR_JWT_TOKEN =
-    "eyJhbGciOiJSUzI1NiIsImtpZCI6IjM4MDI5MzRmZTBlZWM0NmE1ZWQwMDA2ZDE0YTFiYWIwMWUzNDUwODMiLCJ0eXAiOiJKV1QifQ.eyJpc3MiOiJodHRwczovL3NlY3VyZXRva2VuLmdvb2dsZS5jb20vZGV2LWtpc2hhbmJoYWktYXBwIiwiYXVkIjoiZGV2LWtpc2hhbmJoYWktYXBwIiwiYXV0aF90aW1lIjoxNzYzMjgzNjc4LCJ1c2VyX2lkIjoiREtYdDVCMjBQMVhVMVFoOGgwT3Jhc1NYVDIwMiIsInN1YiI6IkRLWHQ1QjIwUDFYVTFRaDhoME9yYXNTWFQyMDIiLCJpYXQiOjE3NjMyODM2NzgsImV4cCI6MTc2MzI4NzI3OCwicGhvbmVfbnVtYmVyIjoiKzkxNzc2NDAyOTEwMiIsImZpcmViYXNlIjp7ImlkZW50aXRpZXMiOnsicGhvbmUiOlsiKzkxNzc2NDAyOTEwMiJdfSwic2lnbl9pbl9wcm92aWRlciI6InBob25lIn19.b_qjQJTCFjg8HVwWOVntXlL0AxA6wyx_oqVLT3u-TXMZjK6KvSb0C_sSZguD1TN1LQ3OWgQPikvHS5ssDyCa5mam1s14PrnvbNVLTeqBMfp9nXvLyOKW-wvsB0BkA6aCIe4XxYgHhDg-cwIps_zOklm-GaDUmbjxHHzzWMmJGbobZcq2s3fvR32lVUL93cA1Hmfps6DLhzuqW7S7m9YaaQ7SU3nHX3AQWBdcsLt6-icFGGj4cHU_SGvZAnr2NyVXFRGacVAVIKUQ52eOt4ARbdMAmoeEjLWYyEbqDBXty8Xhw1wcprmRKxexGq4FwbbQxSRPh1Ej__xoMC4O1LqKNw";
-
   // ✅ Input change handler
   const handleChange = (key: keyof typeof formData, value: string) => {
     setFormData((prev) => ({ ...prev, [key]: value }));
@@ -41,11 +47,11 @@ export default function Signup() {
   // ✅ Validation logic
   const validateForm = () => {
     let valid = true;
-    let newErrors = { name: "", email_id: "", password: "", mobile_number: "" };
+    const newErrors = { name: "", email_id: "", mobile_number: "" };
 
     // Name validation
-    if (!formData.name.trim()) {
-      newErrors.name = "Name is required";
+    if (formData.name.trim().length < 2) {
+      newErrors.name = "Name must be at least 2 characters long";
       valid = false;
     }
 
@@ -60,11 +66,11 @@ export default function Signup() {
     }
 
     // Mobile number validation
-    const phoneRegex = /^\+[1-9]\d{7,14}$/; // E.164 format (+91xxxxxxxxxx)
+    const phoneRegex = /^\+91\d{10}$/; // Matches +91 followed by 10 digits
     if (!formData.mobile_number.trim()) {
       newErrors.mobile_number = "Mobile number is required";
       valid = false;
-    } else if (!phoneRegex.test(formData.mobile_number)) {
+    } else if (!phoneRegex.test(formData.mobile_number.replace(/\s/g, ""))) {
       newErrors.mobile_number = "Invalid phone number (e.g. +911234567890)";
       valid = false;
     }
@@ -77,30 +83,26 @@ export default function Signup() {
   const handleSignup = async () => {
     if (loading) return;
 
-    // Basic front-end validation
-    if (!formData.name || formData.name.length < 2) {
-      Alert.alert("Invalid name", "Name must be at least 2 characters long");
+    // Validate the form before proceeding
+    if (!validateForm()) {
       return;
     }
-    if (!formData.email_id) {
-      Alert.alert("Invalid email", "Email is required");
-      return;
-    }
-    if (!/^\+91\d{10}$/.test(formData.mobile_number)) {
-      Alert.alert(
-        "Invalid number",
-        "Mobile number must be in +91XXXXXXXXXX format"
-      );
-      return;
-    }
-
+    
     try {
       setLoading(true);
+
+      const token = await getLoginJwtToken();
+      if (!token) {
+        Alert.alert("Authentication Error", "Login token not found. Please try logging in again.");
+        setLoading(false);
+        router.replace("/phoneLoginScreen");
+        return;
+      }
 
       const payload = {
         name: formData.name,
         email_id: formData.email_id,
-        mobile_number: formData.mobile_number,
+        mobile_number: initialMobileNumber,
       };
 
       console.log("📤 Sending payload:", payload);
@@ -112,7 +114,7 @@ export default function Signup() {
           headers: {
             "Content-Type": "application/json",
             "X-Role": "user", // default role
-            Authorization: `Bearer ${YOUR_JWT_TOKEN}`, // replace with actual token
+            Authorization: `Bearer ${token}`, // use the fetched token
             "X-Token-Source": "firebase", // or any appropriate value
           },
           body: JSON.stringify(payload),
@@ -127,7 +129,10 @@ export default function Signup() {
         return;
       }
 
-      router.replace("/phoneLoginScreen");
+      // Fetch and save the newly created user's data
+      await fetchAndSaveUser();
+
+      router.replace("/(tabs)");
 
       setFormData({
         name: "",
@@ -143,89 +148,79 @@ export default function Signup() {
   };
 
   return (
-    <KeyboardAvoidingView
-      style={{ flex: 1, backgroundColor: "lightgray" }}
-      behavior={Platform.OS === "ios" ? "padding" : undefined}
-    >
-      <ScrollView contentContainerStyle={styles.container}>
-        <Image
-          source={require("../assets/images/logo.png")}
-          style={{ width: 270, height: 270 }}
-        />
-
-        <Text style={styles.title}>Create an Account</Text>
-
-        {/* Name Field */}
-        <TextInput
-          style={[styles.input, errors.name && styles.errorInput]}
-          placeholder="Full Name"
-          placeholderTextColor="#888"
-          value={formData.name}
-          onChangeText={(text) => handleChange("name", text)}
-        />
-        {errors.name ? (
-          <Text style={styles.errorText}>{errors.name}</Text>
-        ) : null}
-
-        {/* Email Field */}
-        <TextInput
-          style={[styles.input, errors.email_id && styles.errorInput]}
-          placeholder="Email Address"
-          placeholderTextColor="#888"
-          keyboardType="email-address"
-          autoCapitalize="none"
-          value={formData.email_id}
-          onChangeText={(text) => handleChange("email_id", text)}
-        />
-        {errors.email_id ? (
-          <Text style={styles.errorText}>{errors.email_id}</Text>
-        ) : null}
-
-        {/* Mobile Field */}
-        <TextInput
-          style={[styles.input, errors.mobile_number && styles.errorInput]}
-          placeholder="Enter your mobile number"
-          placeholderTextColor="#888"
-          keyboardType="phone-pad"
-          maxLength={13} // +91 + 10 digits
-          value={formData.mobile_number}
-          onChangeText={(text) => {
-            // Ensure +91 prefix is always present
-            if (!text.startsWith("+91")) {
-              text = "+91" + text.replace(/^\+?91/, "");
-            }
-            handleChange("mobile_number", text);
-          }}
-          selection={{
-            start: formData.mobile_number.length,
-            end: formData.mobile_number.length,
-          }} // keep cursor at the end
-        />
-        {errors.mobile_number ? (
-          <Text style={styles.errorText}>{errors.mobile_number}</Text>
-        ) : null}
-
-        {/* Submit Button */}
-        {loading ? (
-          <ActivityIndicator
-            size="large"
-            color="#4CAF50"
-            style={{ marginTop: 20 }}
+    <SafeAreaView style={{ flex: 1 }}>
+      <KeyboardAvoidingView
+        style={{ flex: 1 }}
+        behavior={Platform.OS === "ios" ? "padding" : "height"}
+      >
+        <ScrollView contentContainerStyle={styles.container}>
+          <Image
+            source={require("../assets/images/logo.png")}
+            style={{ width: 270, height: 270 }}
           />
-        ) : (
-          <CustomButton
-            title="Submit"
-            backgroundColor="#4CAF50"
-            onPress={handleSignup}
-            style={{
-              paddingHorizontal: 50,
-              paddingVertical: 16,
-              opacity: loading ? 0.7 : 1,
-            }}
+
+          <Text style={styles.title}>Create an Account</Text>
+
+          {/* Name Field */}
+          <TextInput
+            style={[styles.input, errors.name && styles.errorInput]}
+            placeholder="Full Name"
+            placeholderTextColor="#888"
+            value={formData.name}
+            onChangeText={(text) => handleChange("name", text)}
           />
-        )}
-      </ScrollView>
-    </KeyboardAvoidingView>
+          {errors.name ? (
+            <Text style={styles.errorText}>{errors.name}</Text>
+          ) : null}
+
+          {/* Email Field */}
+          <TextInput
+            style={[styles.input, errors.email_id && styles.errorInput]}
+            placeholder="Email Address"
+            placeholderTextColor="#888"
+            keyboardType="email-address"
+            autoCapitalize="none"
+            value={formData.email_id}
+            onChangeText={(text) => handleChange("email_id", text)}
+          />
+          {errors.email_id ? (
+            <Text style={styles.errorText}>{errors.email_id}</Text>
+          ) : null}
+
+          {/* Mobile Field */}
+          <TextInput
+            style={[styles.input, styles.disabledInput]}
+            placeholder="Enter your mobile number"
+            placeholderTextColor="#888"
+            value={formData.mobile_number}
+            editable={false}
+          />
+          {errors.mobile_number ? (
+            <Text style={styles.errorText}>{errors.mobile_number}</Text>
+          ) : null}
+
+          {/* Submit Button */}
+          {loading ? (
+            <ActivityIndicator
+              size="large"
+              color="#4CAF50"
+              style={{ marginTop: 20 }}
+            />
+          ) : (
+            <CustomButton
+              title="Submit"
+              backgroundColor="#4CAF50"
+              onPress={handleSignup}
+              style={{
+                paddingHorizontal: 50,
+                paddingVertical: 16,
+                opacity: loading ? 0.7 : 1,
+              }}
+            />
+          )}
+        </ScrollView>
+      </KeyboardAvoidingView>
+    </SafeAreaView>
   );
 }
 
@@ -235,8 +230,7 @@ const styles = StyleSheet.create({
     justifyContent: "center",
     alignItems: "center",
     padding: 20,
-    backgroundColor: "#fff",
-    paddingBottom: 150,
+    paddingBottom: 50,
   },
   title: {
     fontSize: 26,
@@ -253,6 +247,10 @@ const styles = StyleSheet.create({
     marginBottom: 8,
     fontSize: 16,
     color: "#333",
+  },
+  disabledInput: {
+    backgroundColor: "#f0f0f0",
+    color: "#888",
   },
   errorInput: {
     borderColor: "red",
