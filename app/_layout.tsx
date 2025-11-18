@@ -44,3 +44,36 @@ export default function RootLayout() {
     </SafeAreaProvider>
   );
 }
+
+// import { Redirect, Stack } from "expo-router";
+// import { onAuthStateChanged, User } from "firebase/auth";
+// import { useEffect, useState } from "react";
+// import { auth } from "./firebaseConfig";
+
+// export default function RootLayout() {
+//   const [initializing, setInitializing] = useState(true);
+//   const [user, setUser] = useState<User | null>(null);
+
+//   useEffect(() => {
+//     const unsubscribe = onAuthStateChanged(auth, (u) => {
+//       setUser(u); // now TypeScript accepts this
+//       setInitializing(false);
+//     });
+
+//     return unsubscribe;
+//   }, []);
+
+//   if (initializing) return null;
+
+//   return (
+//     <>
+//       <Stack screenOptions={{ headerShown: false }} />
+
+//       {!user ? (
+//         <Redirect href="/phoneLoginScreen" />
+//       ) : (
+//         <Redirect href="/(tabs)" />
+//       )}
+//     </>
+//   );
+// }
