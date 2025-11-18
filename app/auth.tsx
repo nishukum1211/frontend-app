@@ -14,30 +14,90 @@ export const saveUserData = async (user: DecodedToken) => {
   await SecureStore.setItemAsync("User", JSON.stringify(user));
 };
 
-// // Get user data
-// export const getUserData = async (): Promise<DecodedToken | null> => {
-//   const userData = await SecureStore.getItemAsync("User");
-//   return userData ? JSON.parse(userData) : null;
-// };
-
-// Mock function to simulate a logged-in user
+// Get user data
 export const getUserData = async (): Promise<DecodedToken | null> => {
-  // Mock user data
-  const mockUser: DecodedToken = {
-    id: "123",
-    name: "Alice Johnson",
-    email_id: "alice@example.com",
-    mobile_number: "1234567890",
-    role: "agent", // change to "agent" to test agent view
-    exp: Math.floor(Date.now() / 1000) + 3600, // expires in 1 hour
-  };
+  const storedUserData = await SecureStore.getItemAsync("User");
+  if (storedUserData) {
+    return JSON.parse(storedUserData);
+  }
 
-  // Simulate a small delay like fetching from storage
-  await new Promise((resolve) => setTimeout(resolve, 500));
-
-  return mockUser;
+  // If no user data is stored, check for a token and try to fetch.
+  const token = await getLoginJwtToken();
+  if (token) {
+    return await fetchAndSaveUser();
+  }
+  return null;
 };
+
+
+
 // Remove user data
 export const removeUserData = async () => {
   await SecureStore.deleteItemAsync("User");
+};
+
+// Save JWT token
+export const setLoginJwtToken = async (token: string) => {
+  await SecureStore.setItemAsync("loginJwtToken", token);
+};
+
+
+// Remove JWT token
+export const removeLoginJwtToken = async () => {
+  await SecureStore.deleteItemAsync("loginJwtToken");
+};
+
+// Get JWT token
+export const getLoginJwtToken = async (): Promise<string | null> => {
+  return await SecureStore.getItemAsync("loginJwtToken");
+};
+
+/**
+ * Fetches user data from the backend and saves it to SecureStore.
+ * This calls the GET /user/fetch endpoint.
+ * @returns {Promise<DecodedToken | null>} The user data if successful, otherwise null.
+ */
+export const fetchAndSaveUser = async (
+  role: "user" | "agent" = "user",
+  tokenSource: "firebase" | "password" = "firebase"
+): Promise<DecodedToken | null> => {
+  try {
+    const token = await getLoginJwtToken();
+    if (!token) {
+      console.log("No auth token found for fetching user.");
+      return null;
+    }
+        console.log(tokenSource, role)
+    const response = await fetch(
+      "https://dev-backend-py-23809827867.us-east1.run.app/user/fetch",
+      {
+        method: "GET",
+        headers: {
+          Authorization: `Bearer ${token}`,
+          "X-Role": role,
+          "X-Token-Source": tokenSource,
+        },
+      }
+    );
+
+
+    if (!response.ok) {
+      // Try to parse error response, but don't fail if it's not JSON
+      let errorBody = "Could not parse error response.";
+      try { errorBody = await response.json(); } catch (e) { /* ignore */ }
+      console.error(
+        "Failed to fetch user data:",
+        (errorBody as any)?.message || (errorBody as any)?.detail || response.statusText || `HTTP ${response.status}`
+      );
+      return null;
+    }
+
+    const userData: DecodedToken = await response.json();
+    await saveUserData(userData); // Save the fetched user data
+
+    return userData;
+  } catch (error) {
+    console.error("Error during fetchAndSaveUser:", error);
+    return null;
+  }
 };
