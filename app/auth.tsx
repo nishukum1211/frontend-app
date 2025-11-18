@@ -20,7 +20,6 @@ export const saveUserData = async (user: DecodedToken) => {
 //   return userData ? JSON.parse(userData) : null;
 // };
 
-
 // Mock function to simulate a logged-in user
 export const getUserData = async (): Promise<DecodedToken | null> => {
   // Mock user data

@@ -4,10 +4,7 @@ import { useFocusEffect, useNavigation } from "@react-navigation/native";
 import { onAuthStateChanged, User } from "firebase/auth";
 import { useCallback, useEffect, useState } from "react";
 import { FlatList, Image, TouchableOpacity, View } from "react-native";
-import AgentWidget from "../agentWidget"; // adjust path if needed
 //import AnimatedSplash from "../animatedSplash";
-import ImageCarousel from "../components/ImageCarousel";
-import IntroMessage from "../introMessage";
 
 export default function Home() {
   const navigation = useNavigation();
@@ -25,22 +22,48 @@ export default function Home() {
   );
 
   // Dynamically update header
+  // Dynamically update header
   useEffect(() => {
     navigation.setOptions({
-      title: "Home",
-      headerRight: () =>
-        !user ? (
+      title: "",
+
+      // LEFT SIDE: profile icon if logged in, login icon if logged out
+      headerLeft: () =>
+        user ? (
           <TouchableOpacity
-            onPress={() => navigation.navigate("login" as never)}
-            style={{ marginRight: 15 }}
+            onPress={() => navigation.navigate("phoneLoginScreen" as never)}
+            style={{ marginLeft: 15 }}
           >
             <MaterialCommunityIcons
-              name="account-arrow-right"
-              size={28}
+              name="account-circle"
+              size={30}
               color="#007AFF"
             />
           </TouchableOpacity>
-        ) : null,
+        ) : (
+          <TouchableOpacity
+            onPress={() => navigation.navigate("phoneLoginScreen" as never)}
+            style={{ marginLeft: 15 }}
+          >
+            <MaterialCommunityIcons
+              name="account-arrow-right"
+              size={30}
+              color="#007AFF"
+            />
+          </TouchableOpacity>
+        ),
+
+      // RIGHT SIDE: logo always visible
+      headerRight: () => (
+        <Image
+          source={require("../../assets/images/logo.png")}
+          style={{
+            width: 130,
+            height: 100,
+            resizeMode: "contain",
+          }}
+        />
+      ),
     });
   }, [navigation, user]);
 
@@ -67,7 +90,7 @@ export default function Home() {
             />
           </View>
 
-          <View style={{ alignItems: "center", marginBottom: 10 }}>
+          {/* <View style={{ alignItems: "center", marginBottom: 10 }}>
             <IntroMessage />
           </View>
 
@@ -91,9 +114,9 @@ export default function Home() {
               ]}
               duration={2000}
             />
-          </View>
+          </View> */}
 
-          <AgentWidget />
+          {/* <AgentWidget /> */}
         </View>
       )}
     />

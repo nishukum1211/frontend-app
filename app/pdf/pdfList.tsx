@@ -57,16 +57,20 @@ export default function PdfList() {
               }}
             >
               <Image
-                source={require("../../assets/images/logo.png")}
+                source={{
+                  uri: `https://dev-backend-py-23809827867.us-east1.run.app/agent/sell/item/photo/${item.id}`,
+                }}
                 style={{
-                  width: 70,
-                  height: 70,
+                  width: "100%",
+                  height: 190,
                   borderRadius: 12,
                   marginRight: 12,
+                  backgroundColor: "#ddd",
+                  marginBottom: 10,
                 }}
               />
 
-              <Image
+              {/* <Image
                 source={require("../../assets/images/subcreiption.png")}
                 style={{
                   width: 30,
@@ -74,7 +78,7 @@ export default function PdfList() {
                   borderRadius: 12,
                   marginBottom: 50,
                 }}
-              />
+              /> */}
             </View>
 
             <Text
