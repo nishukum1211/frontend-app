@@ -63,7 +63,7 @@ const Login: React.FC<Props> = ({ onClose }) => {
         console.log("Decoded User:", decoded);
 
         // Navigate to profile or main tabs
-        router.replace("/(tabs)");
+        router.replace("./(tabs)");
       } else {
         Alert.alert("Login Failed", data.message || "Invalid credentials");
       }

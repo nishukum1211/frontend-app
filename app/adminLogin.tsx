@@ -52,7 +52,7 @@ export default function AgentLogin() {
         // Save token securely
         await SecureStore.setItemAsync("agentToken", data.token);
         await SecureStore.setItemAsync("agentData", JSON.stringify(decoded));
-        router.replace("../(tabs)");
+        router.replace("./(tabs)");
 
         Alert.alert("Login Success", "You are logged in as agent.");
       } else {
