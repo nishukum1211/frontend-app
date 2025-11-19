@@ -38,7 +38,6 @@ export default function AgentChatDetail() {
   useEffect(() => {
     const getAgentData = async () => {
       const agent = await getUserData();
-      console.log("🚀 ~ AgentChatDetail ~ agent:", agent);
       if (agent) {
         setAgentId(agent.id);
       } else {
@@ -49,6 +48,7 @@ export default function AgentChatDetail() {
   }, [router]);
 
   const ws = useRef<WebSocket | null>(null);
+  const isClosing = useRef(false);
 
   // Establish WebSocket connection when the screen is focused
   useFocusEffect(
@@ -56,42 +56,48 @@ export default function AgentChatDetail() {
       if (!agentId || !id) return; // Wait for agentId and userId
 
       const userId = id as string;
-      console.log("🚀 ~ AgentChatDetail ~ userId:", userId);
+      isClosing.current = false;
       setConnectionStatus("Connecting...");
       const websocketUrl = `wss://dev-backend-py-23809827867.us-east1.run.app/chat/ws/${userId}/${agentId}/agent`;
       ws.current = new WebSocket(websocketUrl);
 
       ws.current.onopen = () => {
-        console.log("WebSocket Connected for agent:", agentId, "chatting with user:", userId);
+        // console.log("WebSocket Connected for agent:", agentId, "chatting with user:", userId);
         setConnectionStatus("Connected");
       };
       ws.current.onmessage = (event) => {
         try {
           const incomingData = JSON.parse(event.data);
-          console.log("Received data:", incomingData);
+          // console.log("Received data:", incomingData);
 
-          const newMessages: IMessage[] = Array.isArray(incomingData)
-            ? incomingData
-            : incomingData ? [incomingData] : [];
+          // Handle both history ({ messages: [...] }) and single message objects
+          const messagesFromServer = incomingData.messages || incomingData;
 
+          const newMessages: IMessage[] = Array.isArray(messagesFromServer)
+            ? messagesFromServer
+            : messagesFromServer ? [messagesFromServer] : [];
           if (newMessages.length === 0) return;
 
           setMessages((previousMessages) => {
-            // If messages are not set yet (it's history), set them.
-            if (previousMessages === undefined) {
-              return newMessages;
-            }
-            // Otherwise, append new messages.
-            return GiftedChat.append(previousMessages, newMessages.filter(
-              (msg) => !previousMessages.some(prevMsg => prevMsg._id === msg._id)
-            ));
+            // Ensure previousMessages is an array, even if it's undefined initially
+            const currentMessages = previousMessages || [];
+
+            // Filter out any messages that are already in the state
+            const uniqueNewMessages = newMessages.filter(
+              (msg) => msg && !currentMessages.some((prevMsg) => prevMsg._id === msg._id)
+            );
+            if (uniqueNewMessages.length === 0) return currentMessages;
+            const allMessages = GiftedChat.append(currentMessages, uniqueNewMessages);
+            // Sort all messages by date to ensure correct order.
+            // GiftedChat expects newest messages to be at the start of the array.
+            return allMessages.sort((a, b) => new Date(b.createdAt).getTime() - new Date(a.createdAt).getTime());
           });
         } catch (e) {
-          console.error("Failed to parse or process message:", e);
         }
       };
 
       ws.current.onerror = (error) => {
+        if (isClosing.current) return;
         console.error("WebSocket Error:", error);
       };
 
@@ -102,33 +108,39 @@ export default function AgentChatDetail() {
 
       // Clean up WebSocket on component unmount or when the screen loses focus
       return () => {
+        isClosing.current = true;
         ws.current?.close();
       };
     }, [agentId, id]) // Reconnect if agentId or userId changes
   );
 
-  const onSend = useCallback((newMessages: IMessage[] = []) => {
-    if (!agentId || !ws.current || ws.current.readyState !== WebSocket.OPEN) {
-      console.error("WebSocket not connected or agent not available");
-      return;
-    }
+  const onSend = useCallback(
+    (newMessages: IMessage[] = []) => {
+      if (!agentId || !ws.current || ws.current.readyState !== WebSocket.OPEN) {
+        console.error("WebSocket not connected or agent not available");
+        return;
+      }
 
-    const message = newMessages[0];
-    const messageToSend = {
-      _id: message._id,
-      text: message.text,
-      createdAt: message.createdAt,
-      user: {
-        _id: agentId,
-        name: "Agent",
-      },
-    };
+      const message = newMessages[0];
+      const messageToSend = {
+        _id: message._id,
+        text: message.text,
+        createdAt: message.createdAt,
+        user: {
+          _id: agentId,
+          name: "Agent", // Or a dynamic agent name if available
+        },
+      };
 
-    ws.current.send(JSON.stringify(messageToSend));
-    setMessages((previousMessages) =>
-      GiftedChat.append(previousMessages, newMessages)
-    );
-  }, [agentId]);
+      ws.current.send(JSON.stringify(messageToSend));
+
+      // Optimistically update the UI
+      setMessages((previousMessages) =>
+        GiftedChat.append(previousMessages, newMessages)
+      );
+    },
+    [agentId]
+  );
 
   return (
     <SafeAreaView style={{ flex: 1, backgroundColor: "white" }}>

@@ -77,7 +77,7 @@ export default function Chat() {
 
         if (response.ok) {
           const data = await response.json();
-          console.log("Fetched agent chats:", data);
+          // console.log("Fetched agent chats:", data);
           setAgentChats(data);
         } else {
           console.error("Failed to fetch agent chats:", await response.text());
@@ -119,14 +119,15 @@ export default function Chat() {
         const incomingData = JSON.parse(event.data);
         console.log("Received data:", incomingData);
 
-        let newMessages: IMessage[] = [];
-        if (incomingData) {
-          // Ensure incomingData is not null or undefined
-          // The backend sends history as an array and subsequent messages as single objects.
-          newMessages = Array.isArray(incomingData)
-            ? incomingData
-            : [incomingData];
-        }
+        // The backend sends history as { messages: [...] } and single messages as objects.
+        // Let's handle both cases.
+        const messagesFromServer = incomingData.messages || incomingData;
+
+        const newMessages: IMessage[] = Array.isArray(messagesFromServer)
+          ? messagesFromServer
+          : messagesFromServer
+          ? [messagesFromServer]
+          : [];
 
         setMessages((previousMessages) => {
           // Filter out any messages that are already in the state
