@@ -1,10 +1,13 @@
 import { useNavigation } from "@react-navigation/native";
-import { useLocalSearchParams, useRouter } from "expo-router";
+import { useFocusEffect, useLocalSearchParams, useRouter } from "expo-router";
 import { useCallback, useEffect, useRef, useState } from "react";
-import { StyleSheet, Text, View } from "react-native";
+import { Dimensions, StyleSheet, Text, TouchableOpacity, View } from "react-native";
 import { GiftedChat, IMessage } from "react-native-gifted-chat";
+import { SafeAreaView } from "react-native-safe-area-context";
 import { getUserData } from "./auth"; // Assuming DecodedToken is defined here or similar
 import ChatView from "./components/ChatView";
+
+const { width } = Dimensions.get("window");
 
 export default function AgentChatDetail() {
   const router = useRouter();
@@ -13,78 +16,96 @@ export default function AgentChatDetail() {
   const { id, userName } = params;
   const [connectionStatus, setConnectionStatus] = useState("Connecting...");
 
-  const [messages, setMessages] = useState<IMessage[]>([]);
+  const [messages, setMessages] = useState<IMessage[] | undefined>(undefined); // Start as undefined
   const [agentId, setAgentId] = useState<string | null>(null);
 
   // Set header options for the chat screen
   useEffect(() => {
-    console.log("🚀 ~ AgentChatDetail ~ userName:", userName);
     navigation.setOptions({
-      title: userName || 'Chat',
-      headerTitleAlign: "center",
-    });
+  title: userName,
+  headerLeft: () => (
+    <TouchableOpacity
+      onPress={() => router.back()}
+      style={{ paddingHorizontal: 10 }}
+    >
+      <Text style={{ fontSize: 18 }}>←</Text>
+    </TouchableOpacity>
+  ),
+});
   }, [navigation, userName, router]);
 
   // Fetch agent's ID from SecureStore
   useEffect(() => {
     const getAgentData = async () => {
       const agent = await getUserData();
+      console.log("🚀 ~ AgentChatDetail ~ agent:", agent);
       if (agent) {
         setAgentId(agent.id);
+      } else {
+        router.replace("/adminLogin");
       }
     };
     getAgentData();
-  }, []);
+  }, [router]);
 
   const ws = useRef<WebSocket | null>(null);
 
-  // Establish WebSocket connection
-  useEffect(() => {
-    if (!agentId || !id) return; // Wait for agentId and userId
+  // Establish WebSocket connection when the screen is focused
+  useFocusEffect(
+    useCallback(() => {
+      if (!agentId || !id) return; // Wait for agentId and userId
 
-    const userId = id as string;
-    setConnectionStatus("Connecting...");
-    const websocketUrl = `wss://dev-backend-py-23809827867.us-east1.run.app/chat/ws/${userId}/${agentId}/agent`;
-    ws.current = new WebSocket(websocketUrl);
+      const userId = id as string;
+      console.log("🚀 ~ AgentChatDetail ~ userId:", userId);
+      setConnectionStatus("Connecting...");
+      const websocketUrl = `wss://dev-backend-py-23809827867.us-east1.run.app/chat/ws/${userId}/${agentId}/agent`;
+      ws.current = new WebSocket(websocketUrl);
 
-    ws.current.onopen = () => {
-      console.log("WebSocket Connected for agent:", agentId, "chatting with user:", userId);
-      setConnectionStatus("Connected");
-    };
-    ws.current.onmessage = (event) => {
-      try {
-        const incomingData = JSON.parse(event.data);
-        console.log("Received data:", incomingData);
+      ws.current.onopen = () => {
+        console.log("WebSocket Connected for agent:", agentId, "chatting with user:", userId);
+        setConnectionStatus("Connected");
+      };
+      ws.current.onmessage = (event) => {
+        try {
+          const incomingData = JSON.parse(event.data);
+          console.log("Received data:", incomingData);
 
-        if (!incomingData) return; // Don't proceed if data is null
+          const newMessages: IMessage[] = Array.isArray(incomingData)
+            ? incomingData
+            : incomingData ? [incomingData] : [];
 
-        // Check if the payload has a 'messages' property (for history) or is a single message object.
-        const messages = incomingData.messages || incomingData;
+          if (newMessages.length === 0) return;
 
-        const newMessages: IMessage[] = Array.isArray(messages) ? messages : [messages];
+          setMessages((previousMessages) => {
+            // If messages are not set yet (it's history), set them.
+            if (previousMessages === undefined) {
+              return newMessages;
+            }
+            // Otherwise, append new messages.
+            return GiftedChat.append(previousMessages, newMessages.filter(
+              (msg) => !previousMessages.some(prevMsg => prevMsg._id === msg._id)
+            ));
+          });
+        } catch (e) {
+          console.error("Failed to parse or process message:", e);
+        }
+      };
 
-        // Append the new messages to the chat
-        if (newMessages.length > 0)
-          setMessages((previousMessages) => GiftedChat.append(previousMessages, newMessages));
-      } catch (e) {
-        console.error("Failed to parse or process message:", e);
-      }
-    };
+      ws.current.onerror = (error) => {
+        console.error("WebSocket Error:", error);
+      };
 
-    ws.current.onerror = (error) => {
-      console.error("WebSocket Error:", error);
-    };
+      ws.current.onclose = (event) => {
+        console.log("WebSocket Disconnected:", event.code, event.reason);
+        setConnectionStatus("Disconnected");
+      };
 
-    ws.current.onclose = (event) => {
-      console.log("WebSocket Disconnected:", event.code, event.reason);
-      setConnectionStatus("Disconnected");
-    };
-
-    // Clean up WebSocket on component unmount
-    return () => {
-      ws.current?.close();
-    };
-  }, [agentId, id, userName]); // Reconnect if agentId or userId changes
+      // Clean up WebSocket on component unmount or when the screen loses focus
+      return () => {
+        ws.current?.close();
+      };
+    }, [agentId, id]) // Reconnect if agentId or userId changes
+  );
 
   const onSend = useCallback((newMessages: IMessage[] = []) => {
     if (!agentId || !ws.current || ws.current.readyState !== WebSocket.OPEN) {
@@ -110,7 +131,22 @@ export default function AgentChatDetail() {
   }, [agentId]);
 
   return (
+    <SafeAreaView style={{ flex: 1, backgroundColor: "white" }}>
     <View style={{ flex: 1, backgroundColor: "white" }}>
+      {/* ===== CUSTOM HEADER ===== */}
+      <View style={styles.headerContainer}>
+        {/* Back Button */}
+        <TouchableOpacity onPress={() => router.back()} style={styles.backButton}>
+          <Text style={styles.backArrow}>←</Text>
+        </TouchableOpacity>
+
+        {/* User Name */}
+        <View style={styles.nameContainer}>
+          <Text numberOfLines={1} style={styles.userName}>
+            {userName}
+          </Text>
+        </View>
+      </View>
       <View style={[
           styles.statusBar,
           connectionStatus === "Connected"
@@ -121,7 +157,7 @@ export default function AgentChatDetail() {
         <Text style={styles.statusText}>{connectionStatus}</Text>
       </View>
       <ChatView
-        messages={messages}
+        messages={messages || []}
         onSend={onSend}
         user={{ // This user prop represents the current user of the chat (the agent in this case)
           _id: agentId || "agent", // Use the actual agentId if available,
@@ -130,6 +166,7 @@ export default function AgentChatDetail() {
         }}
       />
     </View>
+    </SafeAreaView>
   );
 }
 
@@ -149,5 +186,31 @@ const styles = StyleSheet.create({
     color: "white",
     fontSize: 12,
     fontWeight: "600",
+  },
+  headerContainer: {
+    flexDirection: "row",
+    alignItems: "center",
+    height: 60,
+    paddingHorizontal: 10,
+    borderBottomWidth: 1,
+    borderBottomColor: "#ddd",
+  },
+  backButton: {
+    padding: 10,
+    justifyContent: "center",
+    alignItems: "center",
+  },
+  backArrow: {
+    fontSize: 22,
+    color: "#007AFF",
+  },
+  nameContainer: {
+    maxWidth: width - 80, // Keep some space for back button
+    justifyContent: "center",
+  },
+  userName: {
+    fontSize: 18,
+    fontWeight: "600",
+    color: "#000",
   },
 });

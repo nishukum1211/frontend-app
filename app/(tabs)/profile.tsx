@@ -48,7 +48,7 @@ export default function Profile() {
     await removeLoginJwtToken();
     setUser(null);
     // Optionally, navigate away or show a confirmation
-    router.replace("./(tabs)/profile");
+    router.replace("../(tabs)/profile");
   };
 
   // 📸 Pick Image
@@ -74,26 +74,6 @@ export default function Profile() {
       </View>
     );
   }
-
-  // const loadToken = async () => {
-  //   const token = await AsyncStorage.getItem("jwtToken");
-  //   const agentToken = await SecureStore.getItemAsync("agentToken");
-
-  //   const finalToken = token || agentToken;
-
-  //   if (finalToken) {
-  //     try {
-  //       const decoded: DecodedToken = jwtDecode(finalToken);
-  //       setUser(decoded);
-  //       setIsLoggedIn(true);
-  //     } catch {
-  //       console.log("Invalid Token");
-  //       setIsLoggedIn(false);
-  //     }
-  //   } else {
-  //     setIsLoggedIn(false);
-  //   }
-  // };
 
   // 🚪 If not logged in: show buttons
   if (!user) {
@@ -147,22 +127,22 @@ export default function Profile() {
         <Text style={styles.label}>Mobile Number</Text>
         <Text style={styles.value}>{user?.mobile_number}</Text>
 
-        {user?.role !== "agent" && (
+        {/* {user?.role !== "agent" && (
           <>
             <Text style={styles.label}>Role</Text>
             <Text style={styles.value}>{user?.role}</Text>
           </>
-        )}
+        )} */}
       </View>
 
-      {/* {user?.role === "agent" && ( */}
-      <TouchableOpacity
-        style={styles.uploadButton}
-        onPress={() => router.push("../agentForm/agentUploadForm")}
-      >
-        <Text style={styles.uploadButtonText}>Upload PDF / Sell Item</Text>
-      </TouchableOpacity>
-      {/* )} */}
+      {user?.role === "agent" && (
+        <TouchableOpacity
+          style={styles.uploadButton}
+          onPress={() => router.push("../agentForm/agentUploadForm")}
+        >
+          <Text style={styles.uploadButtonText}>Upload PDF / Sell Item</Text>
+        </TouchableOpacity>
+      )}
 
       <TouchableOpacity style={styles.editButton} onPress={handleLogout}>
         <Text style={styles.editButtonText}>Logout</Text>

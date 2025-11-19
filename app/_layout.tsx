@@ -1,30 +1,43 @@
 // app/_layout.tsx  (RootLayout)
-import { auth } from "@/app/firebaseConfig";
 import { Stack } from "expo-router";
-import { onAuthStateChanged } from "firebase/auth";
 import { useEffect, useState } from "react";
 import { SafeAreaProvider } from "react-native-safe-area-context";
+import { DecodedToken, getUserData, addAuthChangeListener, removeAuthChangeListener } from "./auth";
 
 export default function RootLayout() {
   const [initializing, setInitializing] = useState(true);
-  const [user, setUser] = useState<any>(null);
+  const [user, setUser] = useState<DecodedToken | null>(null);
 
   useEffect(() => {
-    const unsubscribe = onAuthStateChanged(auth, (firebaseUser) => {
-      setUser(firebaseUser);
+    const checkUser = async () => {
+      const storedUser = await getUserData();
+      setUser(storedUser);
       setInitializing(false);
-    });
-    return unsubscribe;
+    };
+    checkUser();
   }, []);
+
+  useEffect(() => {
+    // Listen for auth changes
+    const handleAuthChange = (newUser: DecodedToken | null) => {
+      setUser(newUser);
+    };
+    addAuthChangeListener(handleAuthChange);
+
+    return () => removeAuthChangeListener(handleAuthChange);
+  }, []); // Empty dependency array means this runs once on mount and cleanup on unmount
 
   if (initializing) return null;
 
   return (
     <SafeAreaProvider>
       <Stack screenOptions={{ headerShown: false }}>
-        {user ? (
-          <Stack.Screen name="(tabs)" options={{ headerShown: false }} />
-        ) : (
+        {user ? ( // Screens for logged-in users
+          <>
+            <Stack.Screen name="(tabs)" options={{ headerShown: false }} />
+            <Stack.Screen name="agentChatDetail" options={{ headerShown: true }} />
+          </>
+        ) : ( // Screens for logged-out users
           <>
             <Stack.Screen name="index" options={{ headerShown: false }} />
             <Stack.Screen name="signup" options={{ headerShown: false }} />

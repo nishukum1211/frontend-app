@@ -4,43 +4,25 @@ import {
   ActivityIndicator,
   Dimensions,
   FlatList,
-  Image,
   StyleSheet,
   Text,
   TouchableOpacity,
-  View,
+  View
 } from "react-native";
 import { GiftedChat, IMessage } from "react-native-gifted-chat";
-
-import { DecodedToken, getUserData, removeUserData } from "../auth";
+import { DecodedToken, getLoginJwtToken, getUserData, removeUserData } from "../auth";
 import ChatView from "../components/ChatView";
-
-// Mock agent chat data
-const mockChats = [
-  {
-    id: "User123",
-    userName: "John Doe",
-    lastMessage: "I have a question about my policy.",
-    avatar: require("@/assets/images/profile_img.jpg"),
-  },
-  {
-    id: "2",
-    userName: "Jane Smith",
-    lastMessage: "Can you help me with a claim?",
-    avatar: require("@/assets/images/profile_img.jpg"),
-  },
-  {
-    id: "3",
-    userName: "Peter Jones",
-    lastMessage: "Thank you for your help!",
-    avatar: require("@/assets/images/profile_img.jpg"),
-  },
-];
 
 const { width } = Dimensions.get("window");
 
+type AgentChatItem = {
+  id: string;
+  userName: string;
+  lastMessage: string;
+};
+
 // Hardcoded for demonstration. In a real app, this would come from an API or selection.
-const SUPPORT_AGENT_ID = "Agent123";
+const SUPPORT_AGENT_ID = "ecc71288-6403-48ed-8058-dad2a6dc8c76"; 
 
 export default function Chat() {
   const router = useRouter();
@@ -48,6 +30,7 @@ export default function Chat() {
   const [loading, setLoading] = useState(true);
   const [messages, setMessages] = useState<IMessage[]>([]);
   const [connectionStatus, setConnectionStatus] = useState("Connecting...");
+  const [agentChats, setAgentChats] = useState<AgentChatItem[]>([]);
 
   useFocusEffect(
     // This effect runs when the screen comes into focus
@@ -59,18 +42,63 @@ export default function Chat() {
         if (storedUser) {
           if (storedUser.exp && storedUser.exp * 1000 < Date.now()) {
             await removeUserData();
+            setUser(null);
+            router.replace("/(tabs)/profile");
           } else {
             setUser(storedUser);
           }
+        } else {
+          router.replace("/(tabs)/profile");
         }
         setLoading(false); // Set loading to false after auth check
       };
 
       checkAuthStatus();
-    }, [])
+    }, [router])
   );
 
   const ws = useRef<WebSocket | null>(null);
+
+  // Fetch agent chats when user is an agent
+  useEffect(() => {
+    const fetchAgentChats = async (token: string) => {
+      setLoading(true);
+      try {
+        const response = await fetch(
+          "https://dev-backend-py-23809827867.us-east1.run.app/chat/list",
+          {
+            method: "GET",
+            headers: {
+              Authorization: `Bearer ${token}`,
+              "X-Token-Source": "password", // Assuming agent logs in via password
+            },
+          }
+        );
+
+        if (response.ok) {
+          const data = await response.json();
+          console.log("Fetched agent chats:", data);
+          setAgentChats(data);
+        } else {
+          console.error("Failed to fetch agent chats:", await response.text());
+        }
+      } catch (error) {
+        console.error("Error fetching agent chats:", error);
+      } finally {
+        setLoading(false);
+      }
+    };
+
+    if (user?.role === "agent") {
+      getLoginJwtToken().then(token => {
+        if (token) {
+          fetchAgentChats(token);
+        } else {
+          console.error("Agent is logged in but no token found.");
+        }
+      });
+    }
+  }, [user]); // Re-fetch if the user object changes
 
   useEffect(() => {
     if (!user || user.role === "agent") return; // Only connect if it's a regular user
@@ -171,7 +199,7 @@ export default function Chat() {
       <View style={styles.agentContainer}>
         <Text style={styles.header}>Conversations</Text>
         <FlatList
-          data={mockChats}
+          data={agentChats}
           keyExtractor={(item) => item.id}
           contentContainerStyle={{ paddingHorizontal: 16, paddingBottom: 20 }}
           renderItem={({ item }) => (
@@ -188,10 +216,16 @@ export default function Chat() {
               }
               activeOpacity={0.8}
             >
-              <Image source={item.avatar} style={styles.avatar} />
+              <View style={[styles.avatar, styles.textAvatarBackground]}>
+                <Text style={styles.textAvatar}>
+                  {item.userName ? item.userName.substring(0, 2).toUpperCase() : ""}
+                </Text>
+              </View>
               <View style={styles.chatContent}>
-                <Text style={styles.userName}>{item.userName}</Text>
-                <Text style={styles.lastMessage} numberOfLines={1}>
+                <Text style={styles.userName}>
+                  {item.userName}
+                </Text>
+                <Text style={styles.lastMessage} numberOfLines={2}>
                   {item.lastMessage}
                 </Text>
               </View>
@@ -226,6 +260,7 @@ export default function Chat() {
     </View>
   ) : null;
 }
+
 
 const styles = StyleSheet.create({
   statusBar: {
@@ -266,7 +301,7 @@ const styles = StyleSheet.create({
     flexDirection: "row",
     alignItems: "center",
     padding: 16,
-    backgroundColor: "#fff",
+    backgroundColor: "#FDFDFD",
     borderRadius: 16,
     marginBottom: 12,
     width: width - 32,
@@ -289,13 +324,23 @@ const styles = StyleSheet.create({
     flex: 1,
   },
   userName: {
-    fontSize: 16,
-    fontWeight: "600",
+    fontSize: 18,
+    fontWeight: "bold",
     color: "#111827",
   },
   lastMessage: {
     fontSize: 14,
     color: "#6B7280",
     marginTop: 4,
+  },
+  textAvatarBackground: {
+    backgroundColor: "#bbbfccff", // A light blue background for the text avatar
+    justifyContent: "center",
+    alignItems: "center",
+  },
+  textAvatar: {
+    color: "#4F46E5", // Darker blue text color
+    fontSize: 20,
+    fontWeight: "bold",
   },
 });

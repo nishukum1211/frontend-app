@@ -9,9 +9,30 @@ export type DecodedToken = {
   exp?: number;
 };
 
+// --- Custom Event Emitter ---
+type AuthChangeListener = (user: DecodedToken | null) => void;
+const listeners: AuthChangeListener[] = [];
+
+export const addAuthChangeListener = (listener: AuthChangeListener) => {
+  listeners.push(listener);
+};
+
+export const removeAuthChangeListener = (listener: AuthChangeListener) => {
+  const index = listeners.indexOf(listener);
+  if (index > -1) {
+    listeners.splice(index, 1);
+  }
+};
+
+const emitAuthChange = (user: DecodedToken | null) => {
+  listeners.forEach(listener => listener(user));
+};
+// --- End Custom Event Emitter ---
+
 // Save user data
 export const saveUserData = async (user: DecodedToken) => {
   await SecureStore.setItemAsync("User", JSON.stringify(user));
+  emitAuthChange(user); // Emit event on login
 };
 
 // Get user data
@@ -34,6 +55,7 @@ export const getUserData = async (): Promise<DecodedToken | null> => {
 // Remove user data
 export const removeUserData = async () => {
   await SecureStore.deleteItemAsync("User");
+  emitAuthChange(null); // Emit event on logout
 };
 
 // Save JWT token
