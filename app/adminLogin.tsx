@@ -58,7 +58,7 @@ export default function AgentLogin() {
       if (response.ok && data.token) {
         await setLoginJwtToken(data.token);
         await fetchAndSaveUser("agent", "password");
-        router.replace("/(tabs)/profile");
+        router.replace("../(tabs)");
 
         Alert.alert("Login Success", "You are logged in as agent.");
       } else {

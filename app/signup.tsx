@@ -17,12 +17,15 @@ import CustomButton from "./components/Button";
 
 export default function Signup() {
   const router = useRouter(); // ✅ Move it here (top-level)
-  const { mobile_number: raw_mobile_number } =
-    useLocalSearchParams<{ mobile_number?: string }>();
+  const { mobile_number: raw_mobile_number } = useLocalSearchParams<{
+    mobile_number?: string;
+  }>();
 
   const initialMobileNumber = (raw_mobile_number || "")
     .replace(/\s/g, "")
-    .startsWith("+") ? (raw_mobile_number || "").replace(/\s/g, "") : `+${(raw_mobile_number || "").replace(/\s/g, "")}`;
+    .startsWith("+")
+    ? (raw_mobile_number || "").replace(/\s/g, "")
+    : `+${(raw_mobile_number || "").replace(/\s/g, "")}`;
 
   const [formData, setFormData] = useState({
     name: "",
@@ -87,15 +90,18 @@ export default function Signup() {
     if (!validateForm()) {
       return;
     }
-    
+
     try {
       setLoading(true);
 
       const token = await getLoginJwtToken();
       if (!token) {
-        Alert.alert("Authentication Error", "Login token not found. Please try logging in again.");
+        Alert.alert(
+          "Authentication Error",
+          "Login token not found. Please try logging in again."
+        );
         setLoading(false);
-        router.replace("/phoneLoginScreen");
+        router.replace("./phoneLoginScreen");
         return;
       }
 
@@ -132,7 +138,7 @@ export default function Signup() {
       // Fetch and save the newly created user's data
       await fetchAndSaveUser();
 
-      router.replace("/(tabs)");
+      router.replace("./(tabs)");
 
       setFormData({
         name: "",
