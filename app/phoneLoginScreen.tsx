@@ -3,7 +3,7 @@ import { useRouter } from "expo-router";
 import {
   getAdditionalUserInfo,
   PhoneAuthProvider,
-  signInWithCredential
+  signInWithCredential,
 } from "firebase/auth";
 import { useRef, useState } from "react";
 import {
@@ -14,7 +14,7 @@ import {
   Text,
   TextInput,
   TouchableOpacity,
-  View
+  View,
 } from "react-native";
 import CountryPicker, {
   Country,
@@ -86,15 +86,17 @@ export default function PhoneLoginScreen() {
 
       setMessage("Phone authentication successful!");
 
- if (additionalUserInfo?.isNewUser) {
+      if (additionalUserInfo?.isNewUser) {
         // New user, redirect to a sign-up completion screen
         router.navigate(
-          `/signup?mobile_number=${encodeURIComponent(phone.replace(/\s/g, ""))}`
+          `./signup?mobile_number=${encodeURIComponent(
+            phone.replace(/\s/g, "")
+          )}`
         );
       } else {
         // Existing user, go to home
         await fetchAndSaveUser();
-        router.replace("/(tabs)");
+        router.replace("./(tabs)");
       }
     } catch (err: any) {
       setMessage(`Error: ${err.message}`);
@@ -104,96 +106,98 @@ export default function PhoneLoginScreen() {
   return (
     <SafeAreaView style={{ flex: 1 }}>
       <View style={styles.container}>
-      {/* Recaptcha */}
-      <FirebaseRecaptchaVerifierModal
-        ref={recaptchaVerifier}
-        firebaseConfig={app.options}
-      />
-
-      <View style={styles.logoContainer}>
-        <Image
-          source={require("../assets/images/logo.png")}
-          style={styles.logo}
+        {/* Recaptcha */}
+        <FirebaseRecaptchaVerifierModal
+          ref={recaptchaVerifier}
+          firebaseConfig={app.options}
         />
-      </View>
 
-      <KeyboardAvoidingView
-        behavior={Platform.OS === "ios" ? "padding" : "height"}
-        style={{ width: "100%" }}
-      >
-        <Text style={styles.title}>{verificationId ? "Confirm OTP" : "Login with Phone"}</Text>
+        <View style={styles.logoContainer}>
+          <Image
+            source={require("../assets/images/logo.png")}
+            style={styles.logo}
+          />
+        </View>
 
-        {!verificationId ? (
-          <>
-            <View style={styles.phoneInputContainer}>
-              {/* Country picker with flag and triangle */}
-              <CountryPicker
-                countryCode={countryCode}
-                withFlag
-                withCallingCode
-                withFilter
-                withAlphaFilter
-                onSelect={(country: Country) => {
-                  setCountryCode(country.cca2);
-                  setCallingCode(country.callingCode[0]);
-                  // Automatically fill input with +code if empty
-                  if (!phone.startsWith(`+${country.callingCode[0]}`)) {
-                    setPhone(`+${country.callingCode[0]}`);
-                  }
-                }}
-                containerButtonStyle={styles.countryPickerButton}
-              />
-              {/* Triangle/dropdown indicator */}
-              <Text style={styles.arrow}>▼</Text>
+        <KeyboardAvoidingView
+          behavior={Platform.OS === "ios" ? "padding" : "height"}
+          style={{ width: "100%" }}
+        >
+          <Text style={styles.title}>
+            {verificationId ? "Confirm OTP" : "Login with Phone"}
+          </Text>
 
-              {/* Phone input with code prefixed */}
-              <TextInput
-                style={styles.inputWithPrefix}
-                placeholder="Phone Number"
-                keyboardType="phone-pad"
-                maxLength={15} // +91 XXXXX XXXXX
-                value={phone}
-                onChangeText={handlePhoneChange}
-              />
-            </View>
-            <TouchableOpacity style={styles.button} onPress={sendOtp}>
-              <Text style={styles.buttonText}>Proceed</Text>
-            </TouchableOpacity>
-          </>
-        ) : (
-          <>
-            <KeyboardAvoidingView
-              behavior={Platform.OS === "ios" ? "padding" : "height"}
-              style={{ width: "100%" }}
-            >
-              <View style={styles.otpContainer}>
-                {Array.from({ length: 6 }).map((_, index) => (
-                  <View key={index} style={styles.otpBox}>
-                    <Text style={styles.otpText}>{otp[index] || ""}</Text>
-                  </View>
-                ))}
-                <TextInput
-                  style={styles.hiddenInput}
-                  value={otp}
-                  onChangeText={(text) => {
-                    if (text.length <= 6) setOtp(text.replace(/[^0-9]/g, ""));
+          {!verificationId ? (
+            <>
+              <View style={styles.phoneInputContainer}>
+                {/* Country picker with flag and triangle */}
+                <CountryPicker
+                  countryCode={countryCode}
+                  withFlag
+                  withCallingCode
+                  withFilter
+                  withAlphaFilter
+                  onSelect={(country: Country) => {
+                    setCountryCode(country.cca2);
+                    setCallingCode(country.callingCode[0]);
+                    // Automatically fill input with +code if empty
+                    if (!phone.startsWith(`+${country.callingCode[0]}`)) {
+                      setPhone(`+${country.callingCode[0]}`);
+                    }
                   }}
-                  keyboardType="number-pad"
-                  maxLength={6}
-                  caretHidden
-                  autoFocus
+                  containerButtonStyle={styles.countryPickerButton}
+                />
+                {/* Triangle/dropdown indicator */}
+                <Text style={styles.arrow}>▼</Text>
+
+                {/* Phone input with code prefixed */}
+                <TextInput
+                  style={styles.inputWithPrefix}
+                  placeholder="Phone Number"
+                  keyboardType="phone-pad"
+                  maxLength={15} // +91 XXXXX XXXXX
+                  value={phone}
+                  onChangeText={handlePhoneChange}
                 />
               </View>
-
-              <TouchableOpacity style={styles.button} onPress={confirmOtp}>
-                <Text style={styles.buttonText}>Login</Text>
+              <TouchableOpacity style={styles.button} onPress={sendOtp}>
+                <Text style={styles.buttonText}>Proceed</Text>
               </TouchableOpacity>
-            </KeyboardAvoidingView>
-          </>
-        )}
-      </KeyboardAvoidingView>
+            </>
+          ) : (
+            <>
+              <KeyboardAvoidingView
+                behavior={Platform.OS === "ios" ? "padding" : "height"}
+                style={{ width: "100%" }}
+              >
+                <View style={styles.otpContainer}>
+                  {Array.from({ length: 6 }).map((_, index) => (
+                    <View key={index} style={styles.otpBox}>
+                      <Text style={styles.otpText}>{otp[index] || ""}</Text>
+                    </View>
+                  ))}
+                  <TextInput
+                    style={styles.hiddenInput}
+                    value={otp}
+                    onChangeText={(text) => {
+                      if (text.length <= 6) setOtp(text.replace(/[^0-9]/g, ""));
+                    }}
+                    keyboardType="number-pad"
+                    maxLength={6}
+                    caretHidden
+                    autoFocus
+                  />
+                </View>
 
-      {message ? <Text style={styles.message}>{message}</Text> : null}
+                <TouchableOpacity style={styles.button} onPress={confirmOtp}>
+                  <Text style={styles.buttonText}>Login</Text>
+                </TouchableOpacity>
+              </KeyboardAvoidingView>
+            </>
+          )}
+        </KeyboardAvoidingView>
+
+        {message ? <Text style={styles.message}>{message}</Text> : null}
       </View>
       <View style={styles.bottomContainer}>
         <Text style={styles.agreementText}>
@@ -259,7 +263,7 @@ const styles = StyleSheet.create({
     position: "absolute",
     bottom: 20,
     left: 0,
-    right: 0,    
+    right: 0,
     justifyContent: "flex-end", // Pushes agreement text to the bottom
     alignItems: "center",
     paddingHorizontal: 20,

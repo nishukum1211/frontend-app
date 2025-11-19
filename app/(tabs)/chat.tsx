@@ -40,7 +40,7 @@ const mockChats = [
 const { width } = Dimensions.get("window");
 
 // Hardcoded for demonstration. In a real app, this would come from an API or selection.
-const SUPPORT_AGENT_ID = "Agent123"; 
+const SUPPORT_AGENT_ID = "Agent123";
 
 export default function Chat() {
   const router = useRouter();
@@ -59,12 +59,9 @@ export default function Chat() {
         if (storedUser) {
           if (storedUser.exp && storedUser.exp * 1000 < Date.now()) {
             await removeUserData();
-            router.replace("/profile");
           } else {
             setUser(storedUser);
           }
-        } else {
-          router.replace("/profile");
         }
         setLoading(false); // Set loading to false after auth check
       };
@@ -95,7 +92,8 @@ export default function Chat() {
         console.log("Received data:", incomingData);
 
         let newMessages: IMessage[] = [];
-        if (incomingData) { // Ensure incomingData is not null or undefined
+        if (incomingData) {
+          // Ensure incomingData is not null or undefined
           // The backend sends history as an array and subsequent messages as single objects.
           newMessages = Array.isArray(incomingData)
             ? incomingData
@@ -106,7 +104,9 @@ export default function Chat() {
           // Filter out any messages that are already in the state
           const uniqueNewMessages = newMessages.filter(
             // Ensure msg is not null/undefined before accessing its properties
-            (msg) => msg && !previousMessages.some((prevMsg) => prevMsg._id === msg._id)
+            (msg) =>
+              msg &&
+              !previousMessages.some((prevMsg) => prevMsg._id === msg._id)
           );
           if (uniqueNewMessages.length === 0) return previousMessages;
           return GiftedChat.append(previousMessages, uniqueNewMessages);
@@ -131,27 +131,31 @@ export default function Chat() {
     };
   }, [user]); // Reconnect if user changes
 
-  const onSend = useCallback((messages: IMessage[] = []) => {
-    if (!user || !ws.current || ws.current.readyState !== WebSocket.OPEN) {
-      console.error("WebSocket not connected or user not available");
-      return;
-    }
+  const onSend = useCallback(
+    (messages: IMessage[] = []) => {
+      if (!user || !ws.current || ws.current.readyState !== WebSocket.OPEN) {
+        console.error("WebSocket not connected or user not available");
+        return;
+      }
 
-    const message = messages[0];
-    const messageToSend = {
-      _id: message._id,
-      text: message.text,
-      createdAt: message.createdAt,
-      user: {
-        _id: user.id,
-        name: user.name,
-      },
-    };
+      const message = messages[0];
+      const messageToSend = {
+        _id: message._id,
+        text: message.text,
+        createdAt: message.createdAt,
+        user: {
+          _id: user.id,
+          name: user.name,
+        },
+      };
 
-    ws.current.send(JSON.stringify(messageToSend));
-    setMessages((previousMessages) => GiftedChat.append(previousMessages, messages));
-  }, [user]);
-
+      ws.current.send(JSON.stringify(messageToSend));
+      setMessages((previousMessages) =>
+        GiftedChat.append(previousMessages, messages)
+      );
+    },
+    [user]
+  );
 
   if (loading) {
     return (
@@ -175,7 +179,7 @@ export default function Chat() {
               style={styles.chatItem}
               onPress={() =>
                 router.push({
-                  pathname: "/agentChatDetail",
+                  pathname: "../agentChatDetail",
                   params: {
                     id: item.id,
                     userName: item.userName,

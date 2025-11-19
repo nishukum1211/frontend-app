@@ -4,6 +4,9 @@ import { useFocusEffect, useNavigation } from "@react-navigation/native";
 import { onAuthStateChanged, User } from "firebase/auth";
 import { useCallback, useEffect, useState } from "react";
 import { FlatList, Image, TouchableOpacity, View } from "react-native";
+import Call from "../call/call";
+import VegetableCoursesSection from "../vegetableCoursesSection/vegetableCoursesSection";
+import VegetableSubscription from "../vegetableSubscription/vegetableSubscription";
 //import AnimatedSplash from "../animatedSplash";
 
 export default function Home() {
@@ -28,7 +31,7 @@ export default function Home() {
       title: "",
 
       // LEFT SIDE: profile icon if logged in, login icon if logged out
-      headerLeft: () =>
+      headerRight: () =>
         user ? (
           <TouchableOpacity
             onPress={() => navigation.navigate("phoneLoginScreen" as never)}
@@ -43,7 +46,7 @@ export default function Home() {
         ) : (
           <TouchableOpacity
             onPress={() => navigation.navigate("phoneLoginScreen" as never)}
-            style={{ marginLeft: 15 }}
+            style={{ marginRight: 12 }}
           >
             <MaterialCommunityIcons
               name="account-arrow-right"
@@ -52,18 +55,18 @@ export default function Home() {
             />
           </TouchableOpacity>
         ),
-
-      // RIGHT SIDE: logo always visible
-      headerRight: () => (
+      headerLeft: () => (
         <Image
           source={require("../../assets/images/logo.png")}
           style={{
-            width: 130,
+            width: 140,
             height: 100,
             resizeMode: "contain",
           }}
         />
       ),
+
+      // RIGHT SIDE: logo always visible
     });
   }, [navigation, user]);
 
@@ -73,23 +76,13 @@ export default function Home() {
       keyExtractor={() => "home"}
       renderItem={() => (
         <View>
-          <View
-            style={{
-              marginBottom: 10,
-              backgroundColor: "#EAF4FF",
-              alignItems: "center",
-            }}
-          >
-            <Image
-              source={require("../../assets/images/logo.png")}
-              style={{
-                width: 700,
-                height: 200,
-                resizeMode: "contain",
-              }}
-            />
+          <View>
+            <Call />
+            <VegetableSubscription />
           </View>
-
+          <View>
+            <VegetableCoursesSection />
+          </View>
           {/* <View style={{ alignItems: "center", marginBottom: 10 }}>
             <IntroMessage />
           </View>
