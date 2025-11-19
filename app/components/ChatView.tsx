@@ -35,8 +35,8 @@ export default function ChatView({ messages, onSend, user }: ChatViewProps) {
             left: { backgroundColor: "#E5E7EB" },
           }}
           textStyle={{
-            right: { color: "#fff" },
-            left: { color: "#111827" },
+            right: { color: "#fff",  fontSize: 16  },
+            left: { color: "#111827", fontSize: 16 }, // Increased font size for left bubble
           }}
         />
       )}

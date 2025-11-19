@@ -1,3 +1,4 @@
+import { MaterialCommunityIcons } from "@expo/vector-icons";
 import { useNavigation } from "@react-navigation/native";
 import { useFocusEffect, useLocalSearchParams, useRouter } from "expo-router";
 import { useCallback, useEffect, useRef, useState } from "react";
@@ -18,21 +19,6 @@ export default function AgentChatDetail() {
 
   const [messages, setMessages] = useState<IMessage[] | undefined>(undefined); // Start as undefined
   const [agentId, setAgentId] = useState<string | null>(null);
-
-  // Set header options for the chat screen
-  useEffect(() => {
-    navigation.setOptions({
-  title: userName,
-  headerLeft: () => (
-    <TouchableOpacity
-      onPress={() => router.back()}
-      style={{ paddingHorizontal: 10 }}
-    >
-      <Text style={{ fontSize: 18 }}>←</Text>
-    </TouchableOpacity>
-  ),
-});
-  }, [navigation, userName, router]);
 
   // Fetch agent's ID from SecureStore
   useEffect(() => {
@@ -149,8 +135,15 @@ export default function AgentChatDetail() {
       <View style={styles.headerContainer}>
         {/* Back Button */}
         <TouchableOpacity onPress={() => router.back()} style={styles.backButton}>
-          <Text style={styles.backArrow}>←</Text>
+          <MaterialCommunityIcons name="arrow-left" size={28} color="#007AFF" />
         </TouchableOpacity>
+
+        {/* Avatar */}
+        <View style={[styles.avatar, styles.textAvatarBackground]}>
+          <Text style={styles.textAvatar}>
+            {userName ? (userName as string).substring(0, 2).toUpperCase() : ""}
+          </Text>
+        </View>
 
         {/* User Name */}
         <View style={styles.nameContainer}>
@@ -158,6 +151,7 @@ export default function AgentChatDetail() {
             {userName}
           </Text>
         </View>
+
       </View>
       <View style={[
           styles.statusBar,
@@ -212,17 +206,37 @@ const styles = StyleSheet.create({
     justifyContent: "center",
     alignItems: "center",
   },
-  backArrow: {
-    fontSize: 22,
+   backArrow: {
+    fontSize: 28,
+    fontWeight: "bold",
     color: "#007AFF",
   },
   nameContainer: {
-    maxWidth: width - 80, // Keep some space for back button
+    flex: 1,
+    marginLeft: 12,
     justifyContent: "center",
   },
   userName: {
-    fontSize: 18,
+    fontSize: 22,
     fontWeight: "600",
     color: "#000",
+  },
+  avatar: {
+    width: 40,
+    height: 40,
+    borderRadius: 20,
+    marginLeft: 5,
+    borderWidth: 1,
+    borderColor: "#4F46E5",
+  },
+  textAvatarBackground: {
+    backgroundColor: "#bbbfccff",
+    justifyContent: "center",
+    alignItems: "center",
+  },
+  textAvatar: {
+    color: "#4F46E5",
+    fontSize: 16,
+    fontWeight: "bold",
   },
 });
