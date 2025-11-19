@@ -9,7 +9,7 @@ import {
   StyleSheet,
   Text,
   TouchableOpacity,
-  View
+  View,
 } from "react-native";
 import { getUserData, removeLoginJwtToken, removeUserData } from "../auth";
 
@@ -48,7 +48,7 @@ export default function Profile() {
     await removeLoginJwtToken();
     setUser(null);
     // Optionally, navigate away or show a confirmation
-    router.replace("/(tabs)/profile");
+    router.replace("./(tabs)/profile");
   };
 
   // 📸 Pick Image
@@ -75,25 +75,25 @@ export default function Profile() {
     );
   }
 
-  const loadToken = async () => {
-    const token = await AsyncStorage.getItem("jwtToken");
-    const agentToken = await SecureStore.getItemAsync("agentToken");
+  // const loadToken = async () => {
+  //   const token = await AsyncStorage.getItem("jwtToken");
+  //   const agentToken = await SecureStore.getItemAsync("agentToken");
 
-    const finalToken = token || agentToken;
+  //   const finalToken = token || agentToken;
 
-    if (finalToken) {
-      try {
-        const decoded: DecodedToken = jwtDecode(finalToken);
-        setUser(decoded);
-        setIsLoggedIn(true);
-      } catch {
-        console.log("Invalid Token");
-        setIsLoggedIn(false);
-      }
-    } else {
-      setIsLoggedIn(false);
-    }
-  };
+  //   if (finalToken) {
+  //     try {
+  //       const decoded: DecodedToken = jwtDecode(finalToken);
+  //       setUser(decoded);
+  //       setIsLoggedIn(true);
+  //     } catch {
+  //       console.log("Invalid Token");
+  //       setIsLoggedIn(false);
+  //     }
+  //   } else {
+  //     setIsLoggedIn(false);
+  //   }
+  // };
 
   // 🚪 If not logged in: show buttons
   if (!user) {
