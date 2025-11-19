@@ -42,15 +42,19 @@ export default function Chat() {
         if (storedUser) {
           if (storedUser.exp && storedUser.exp * 1000 < Date.now()) {
             await removeUserData();
+            setUser(null);
+            router.replace("/(tabs)/profile");
           } else {
             setUser(storedUser);
           }
+        } else {
+          router.replace("/(tabs)/profile");
         }
         setLoading(false); // Set loading to false after auth check
       };
 
       checkAuthStatus();
-    }, [])
+    }, [router])
   );
 
   const ws = useRef<WebSocket | null>(null);

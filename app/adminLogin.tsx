@@ -59,8 +59,6 @@ export default function AgentLogin() {
         await setLoginJwtToken(data.token);
         await fetchAndSaveUser("agent", "password");
         router.replace("../(tabs)");
-
-        Alert.alert("Login Success", "You are logged in as agent.");
       } else {
         Alert.alert("Login Failed", data.message || "Invalid credentials");
       }
