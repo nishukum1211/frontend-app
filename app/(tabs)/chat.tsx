@@ -138,7 +138,9 @@ export default function Chat() {
               !previousMessages.some((prevMsg) => prevMsg._id === msg._id)
           );
           if (uniqueNewMessages.length === 0) return previousMessages;
-          return GiftedChat.append(previousMessages, uniqueNewMessages);
+          const allMessages = GiftedChat.append(previousMessages, uniqueNewMessages);
+          // Sort all messages by date to ensure correct order (newest first).
+          return allMessages.sort((a, b) => new Date(b.createdAt).getTime() - new Date(a.createdAt).getTime());
         });
       } catch (e) {
         console.error("Failed to parse message data:", event.data);
