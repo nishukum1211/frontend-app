@@ -1,3 +1,4 @@
+import { MaterialCommunityIcons } from "@expo/vector-icons";
 import { useNavigation } from "@react-navigation/native";
 import { useFocusEffect, useLocalSearchParams, useRouter } from "expo-router";
 import { useCallback, useEffect, useRef, useState } from "react";
@@ -19,26 +20,10 @@ export default function AgentChatDetail() {
   const [messages, setMessages] = useState<IMessage[] | undefined>(undefined); // Start as undefined
   const [agentId, setAgentId] = useState<string | null>(null);
 
-  // Set header options for the chat screen
-  useEffect(() => {
-    navigation.setOptions({
-  title: userName,
-  headerLeft: () => (
-    <TouchableOpacity
-      onPress={() => router.back()}
-      style={{ paddingHorizontal: 10 }}
-    >
-      <Text style={{ fontSize: 18 }}>←</Text>
-    </TouchableOpacity>
-  ),
-});
-  }, [navigation, userName, router]);
-
   // Fetch agent's ID from SecureStore
   useEffect(() => {
     const getAgentData = async () => {
       const agent = await getUserData();
-      console.log("🚀 ~ AgentChatDetail ~ agent:", agent);
       if (agent) {
         setAgentId(agent.id);
       } else {
@@ -49,6 +34,7 @@ export default function AgentChatDetail() {
   }, [router]);
 
   const ws = useRef<WebSocket | null>(null);
+  const isClosing = useRef(false);
 
   // Establish WebSocket connection when the screen is focused
   useFocusEffect(
@@ -56,42 +42,48 @@ export default function AgentChatDetail() {
       if (!agentId || !id) return; // Wait for agentId and userId
 
       const userId = id as string;
-      console.log("🚀 ~ AgentChatDetail ~ userId:", userId);
+      isClosing.current = false;
       setConnectionStatus("Connecting...");
       const websocketUrl = `wss://dev-backend-py-23809827867.us-east1.run.app/chat/ws/${userId}/${agentId}/agent`;
       ws.current = new WebSocket(websocketUrl);
 
       ws.current.onopen = () => {
-        console.log("WebSocket Connected for agent:", agentId, "chatting with user:", userId);
+        // console.log("WebSocket Connected for agent:", agentId, "chatting with user:", userId);
         setConnectionStatus("Connected");
       };
       ws.current.onmessage = (event) => {
         try {
           const incomingData = JSON.parse(event.data);
-          console.log("Received data:", incomingData);
+          // console.log("Received data:", incomingData);
 
-          const newMessages: IMessage[] = Array.isArray(incomingData)
-            ? incomingData
-            : incomingData ? [incomingData] : [];
+          // Handle both history ({ messages: [...] }) and single message objects
+          const messagesFromServer = incomingData.messages || incomingData;
 
+          const newMessages: IMessage[] = Array.isArray(messagesFromServer)
+            ? messagesFromServer
+            : messagesFromServer ? [messagesFromServer] : [];
           if (newMessages.length === 0) return;
 
           setMessages((previousMessages) => {
-            // If messages are not set yet (it's history), set them.
-            if (previousMessages === undefined) {
-              return newMessages;
-            }
-            // Otherwise, append new messages.
-            return GiftedChat.append(previousMessages, newMessages.filter(
-              (msg) => !previousMessages.some(prevMsg => prevMsg._id === msg._id)
-            ));
+            // Ensure previousMessages is an array, even if it's undefined initially
+            const currentMessages = previousMessages || [];
+
+            // Filter out any messages that are already in the state
+            const uniqueNewMessages = newMessages.filter(
+              (msg) => msg && !currentMessages.some((prevMsg) => prevMsg._id === msg._id)
+            );
+            if (uniqueNewMessages.length === 0) return currentMessages;
+            const allMessages = GiftedChat.append(currentMessages, uniqueNewMessages);
+            // Sort all messages by date to ensure correct order.
+            // GiftedChat expects newest messages to be at the start of the array.
+            return allMessages.sort((a, b) => new Date(b.createdAt).getTime() - new Date(a.createdAt).getTime());
           });
         } catch (e) {
-          console.error("Failed to parse or process message:", e);
         }
       };
 
       ws.current.onerror = (error) => {
+        if (isClosing.current) return;
         console.error("WebSocket Error:", error);
       };
 
@@ -102,33 +94,39 @@ export default function AgentChatDetail() {
 
       // Clean up WebSocket on component unmount or when the screen loses focus
       return () => {
+        isClosing.current = true;
         ws.current?.close();
       };
     }, [agentId, id]) // Reconnect if agentId or userId changes
   );
 
-  const onSend = useCallback((newMessages: IMessage[] = []) => {
-    if (!agentId || !ws.current || ws.current.readyState !== WebSocket.OPEN) {
-      console.error("WebSocket not connected or agent not available");
-      return;
-    }
+  const onSend = useCallback(
+    (newMessages: IMessage[] = []) => {
+      if (!agentId || !ws.current || ws.current.readyState !== WebSocket.OPEN) {
+        console.error("WebSocket not connected or agent not available");
+        return;
+      }
 
-    const message = newMessages[0];
-    const messageToSend = {
-      _id: message._id,
-      text: message.text,
-      createdAt: message.createdAt,
-      user: {
-        _id: agentId,
-        name: "Agent",
-      },
-    };
+      const message = newMessages[0];
+      const messageToSend = {
+        _id: message._id,
+        text: message.text,
+        createdAt: message.createdAt,
+        user: {
+          _id: agentId,
+          name: "Agent", // Or a dynamic agent name if available
+        },
+      };
 
-    ws.current.send(JSON.stringify(messageToSend));
-    setMessages((previousMessages) =>
-      GiftedChat.append(previousMessages, newMessages)
-    );
-  }, [agentId]);
+      ws.current.send(JSON.stringify(messageToSend));
+
+      // Optimistically update the UI
+      setMessages((previousMessages) =>
+        GiftedChat.append(previousMessages, newMessages)
+      );
+    },
+    [agentId]
+  );
 
   return (
     <SafeAreaView style={{ flex: 1, backgroundColor: "white" }}>
@@ -137,8 +135,15 @@ export default function AgentChatDetail() {
       <View style={styles.headerContainer}>
         {/* Back Button */}
         <TouchableOpacity onPress={() => router.back()} style={styles.backButton}>
-          <Text style={styles.backArrow}>←</Text>
+          <MaterialCommunityIcons name="arrow-left" size={28} color="#007AFF" />
         </TouchableOpacity>
+
+        {/* Avatar */}
+        <View style={[styles.avatar, styles.textAvatarBackground]}>
+          <Text style={styles.textAvatar}>
+            {userName ? (userName as string).substring(0, 2).toUpperCase() : ""}
+          </Text>
+        </View>
 
         {/* User Name */}
         <View style={styles.nameContainer}>
@@ -146,6 +151,7 @@ export default function AgentChatDetail() {
             {userName}
           </Text>
         </View>
+
       </View>
       <View style={[
           styles.statusBar,
@@ -200,17 +206,37 @@ const styles = StyleSheet.create({
     justifyContent: "center",
     alignItems: "center",
   },
-  backArrow: {
-    fontSize: 22,
+   backArrow: {
+    fontSize: 28,
+    fontWeight: "bold",
     color: "#007AFF",
   },
   nameContainer: {
-    maxWidth: width - 80, // Keep some space for back button
+    flex: 1,
+    marginLeft: 12,
     justifyContent: "center",
   },
   userName: {
-    fontSize: 18,
+    fontSize: 22,
     fontWeight: "600",
     color: "#000",
+  },
+  avatar: {
+    width: 40,
+    height: 40,
+    borderRadius: 20,
+    marginLeft: 5,
+    borderWidth: 1,
+    borderColor: "#4F46E5",
+  },
+  textAvatarBackground: {
+    backgroundColor: "#bbbfccff",
+    justifyContent: "center",
+    alignItems: "center",
+  },
+  textAvatar: {
+    color: "#4F46E5",
+    fontSize: 16,
+    fontWeight: "bold",
   },
 });
