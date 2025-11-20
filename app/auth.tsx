@@ -1,4 +1,5 @@
 import * as SecureStore from "expo-secure-store";
+import { fetchAllChatsAndCache } from "./chatCache";
 
 export type DecodedToken = {
   id: string;
@@ -60,6 +61,7 @@ export const removeUserData = async () => {
 
 // Save JWT token
 export const setLoginJwtToken = async (token: string) => {
+  // console.log("Saving JWT token:", token);
   await SecureStore.setItemAsync("loginJwtToken", token);
 };
 
@@ -116,6 +118,9 @@ export const fetchAndSaveUser = async (
 
     const userData: DecodedToken = await response.json();
     await saveUserData(userData); // Save the fetched user data
+
+    // After successfully getting user data, fetch and cache all chats
+    await fetchAllChatsAndCache(role);
 
     return userData;
   } catch (error) {

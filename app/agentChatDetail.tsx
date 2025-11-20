@@ -2,13 +2,12 @@ import { MaterialCommunityIcons } from "@expo/vector-icons";
 import { useNavigation } from "@react-navigation/native";
 import { useFocusEffect, useLocalSearchParams, useRouter } from "expo-router";
 import { useCallback, useEffect, useRef, useState } from "react";
-import { Dimensions, StyleSheet, Text, TouchableOpacity, View } from "react-native";
+import { StyleSheet, Text, TouchableOpacity, View } from "react-native";
 import { GiftedChat, IMessage } from "react-native-gifted-chat";
 import { SafeAreaView } from "react-native-safe-area-context";
 import { getUserData } from "./auth"; // Assuming DecodedToken is defined here or similar
+import { loadAllChatsFromCache, updateChatCache } from "./chatCache";
 import ChatView from "./components/ChatView";
-
-const { width } = Dimensions.get("window");
 
 export default function AgentChatDetail() {
   const router = useRouter();
@@ -16,8 +15,7 @@ export default function AgentChatDetail() {
   const params = useLocalSearchParams();
   const { id, userName } = params;
   const [connectionStatus, setConnectionStatus] = useState("Connecting...");
-
-  const [messages, setMessages] = useState<IMessage[] | undefined>(undefined); // Start as undefined
+  const [messages, setMessages] = useState<IMessage[]>([]); // Start as empty array
   const [agentId, setAgentId] = useState<string | null>(null);
 
   // Fetch agent's ID from SecureStore
@@ -33,6 +31,26 @@ export default function AgentChatDetail() {
     getAgentData();
   }, [router]);
 
+  // Load cached messages on initial render
+  useEffect(() => {
+    const loadCachedMessages = async () => {
+      if (!id) return;
+      try {
+        const allChats = await loadAllChatsFromCache();
+        if (allChats) {
+          const cachedChat = allChats[id as string];
+          if (cachedChat && cachedChat.all && cachedChat.all.length > 0) {
+            // Sort newest first for GiftedChat
+            const sortedMessages = [...cachedChat.all].sort((a, b) => new Date(b.createdAt).getTime() - new Date(a.createdAt).getTime());
+            setMessages(sortedMessages);
+          }
+        }
+      } catch (error) {
+        console.error("Failed to load cached messages:", error);
+      }
+    };
+    loadCachedMessages();
+  }, [id]);
   const ws = useRef<WebSocket | null>(null);
   const isClosing = useRef(false);
 
@@ -40,7 +58,6 @@ export default function AgentChatDetail() {
   useFocusEffect(
     useCallback(() => {
       if (!agentId || !id) return; // Wait for agentId and userId
-
       const userId = id as string;
       isClosing.current = false;
       setConnectionStatus("Connecting...");
@@ -49,7 +66,10 @@ export default function AgentChatDetail() {
 
       ws.current.onopen = () => {
         // console.log("WebSocket Connected for agent:", agentId, "chatting with user:", userId);
-        setConnectionStatus("Connected");
+        setConnectionStatus("Connected"); 
+        // If no messages were loaded from cache, the backend will send history.
+        // If messages ARE in cache, this will fetch any messages missed since last cache.
+
       };
       ws.current.onmessage = (event) => {
         try {
@@ -65,8 +85,11 @@ export default function AgentChatDetail() {
           if (newMessages.length === 0) return;
 
           setMessages((previousMessages) => {
-            // Ensure previousMessages is an array, even if it's undefined initially
-            const currentMessages = previousMessages || [];
+            // On first message from websocket, if cache was used, decide whether to append or replace.
+            // This simple logic appends, assuming backend sends history first, then new messages.
+            // A more robust solution might involve checking message timestamps.
+            const isHistory = Array.isArray(messagesFromServer) && messagesFromServer.length > 1;
+            const currentMessages = (previousMessages && !isHistory) ? previousMessages : [];
 
             // Filter out any messages that are already in the state
             const uniqueNewMessages = newMessages.filter(
@@ -124,6 +147,11 @@ export default function AgentChatDetail() {
       setMessages((previousMessages) =>
         GiftedChat.append(previousMessages, newMessages)
       );
+
+      // Also update the cache in AsyncStorage
+      updateChatCache(id as string, newMessages).catch(error => {
+        console.error("Failed to update chat cache on send:", error);
+      });
     },
     [agentId]
   );
@@ -163,7 +191,7 @@ export default function AgentChatDetail() {
         <Text style={styles.statusText}>{connectionStatus}</Text>
       </View>
       <ChatView
-        messages={messages || []}
+        messages={messages}
         onSend={onSend}
         user={{ // This user prop represents the current user of the chat (the agent in this case)
           _id: agentId || "agent", // Use the actual agentId if available,

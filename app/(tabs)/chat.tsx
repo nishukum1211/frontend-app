@@ -10,7 +10,8 @@ import {
   View
 } from "react-native";
 import { GiftedChat, IMessage } from "react-native-gifted-chat";
-import { DecodedToken, getLoginJwtToken, getUserData, removeUserData } from "../auth";
+import { DecodedToken, getUserData, removeUserData } from "../auth";
+import { fetchAllChatsAndCache, loadAgentChatListFromCache } from "../chatCache";
 import ChatView from "../components/ChatView";
 
 const { width } = Dimensions.get("window");
@@ -61,43 +62,26 @@ export default function Chat() {
 
   // Fetch agent chats when user is an agent
   useEffect(() => {
-    const fetchAgentChats = async (token: string) => {
-      setLoading(true);
-      try {
-        const response = await fetch(
-          "https://dev-backend-py-23809827867.us-east1.run.app/chat/list",
-          {
-            method: "GET",
-            headers: {
-              Authorization: `Bearer ${token}`,
-              "X-Token-Source": "password", // Assuming agent logs in via password
-            },
-          }
-        );
+    const initializeAgentView = async () => {
+      if (user?.role !== "agent") return;
 
-        if (response.ok) {
-          const data = await response.json();
-          // console.log("Fetched agent chats:", data);
-          setAgentChats(data);
-        } else {
-          console.error("Failed to fetch agent chats:", await response.text());
-        }
-      } catch (error) {
-        console.error("Error fetching agent chats:", error);
-      } finally {
-        setLoading(false);
+      setLoading(true);
+
+      const getLoginJwtToken = async (): Promise<string | null> => {
+        return await require("expo-secure-store").getItemAsync("loginJwtToken");
+      };
+      const token = await getLoginJwtToken();
+      if (token) {
+        await fetchAllChatsAndCache("agent"); // This fetches and updates the cache
+        const updatedChats = await loadAgentChatListFromCache(); // Reload from cache to get the latest
+        if (updatedChats) setAgentChats(updatedChats);
+      } else {
+        console.error("Agent is logged in but no token found.");
       }
+      setLoading(false);
     };
 
-    if (user?.role === "agent") {
-      getLoginJwtToken().then(token => {
-        if (token) {
-          fetchAgentChats(token);
-        } else {
-          console.error("Agent is logged in but no token found.");
-        }
-      });
-    }
+    initializeAgentView();
   }, [user]); // Re-fetch if the user object changes
 
   useEffect(() => {
