@@ -1,5 +1,5 @@
 import AsyncStorage from "@react-native-async-storage/async-storage";
-import { GiftedChat, IMessage } from "react-native-gifted-chat";
+import { IMessage } from "react-native-gifted-chat";
 import { getLoginJwtToken } from "./auth";
 
 const ALL_CHATS_STORAGE_KEY = "allChats";
@@ -121,19 +121,38 @@ export const loadAllChatsFromCache = async (): Promise<Record<string, AgentChatL
 };
 
 /**
- * Updates the cache for a single chat conversation.
- * @param chatId The ID of the chat to update.
- * @param messages The array of new messages to append.
+ * Updates a chat by appending a single IMessage to the end of the conversation.
+ * @param userId The id of the conversation/user to update
+ * @param message The IMessage to append
+ * @param role "user" or "agent" (the role of the current app user)
+ * @param otherParticipantName Optional: The name of the other participant in the chat.
  */
-export const updateChatCache = async (chatId: string, messages: IMessage[]) => {
-  const allChats = (await loadAllChatsFromCache()) || {};
-  const chatItem = allChats[chatId];
-
-  if (chatItem) {
-    const chatHistory = chatItem.all || [];
-    const updatedHistory = GiftedChat.append(chatHistory, messages);
-    // Update only the 'all' property with the new messages
-    chatItem.all = updatedHistory;
+export const updateChat = async (
+  userId: string,
+  message: IMessage,
+  role: "user" | "agent"
+): Promise<void> => {
+  try {
+    const allChatsJSON = await AsyncStorage.getItem(ALL_CHATS_STORAGE_KEY);
+    const allChats: Record<string, AgentChatListItem> = allChatsJSON
+      ? JSON.parse(allChatsJSON)
+      : {};
+    if (!allChats[userId]) {
+      // If the conversation doesn't exist yet, create a new entry
+      allChats[userId] = {
+        id: userId,
+        userName: role === "agent" ? "Agent" : "User",
+        lastMessage: message.text || "",
+        all: [message],
+      };
+    } else {
+      // Append the new message
+      allChats[userId].all.push(message);
+      allChats[userId].lastMessage = message.text || "";
+    }
     await AsyncStorage.setItem(ALL_CHATS_STORAGE_KEY, JSON.stringify(allChats));
+    console.log(`Successfully updated chat for ${role} ${userId}.`);
+  } catch (error) {
+    console.error(`Failed to update chat for ${role} ${userId}:`, error);
   }
 };

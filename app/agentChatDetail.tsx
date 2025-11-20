@@ -6,7 +6,7 @@ import { StyleSheet, Text, TouchableOpacity, View } from "react-native";
 import { GiftedChat, IMessage } from "react-native-gifted-chat";
 import { SafeAreaView } from "react-native-safe-area-context";
 import { getUserData } from "./auth"; // Assuming DecodedToken is defined here or similar
-import { loadAllChatsFromCache, updateChatCache } from "./chatCache";
+import { loadAllChatsFromCache, updateChat } from "./chatCache";
 import ChatView from "./components/ChatView";
 
 export default function AgentChatDetail() {
@@ -15,6 +15,7 @@ export default function AgentChatDetail() {
   const params = useLocalSearchParams();
   const { id, userName } = params;
   const [connectionStatus, setConnectionStatus] = useState("Connecting...");
+  const userId = id as string;
   const [messages, setMessages] = useState<IMessage[]>([]); // Start as empty array
   const [agentId, setAgentId] = useState<string | null>(null);
 
@@ -31,26 +32,6 @@ export default function AgentChatDetail() {
     getAgentData();
   }, [router]);
 
-  // Load cached messages on initial render
-  useEffect(() => {
-    const loadCachedMessages = async () => {
-      if (!id) return;
-      try {
-        const allChats = await loadAllChatsFromCache();
-        if (allChats) {
-          const cachedChat = allChats[id as string];
-          if (cachedChat && cachedChat.all && cachedChat.all.length > 0) {
-            // Sort newest first for GiftedChat
-            const sortedMessages = [...cachedChat.all].sort((a, b) => new Date(b.createdAt).getTime() - new Date(a.createdAt).getTime());
-            setMessages(sortedMessages);
-          }
-        }
-      } catch (error) {
-        console.error("Failed to load cached messages:", error);
-      }
-    };
-    loadCachedMessages();
-  }, [id]);
   const ws = useRef<WebSocket | null>(null);
   const isClosing = useRef(false);
 
@@ -58,7 +39,24 @@ export default function AgentChatDetail() {
   useFocusEffect(
     useCallback(() => {
       if (!agentId || !id) return; // Wait for agentId and userId
-      const userId = id as string;
+
+      // Load cached messages first
+      const loadCachedMessages = async () => {
+        try {
+          const allChats = await loadAllChatsFromCache();
+          if (allChats) {
+            const cachedChat = allChats[id as string];
+            if (cachedChat && cachedChat.all && cachedChat.all.length > 0) {
+              // Sort newest first for GiftedChat
+              const sortedMessages = [...cachedChat.all].sort((a, b) => new Date(b.createdAt).getTime() - new Date(a.createdAt).getTime());
+              setMessages(sortedMessages);
+            }
+          }
+        } catch (error) {
+          console.error("Failed to load cached messages:", error);
+        }
+      };
+      loadCachedMessages();
       isClosing.current = false;
       setConnectionStatus("Connecting...");
       const websocketUrl = `wss://dev-backend-py-23809827867.us-east1.run.app/chat/ws/${userId}/${agentId}/agent`;
@@ -148,12 +146,11 @@ export default function AgentChatDetail() {
         GiftedChat.append(previousMessages, newMessages)
       );
 
-      // Also update the cache in AsyncStorage
-      updateChatCache(id as string, newMessages).catch(error => {
-        console.error("Failed to update chat cache on send:", error);
-      });
+      updateChat(userId, message, "agent").catch(error => {
+              console.error("Failed to update chat cache on send:", error);
+            });
     },
-    [agentId]
+    [agentId, userId]
   );
 
   return (

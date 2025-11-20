@@ -8,10 +8,10 @@ import {
   Text,
   TouchableOpacity,
   View
-} from "react-native";
+} from "react-native"; // Removed unused `Dimensions` import
 import { GiftedChat, IMessage } from "react-native-gifted-chat";
 import { DecodedToken, getUserData, removeUserData } from "../auth";
-import { fetchAllChatsAndCache, loadAgentChatListFromCache } from "../chatCache";
+import { fetchAllChatsAndCache, loadAgentChatListFromCache, updateChat } from "../chatCache";
 import ChatView from "../components/ChatView";
 
 const { width } = Dimensions.get("window");
@@ -155,9 +155,10 @@ export default function Chat() {
 
       const message = messages[0];
       const messageToSend = {
-        _id: message._id,
-        text: message.text,
-        createdAt: message.createdAt,
+        _id: message._id, // The unique ID of the message
+        text: message.text, // The text content of the message
+        createdAt: message.createdAt, // The timestamp of the message
+        image: message.image, // The ID of the image, if it exists
         user: {
           _id: user.id,
           name: user.name,
@@ -168,6 +169,11 @@ export default function Chat() {
       setMessages((previousMessages) =>
         GiftedChat.append(previousMessages, messages)
       );
+
+      // Call updateChat for sent message
+      updateChat(user.id, message, "user").catch(error => {
+        console.error("Failed to update chat cache on send:", error);
+      });
     },
     [user]
   );
