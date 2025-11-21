@@ -1,10 +1,10 @@
-import { Text, View } from "react-native";
+import { View } from "react-native";
+import PdfList from "./pdfList";
 
 export default function Resources() {
   return (
     <View style={{ flex: 1, justifyContent: "center", alignItems: "center" }}>
-      <Text>Your Purchased Resources Will Appear Here</Text>
-      <Text>PDFs, Guides, Notes, etc.</Text>
+      <PdfList />
     </View>
   );
 }

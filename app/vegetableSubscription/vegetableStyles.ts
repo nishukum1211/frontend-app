@@ -16,7 +16,7 @@ export default StyleSheet.create({
     shadowOffset: { width: 0, height: 5 },
     elevation: 6,
 
-    marginVertical: 20,
+    marginVertical: 10,
   },
 
   /* Image Strip */
