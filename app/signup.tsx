@@ -12,7 +12,8 @@ import {
   TextInput,
 } from "react-native";
 import { SafeAreaView } from "react-native-safe-area-context";
-import { fetchAndSaveUser, getLoginJwtToken } from "./auth";
+import { fetchAndSaveUser } from "./auth/action";
+import { getLoginJwtToken } from "./auth/auth";
 import CustomButton from "./components/Button";
 
 export default function Signup() {

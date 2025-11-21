@@ -21,7 +21,8 @@ import CountryPicker, {
   CountryCode,
 } from "react-native-country-picker-modal";
 import { SafeAreaView } from "react-native-safe-area-context";
-import { fetchAndSaveUser, setLoginJwtToken } from "./auth";
+import { fetchAndSaveUser } from "./auth/action";
+import { setLoginJwtToken } from "./auth/auth";
 import { app, auth } from "./firebaseConfig";
 
 export default function PhoneLoginScreen() {

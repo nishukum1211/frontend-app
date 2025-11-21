@@ -10,7 +10,8 @@ import {
   View
 } from "react-native"; // Removed unused `Dimensions` import
 import { GiftedChat, IMessage } from "react-native-gifted-chat";
-import { DecodedToken, getUserData, removeUserData } from "../auth";
+import { getUserData } from "../auth/action";
+import { DecodedToken, removeUserData } from "../auth/auth";
 import { fetchAllChatsAndCache, loadAgentChatListFromCache, updateChat } from "../chatCache";
 import ChatView from "../components/ChatView";
 
