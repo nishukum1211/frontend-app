@@ -28,7 +28,7 @@ const VegetableCoursesSection: React.FC = () => {
             {/* Row: price → मात्र → > → item name (inside small card) */}
             <View style={styles.row}>
               <Text style={styles.price}>{item.price}</Text>
-              <Text style={styles.unit}>मात्र</Text>
+              <Text style={styles.unit}>₹</Text>
 
               {/* Small card for item name */}
               <View style={styles.nameCard}>

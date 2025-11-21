@@ -1,3 +1,4 @@
+import { Ionicons } from "@expo/vector-icons";
 import { useLocalSearchParams, useRouter } from "expo-router";
 import { useEffect, useState } from "react";
 import { FlatList, Image, Text, TouchableOpacity, View } from "react-native";
@@ -25,7 +26,7 @@ export default function PdfList() {
     <View
       style={{
         padding: 20,
-        paddingTop: 100,
+        paddingTop: 10,
         backgroundColor: "lightgray",
         height: "100%",
       }}
@@ -37,12 +38,12 @@ export default function PdfList() {
           <TouchableOpacity
             onPress={() =>
               router.push({
-                pathname: "./pdfView",
+                pathname: "../pdf/pdfView",
                 params: { id: item.id },
               })
             }
             style={{
-              padding: 15,
+              padding: 9,
               borderRadius: 12,
               backgroundColor: "#F7F7F7",
               marginBottom: 12,
@@ -84,61 +85,38 @@ export default function PdfList() {
             <Text
               style={{ fontSize: 18, fontWeight: "bold", paddingBottom: 7 }}
             >
-              {item.name} -
+              {item.name}
             </Text>
-            <Text>{item.desc}</Text>
+
             <View
               style={{
-                flexDirection: "row",
-                justifyContent: "space-between",
-                alignItems: "center",
-                marginTop: 10,
+                position: "absolute",
+                top: 10,
+                right: 10,
+                zIndex: 10,
+                backgroundColor: "white",
+                padding: 6,
+                borderRadius: 20,
+                elevation: 3,
               }}
             >
-              {/* PRICE TAG */}
-              <View
-                style={{
-                  backgroundColor: "#4C6EF5",
-                  paddingVertical: 6,
-                  paddingHorizontal: 12,
-                  borderRadius: 12,
-                  width: "28%", // adjust as you want
-                }}
-              >
-                <Text
-                  style={{
-                    color: "white",
-                    fontSize: 12,
-                    fontWeight: "bold",
-                    textAlign: "center",
-                  }}
-                >
-                  ₹{item.price}
-                </Text>
-              </View>
-
-              {/* BUY BUTTON */}
-              <TouchableOpacity
-                style={{
-                  backgroundColor: "#2F9E44",
-                  paddingVertical: 6,
-                  paddingHorizontal: 12,
-                  borderRadius: 12,
-                  width: "18%", // same width for symmetry
-                }}
-              >
-                <Text
-                  style={{
-                    color: "white",
-                    fontSize: 12,
-                    fontWeight: "bold",
-                    textAlign: "center",
-                  }}
-                >
-                  Buy
-                </Text>
-              </TouchableOpacity>
+              <Ionicons name="heart-outline" size={22} color="black" />
             </View>
+
+            <TouchableOpacity
+              style={{
+                backgroundColor: "#FFE5E5",
+                paddingVertical: 6,
+                paddingHorizontal: 12,
+                borderRadius: 8,
+                alignSelf: "flex-start",
+                marginTop: 6,
+              }}
+            >
+              <Text style={{ fontSize: 14, color: "red", fontWeight: "600" }}>
+                12 July 2025
+              </Text>
+            </TouchableOpacity>
           </TouchableOpacity>
         )}
       />

@@ -6,7 +6,7 @@ export default StyleSheet.create({
     backgroundColor: "#F1F5F9",
     justifyContent: "center",
     alignItems: "center",
-    marginTop: 15,
+    marginTop: 10,
   },
 
   innerWrapper: {
@@ -16,7 +16,7 @@ export default StyleSheet.create({
 
   card: {
     width: "100%",
-    height: 220,
+    height: 200,
     backgroundColor: "#fff",
     borderRadius: 20,
     overflow: "hidden",
@@ -30,11 +30,9 @@ export default StyleSheet.create({
 
   smallImage: {
     width: "100%",
-    height: 220, // ↓↓↓ IMAGE SMALLER
+    height: 260, // make it a bit taller than the card
     resizeMode: "cover",
-    borderRadius: 20,
     position: "absolute",
-    bottom: 0,
   },
 
   overlayContainer: {

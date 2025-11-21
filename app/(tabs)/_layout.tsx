@@ -55,6 +55,13 @@ export default function TabsLayout() {
           ),
         }}
       />
+
+      <Tabs.Screen
+        name="pdfList"
+        options={{
+          href: null, // 👈 hides from tab bar
+        }}
+      />
     </Tabs>
   );
 }
