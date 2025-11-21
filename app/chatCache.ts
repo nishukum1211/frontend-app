@@ -23,6 +23,25 @@ export const fetchAllChatsAndCache = async (
 ): Promise<AgentChatListItem[] | void> => {
   console.log(`Attempting to fetch and cache all chats for ${role}...`);
   try {
+    // If we already have cached chats, skip fetching from backend.
+    // This avoids unnecessary network calls when data is already present.
+    try {
+      const cached = await AsyncStorage.getItem(ALL_CHATS_STORAGE_KEY);
+      if (cached) {
+        const parsed: Record<string, AgentChatListItem> = JSON.parse(cached);
+        if (parsed && Object.keys(parsed).length > 0) {
+          console.log("Using cached chats; skipping backend fetch.");
+          if (role === "agent") {
+            return Object.values(parsed);
+          }
+          // For users, we don't return anything (preserve previous behavior)
+          return;
+        }
+      }
+    } catch (e) {
+      // If cache read/parse fails, continue to fetch from backend.
+      console.warn("Failed to read/parse chat cache, will fetch from backend:", e);
+    }
     const token = await getLoginJwtToken();
     if (!token) {
       console.log("No auth token found for fetching chats.");
