@@ -132,6 +132,7 @@ export default function AgentChatDetail() {
       const messageToSend = {
         _id: message._id,
         text: message.text,
+        image: message.image, // The ID of the image, if it exists
         createdAt: message.createdAt,
         user: {
           _id: agentId,

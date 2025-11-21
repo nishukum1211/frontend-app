@@ -77,11 +77,10 @@ export default function ChatView({ messages, onSend, user }: ChatViewProps) {
               left: { color: "#111827", fontSize: 16 }, // Increased font size for left bubble
             }}
             renderMessageImage={(bubbleProps) => {
-              const imageId = bubbleProps.currentMessage?.image;
-              console.log("Image ID:", imageId); // This is where the fix is
-              if (!imageId) return null; // Should not happen if renderMessageImage is called
+              const imageUrl = bubbleProps.currentMessage?.image;
+              if (!imageUrl) return null;
               return (
-                <TouchableOpacity onPress={() => setFullScreenImage(imageId)}>
+                <TouchableOpacity onPress={() => setFullScreenImage(imageUrl)}>
                   <MessageImage
                     {...bubbleProps}
                   />
@@ -141,10 +140,7 @@ export default function ChatView({ messages, onSend, user }: ChatViewProps) {
     style={{ margin: 0 }}
   >
     <ImageViewer
-      imageUrls={[{
-        url: `https://dev-backend-py-23809827867.us-east1.run.app/chat/image/${fullScreenImage}`,
-        // Headers are needed if the full-screen viewer needs to fetch a non-cached image
-      }]}
+      imageUrls={[{ url: fullScreenImage }]}
       enableSwipeDown={true}
       onSwipeDown={() => setFullScreenImage(null)}
       renderIndicator={() => <View />} // Return a view to satisfy TS, effectively hiding the indicator
