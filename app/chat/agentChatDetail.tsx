@@ -5,9 +5,9 @@ import { useCallback, useEffect, useRef, useState } from "react";
 import { StyleSheet, Text, TouchableOpacity, View } from "react-native";
 import { GiftedChat, IMessage } from "react-native-gifted-chat";
 import { SafeAreaView } from "react-native-safe-area-context";
-import { getUserData } from "./auth/action";
+import { getUserData } from "../auth/action";
+import ChatView from "../components/ChatView";
 import { loadAllChatsFromCache, updateChat } from "./chatCache";
-import ChatView from "./components/ChatView";
 
 export default function AgentChatDetail() {
   const router = useRouter();

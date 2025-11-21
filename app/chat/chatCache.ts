@@ -1,6 +1,6 @@
 import AsyncStorage from "@react-native-async-storage/async-storage";
 import { IMessage } from "react-native-gifted-chat";
-import { getLoginJwtToken } from "./auth/auth";
+import { getLoginJwtToken } from "../auth/auth";
 
 const ALL_CHATS_STORAGE_KEY = "allChats";
 

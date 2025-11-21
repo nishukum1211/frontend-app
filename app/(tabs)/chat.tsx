@@ -12,7 +12,7 @@ import {
 import { GiftedChat, IMessage } from "react-native-gifted-chat";
 import { getUserData } from "../auth/action";
 import { DecodedToken, removeUserData } from "../auth/auth";
-import { fetchAllChatsAndCache, loadAgentChatListFromCache, updateChat } from "../chatCache";
+import { fetchAllChatsAndCache, loadAgentChatListFromCache, updateChat } from "../chat/chatCache";
 import ChatView from "../components/ChatView";
 
 const { width } = Dimensions.get("window");
@@ -201,7 +201,7 @@ export default function Chat() {
               style={styles.chatItem}
               onPress={() =>
                 router.push({
-                  pathname: "../agentChatDetail",
+                  pathname: "/chat/agentChatDetail",
                   params: {
                     id: item.id,
                     userName: item.userName,

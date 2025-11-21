@@ -36,7 +36,7 @@ export default function RootLayout() {
         {user ? ( // Screens for logged-in users
           <>
             <Stack.Screen name="(tabs)" options={{ headerShown: false }} />
-            <Stack.Screen name="agentChatDetail" options={{ headerShown: true }} />
+            <Stack.Screen name="chat/agentChatDetail" options={{ headerShown: true }} />
           </>
         ) : ( // Screens for logged-out users
           <>
