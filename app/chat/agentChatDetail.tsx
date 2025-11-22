@@ -1,13 +1,14 @@
 import { MaterialCommunityIcons } from "@expo/vector-icons";
 import { useNavigation } from "@react-navigation/native";
 import { useFocusEffect, useLocalSearchParams, useRouter } from "expo-router";
-import { useCallback, useEffect, useRef, useState } from "react";
+import { useCallback, useEffect, useState } from "react";
 import { StyleSheet, Text, TouchableOpacity, View } from "react-native";
 import { GiftedChat, IMessage } from "react-native-gifted-chat";
 import { SafeAreaView } from "react-native-safe-area-context";
 import { getUserData } from "../auth/action";
 import ChatView from "../components/ChatView";
 import { loadAllChatsFromCache, updateChat } from "./chatCache";
+import { webSocketManager } from "./websocketOps";
 
 export default function AgentChatDetail() {
   const router = useRouter();
@@ -32,11 +33,6 @@ export default function AgentChatDetail() {
     getAgentData();
   }, [router]);
 
-  const ws = useRef<WebSocket | null>(null);
-  const isClosing = useRef(false);
-  const initialHistoryReceived = useRef(false); // Flag to track initial history
-
-  // Establish WebSocket connection when the screen is focused
   useFocusEffect(
     useCallback(() => {
       if (!agentId || !id) return; // Wait for agentId and userId
@@ -58,46 +54,39 @@ export default function AgentChatDetail() {
         }
       };
       loadCachedMessages();
-      isClosing.current = false;
-      initialHistoryReceived.current = false; // Reset on new connection
-      setConnectionStatus("Connecting...");
-      const websocketUrl = `wss://dev-backend-py-23809827867.us-east1.run.app/chat/ws/${userId}/${agentId}/agent`;
-      ws.current = new WebSocket(websocketUrl);
 
-      ws.current.onopen = () => {
-        // console.log("WebSocket Connected for agent:", agentId, "chatting with user:", userId);
-        setConnectionStatus("Connected"); 
-        // If no messages were loaded from cache, the backend will send history.
-        // If messages ARE in cache, this will fetch any messages missed since last cache.
+      // Connect WebSocket
+      webSocketManager.connect(
+        { userId, agentId, role: "agent" },
+        {
+          onOpen: () => setConnectionStatus("Connected"),
+          onMessage: (event, messageUserId) => {
+            // Handle incoming messages if needed
+          },
+          onError: (error, errorUserId) => {
+            console.log(`WebSocket Error for user ${errorUserId}:`, error);
+          },
+          onClose: (event, closeUserId) => {
+            console.log(
+              `WebSocket Disconnected for user ${closeUserId}:`,
+              event.code,
+              event.reason
+            );
+            setConnectionStatus("Disconnected");
+          },
+        }
+      );
 
-      };
-      ws.current.onmessage = (event) => {
-        // Ignoring all incoming data from the WebSocket as requested.
-        return;
-      };
-
-      ws.current.onerror = (error) => {
-        if (isClosing.current) return;
-        console.error("WebSocket Error:", error);
-      };
-
-      ws.current.onclose = (event) => {
-        console.log("WebSocket Disconnected:", event.code, event.reason);
-        setConnectionStatus("Disconnected");
-      };
-
-      // Clean up WebSocket on component unmount or when the screen loses focus
       return () => {
-        isClosing.current = true;
-        ws.current?.close();
+        // webSocketManager.disconnect(userId);
       };
     }, [agentId, id]) // Reconnect if agentId or userId changes
   );
 
   const onSend = useCallback(
     async (newMessages: IMessage[] = []) => {
-      if (!agentId || !ws.current || ws.current.readyState !== WebSocket.OPEN) {
-        console.error("WebSocket not connected or agent not available");
+      if (!agentId) {
+        console.error("Agent not available");
         return;
       }
 
@@ -121,18 +110,7 @@ export default function AgentChatDetail() {
       });
 
       // 4. Send the message through the websocket
-      const messageToSend = {
-        _id: updatedMessage._id,
-        text: updatedMessage.text,
-        image: updatedMessage.image, // This will now be the correct URI
-        createdAt: updatedMessage.createdAt,
-        user: {
-          _id: agentId,
-          name: "Agent", // Or a dynamic agent name if available
-        },
-      };
-
-      ws.current.send(JSON.stringify(messageToSend));
+      webSocketManager.sendChat(updatedMessage, userId);
     },
     [agentId, userId]
   );
