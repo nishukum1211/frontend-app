@@ -1,39 +1,7 @@
 import * as SecureStore from "expo-secure-store";
+import { fetchAllChatsAndCache } from "../chat/chatCache";
+import { DecodedToken, getLoginJwtToken, saveUserData } from "./auth";
 
-export type DecodedToken = {
-  id: string;
-  name: string;
-  email_id: string;
-  mobile_number: string;
-  role: string;
-  exp?: number;
-};
-
-// --- Custom Event Emitter ---
-type AuthChangeListener = (user: DecodedToken | null) => void;
-const listeners: AuthChangeListener[] = [];
-
-export const addAuthChangeListener = (listener: AuthChangeListener) => {
-  listeners.push(listener);
-};
-
-export const removeAuthChangeListener = (listener: AuthChangeListener) => {
-  const index = listeners.indexOf(listener);
-  if (index > -1) {
-    listeners.splice(index, 1);
-  }
-};
-
-const emitAuthChange = (user: DecodedToken | null) => {
-  listeners.forEach(listener => listener(user));
-};
-// --- End Custom Event Emitter ---
-
-// Save user data
-export const saveUserData = async (user: DecodedToken) => {
-  await SecureStore.setItemAsync("User", JSON.stringify(user));
-  emitAuthChange(user); // Emit event on login
-};
 
 // Get user data
 export const getUserData = async (): Promise<DecodedToken | null> => {
@@ -51,28 +19,6 @@ export const getUserData = async (): Promise<DecodedToken | null> => {
 };
 
 
-
-// Remove user data
-export const removeUserData = async () => {
-  await SecureStore.deleteItemAsync("User");
-  emitAuthChange(null); // Emit event on logout
-};
-
-// Save JWT token
-export const setLoginJwtToken = async (token: string) => {
-  await SecureStore.setItemAsync("loginJwtToken", token);
-};
-
-
-// Remove JWT token
-export const removeLoginJwtToken = async () => {
-  await SecureStore.deleteItemAsync("loginJwtToken");
-};
-
-// Get JWT token
-export const getLoginJwtToken = async (): Promise<string | null> => {
-  return await SecureStore.getItemAsync("loginJwtToken");
-};
 
 /**
  * Fetches user data from the backend and saves it to SecureStore.
@@ -116,6 +62,9 @@ export const fetchAndSaveUser = async (
 
     const userData: DecodedToken = await response.json();
     await saveUserData(userData); // Save the fetched user data
+
+    // After successfully getting user data, fetch and cache all chats
+    await fetchAllChatsAndCache(role);
 
     return userData;
   } catch (error) {

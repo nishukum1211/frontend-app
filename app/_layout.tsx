@@ -2,7 +2,8 @@
 import { Stack } from "expo-router";
 import { useEffect, useState } from "react";
 import { SafeAreaProvider } from "react-native-safe-area-context";
-import { DecodedToken, getUserData, addAuthChangeListener, removeAuthChangeListener } from "./auth";
+import { getUserData } from "./auth/action";
+import { addAuthChangeListener, DecodedToken, removeAuthChangeListener } from "./auth/auth";
 
 export default function RootLayout() {
   const [initializing, setInitializing] = useState(true);
@@ -35,7 +36,7 @@ export default function RootLayout() {
         {user ? ( // Screens for logged-in users
           <>
             <Stack.Screen name="(tabs)" options={{ headerShown: false }} />
-            <Stack.Screen name="agentChatDetail" options={{ headerShown: true }} />
+            <Stack.Screen name="chat/agentChatDetail" options={{ headerShown: true }} />
           </>
         ) : ( // Screens for logged-out users
           <>

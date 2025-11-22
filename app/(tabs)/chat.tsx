@@ -8,9 +8,11 @@ import {
   Text,
   TouchableOpacity,
   View
-} from "react-native";
+} from "react-native"; // Removed unused `Dimensions` import
 import { GiftedChat, IMessage } from "react-native-gifted-chat";
-import { DecodedToken, getLoginJwtToken, getUserData, removeUserData } from "../auth";
+import { getUserData } from "../auth/action";
+import { DecodedToken, getLoginJwtToken, removeUserData } from "../auth/auth";
+import { fetchAllChatsAndCache, loadAgentChatListFromCache, loadAllChatsFromCache, updateChat } from "../chat/chatCache";
 import ChatView from "../components/ChatView";
 
 const { width } = Dimensions.get("window");
@@ -61,47 +63,55 @@ export default function Chat() {
 
   // Fetch agent chats when user is an agent
   useEffect(() => {
-    const fetchAgentChats = async (token: string) => {
-      setLoading(true);
-      try {
-        const response = await fetch(
-          "https://dev-backend-py-23809827867.us-east1.run.app/chat/list",
-          {
-            method: "GET",
-            headers: {
-              Authorization: `Bearer ${token}`,
-              "X-Token-Source": "password", // Assuming agent logs in via password
-            },
-          }
-        );
+    const initializeAgentView = async () => {
+      if (user?.role !== "agent") return;
 
-        if (response.ok) {
-          const data = await response.json();
-          // console.log("Fetched agent chats:", data);
-          setAgentChats(data);
-        } else {
-          console.error("Failed to fetch agent chats:", await response.text());
-        }
-      } catch (error) {
-        console.error("Error fetching agent chats:", error);
-      } finally {
-        setLoading(false);
+      setLoading(true);
+
+      const getLoginJwtToken = async (): Promise<string | null> => {
+        return await require("expo-secure-store").getItemAsync("loginJwtToken");
+      };
+      const token = await getLoginJwtToken();
+      if (token) {
+        await fetchAllChatsAndCache("agent"); // This fetches and updates the cache
+        const updatedChats = await loadAgentChatListFromCache();
+        // Pretty-print the JSON to the console for better readability
+        // console.log("Agent chats from cache:", JSON.stringify(updatedChats, null, 2));
+        if (updatedChats) setAgentChats(updatedChats);
+      } else {
+        console.error("Agent is logged in but no token found.");
       }
+      setLoading(false);
     };
 
-    if (user?.role === "agent") {
-      getLoginJwtToken().then(token => {
-        if (token) {
-          fetchAgentChats(token);
-        } else {
-          console.error("Agent is logged in but no token found.");
-        }
-      });
-    }
+    initializeAgentView();
   }, [user]); // Re-fetch if the user object changes
 
   useEffect(() => {
     if (!user || user.role === "agent") return; // Only connect if it's a regular user
+    
+    // Load cached messages for the user
+    const loadCachedMessages = async () => {
+      try {
+        const token = await getLoginJwtToken();
+        if (token) {
+          await fetchAllChatsAndCache("user");
+        }
+        const allChats = await loadAllChatsFromCache();
+        if (allChats && allChats[user.id]) {
+          const userChat = allChats[user.id];
+          if (userChat.all && userChat.all.length > 0) {
+            const sortedMessages = [...userChat.all].sort(
+              (a, b) => new Date(b.createdAt).getTime() - new Date(a.createdAt).getTime()
+            );
+            setMessages(sortedMessages);
+          }
+        }
+      } catch (error) {
+        console.error("Failed to load cached messages for user:", error);
+      }
+    };
+    loadCachedMessages();
 
     setConnectionStatus("Connecting...");
     // Establish WebSocket connection
@@ -114,37 +124,8 @@ export default function Chat() {
     };
 
     ws.current.onmessage = (event) => {
-      console.log("Received message:", event.data);
-      try {
-        const incomingData = JSON.parse(event.data);
-        console.log("Received data:", incomingData);
-
-        // The backend sends history as { messages: [...] } and single messages as objects.
-        // Let's handle both cases.
-        const messagesFromServer = incomingData.messages || incomingData;
-
-        const newMessages: IMessage[] = Array.isArray(messagesFromServer)
-          ? messagesFromServer
-          : messagesFromServer
-          ? [messagesFromServer]
-          : [];
-
-        setMessages((previousMessages) => {
-          // Filter out any messages that are already in the state
-          const uniqueNewMessages = newMessages.filter(
-            // Ensure msg is not null/undefined before accessing its properties
-            (msg) =>
-              msg &&
-              !previousMessages.some((prevMsg) => prevMsg._id === msg._id)
-          );
-          if (uniqueNewMessages.length === 0) return previousMessages;
-          const allMessages = GiftedChat.append(previousMessages, uniqueNewMessages);
-          // Sort all messages by date to ensure correct order (newest first).
-          return allMessages.sort((a, b) => new Date(b.createdAt).getTime() - new Date(a.createdAt).getTime());
-        });
-      } catch (e) {
-        console.error("Failed to parse message data:", event.data);
-      }
+      // console.log("Received message:", event.data);
+      return;
     };
 
     ws.current.onerror = (error) => {
@@ -171,9 +152,10 @@ export default function Chat() {
 
       const message = messages[0];
       const messageToSend = {
-        _id: message._id,
-        text: message.text,
-        createdAt: message.createdAt,
+        _id: message._id, // The unique ID of the message
+        text: message.text, // The text content of the message
+        createdAt: message.createdAt, // The timestamp of the message
+        image: message.image, // The ID of the image, if it exists
         user: {
           _id: user.id,
           name: user.name,
@@ -184,6 +166,11 @@ export default function Chat() {
       setMessages((previousMessages) =>
         GiftedChat.append(previousMessages, messages)
       );
+
+      // Call updateChat for sent message
+      updateChat(user.id, message, "user").catch(error => {
+        console.error("Failed to update chat cache on send:", error);
+      });
     },
     [user]
   );
@@ -210,7 +197,7 @@ export default function Chat() {
               style={styles.chatItem}
               onPress={() =>
                 router.push({
-                  pathname: "../agentChatDetail",
+                  pathname: "/chat/agentChatDetail",
                   params: {
                     id: item.id,
                     userName: item.userName,

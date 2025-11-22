@@ -2,13 +2,12 @@ import { MaterialCommunityIcons } from "@expo/vector-icons";
 import { useNavigation } from "@react-navigation/native";
 import { useFocusEffect, useLocalSearchParams, useRouter } from "expo-router";
 import { useCallback, useEffect, useRef, useState } from "react";
-import { Dimensions, StyleSheet, Text, TouchableOpacity, View } from "react-native";
+import { StyleSheet, Text, TouchableOpacity, View } from "react-native";
 import { GiftedChat, IMessage } from "react-native-gifted-chat";
 import { SafeAreaView } from "react-native-safe-area-context";
-import { getUserData } from "./auth"; // Assuming DecodedToken is defined here or similar
-import ChatView from "./components/ChatView";
-
-const { width } = Dimensions.get("window");
+import { getUserData } from "../auth/action";
+import ChatView from "../components/ChatView";
+import { loadAllChatsFromCache, updateChat } from "./chatCache";
 
 export default function AgentChatDetail() {
   const router = useRouter();
@@ -16,8 +15,8 @@ export default function AgentChatDetail() {
   const params = useLocalSearchParams();
   const { id, userName } = params;
   const [connectionStatus, setConnectionStatus] = useState("Connecting...");
-
-  const [messages, setMessages] = useState<IMessage[] | undefined>(undefined); // Start as undefined
+  const userId = id as string;
+  const [messages, setMessages] = useState<IMessage[]>([]); // Start as empty array
   const [agentId, setAgentId] = useState<string | null>(null);
 
   // Fetch agent's ID from SecureStore
@@ -35,51 +34,46 @@ export default function AgentChatDetail() {
 
   const ws = useRef<WebSocket | null>(null);
   const isClosing = useRef(false);
+  const initialHistoryReceived = useRef(false); // Flag to track initial history
 
   // Establish WebSocket connection when the screen is focused
   useFocusEffect(
     useCallback(() => {
       if (!agentId || !id) return; // Wait for agentId and userId
 
-      const userId = id as string;
+      // Load cached messages first
+      const loadCachedMessages = async () => {
+        try {
+          const allChats = await loadAllChatsFromCache();
+          if (allChats) {
+            const cachedChat = allChats[id as string];
+            if (cachedChat && cachedChat.all && cachedChat.all.length > 0) {
+              // Sort newest first for GiftedChat
+              const sortedMessages = [...cachedChat.all].sort((a, b) => new Date(b.createdAt).getTime() - new Date(a.createdAt).getTime());
+              setMessages(sortedMessages);
+            }
+          }
+        } catch (error) {
+          console.error("Failed to load cached messages:", error);
+        }
+      };
+      loadCachedMessages();
       isClosing.current = false;
+      initialHistoryReceived.current = false; // Reset on new connection
       setConnectionStatus("Connecting...");
       const websocketUrl = `wss://dev-backend-py-23809827867.us-east1.run.app/chat/ws/${userId}/${agentId}/agent`;
       ws.current = new WebSocket(websocketUrl);
 
       ws.current.onopen = () => {
         // console.log("WebSocket Connected for agent:", agentId, "chatting with user:", userId);
-        setConnectionStatus("Connected");
+        setConnectionStatus("Connected"); 
+        // If no messages were loaded from cache, the backend will send history.
+        // If messages ARE in cache, this will fetch any messages missed since last cache.
+
       };
       ws.current.onmessage = (event) => {
-        try {
-          const incomingData = JSON.parse(event.data);
-          // console.log("Received data:", incomingData);
-
-          // Handle both history ({ messages: [...] }) and single message objects
-          const messagesFromServer = incomingData.messages || incomingData;
-
-          const newMessages: IMessage[] = Array.isArray(messagesFromServer)
-            ? messagesFromServer
-            : messagesFromServer ? [messagesFromServer] : [];
-          if (newMessages.length === 0) return;
-
-          setMessages((previousMessages) => {
-            // Ensure previousMessages is an array, even if it's undefined initially
-            const currentMessages = previousMessages || [];
-
-            // Filter out any messages that are already in the state
-            const uniqueNewMessages = newMessages.filter(
-              (msg) => msg && !currentMessages.some((prevMsg) => prevMsg._id === msg._id)
-            );
-            if (uniqueNewMessages.length === 0) return currentMessages;
-            const allMessages = GiftedChat.append(currentMessages, uniqueNewMessages);
-            // Sort all messages by date to ensure correct order.
-            // GiftedChat expects newest messages to be at the start of the array.
-            return allMessages.sort((a, b) => new Date(b.createdAt).getTime() - new Date(a.createdAt).getTime());
-          });
-        } catch (e) {
-        }
+        // Ignoring all incoming data from the WebSocket as requested.
+        return;
       };
 
       ws.current.onerror = (error) => {
@@ -101,17 +95,37 @@ export default function AgentChatDetail() {
   );
 
   const onSend = useCallback(
-    (newMessages: IMessage[] = []) => {
+    async (newMessages: IMessage[] = []) => {
       if (!agentId || !ws.current || ws.current.readyState !== WebSocket.OPEN) {
         console.error("WebSocket not connected or agent not available");
         return;
       }
 
-      const message = newMessages[0];
+      const sentMessage = newMessages[0];
+
+      // 1. Optimistically update the UI with the initial message (with temporary image URI)
+      setMessages((previousMessages) =>
+        GiftedChat.append(previousMessages, newMessages)
+      );
+
+      // 2. Process the image and get the updated message with the final URI
+      const updatedMessage = await updateChat(userId, sentMessage, "agent");
+
+      // 3. Update the UI again with the correct image URI
+      setMessages((previousMessages) => {
+        // Find the original message by its ID and replace it with the updated one
+        const newMsgs = previousMessages.map((msg) =>
+          msg._id === updatedMessage._id ? updatedMessage : msg
+        );
+        return newMsgs;
+      });
+
+      // 4. Send the message through the websocket
       const messageToSend = {
-        _id: message._id,
-        text: message.text,
-        createdAt: message.createdAt,
+        _id: updatedMessage._id,
+        text: updatedMessage.text,
+        image: updatedMessage.image, // This will now be the correct URI
+        createdAt: updatedMessage.createdAt,
         user: {
           _id: agentId,
           name: "Agent", // Or a dynamic agent name if available
@@ -119,13 +133,8 @@ export default function AgentChatDetail() {
       };
 
       ws.current.send(JSON.stringify(messageToSend));
-
-      // Optimistically update the UI
-      setMessages((previousMessages) =>
-        GiftedChat.append(previousMessages, newMessages)
-      );
     },
-    [agentId]
+    [agentId, userId]
   );
 
   return (
@@ -163,7 +172,7 @@ export default function AgentChatDetail() {
         <Text style={styles.statusText}>{connectionStatus}</Text>
       </View>
       <ChatView
-        messages={messages || []}
+        messages={messages}
         onSend={onSend}
         user={{ // This user prop represents the current user of the chat (the agent in this case)
           _id: agentId || "agent", // Use the actual agentId if available,
