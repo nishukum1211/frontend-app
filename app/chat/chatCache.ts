@@ -1,6 +1,8 @@
 import AsyncStorage from "@react-native-async-storage/async-storage";
 import { IMessage } from "react-native-gifted-chat";
 import { getLoginJwtToken } from "../auth/auth";
+import { getFileName } from "../utils/fileSystem";
+import { downloadChatImageToLocal, processChatImageMessage } from "./imageCache";
 
 const ALL_CHATS_STORAGE_KEY = "allChats";
 
@@ -23,25 +25,6 @@ export const fetchAllChatsAndCache = async (
 ): Promise<AgentChatListItem[] | void> => {
   console.log(`Attempting to fetch and cache all chats for ${role}...`);
   try {
-    // If we already have cached chats, skip fetching from backend.
-    // This avoids unnecessary network calls when data is already present.
-    try {
-      const cached = await AsyncStorage.getItem(ALL_CHATS_STORAGE_KEY);
-      if (cached) {
-        const parsed: Record<string, AgentChatListItem> = JSON.parse(cached);
-        if (parsed && Object.keys(parsed).length > 0) {
-          console.log("Using cached chats; skipping backend fetch.");
-          if (role === "agent") {
-            return Object.values(parsed);
-          }
-          // For users, we don't return anything (preserve previous behavior)
-          return;
-        }
-      }
-    } catch (e) {
-      // If cache read/parse fails, continue to fetch from backend.
-      console.warn("Failed to read/parse chat cache, will fetch from backend:", e);
-    }
     const token = await getLoginJwtToken();
     if (!token) {
       console.log("No auth token found for fetching chats.");
@@ -88,6 +71,33 @@ export const fetchAllChatsAndCache = async (
         }
       });
 
+      // For any message that references a backend image, download it to local cache
+      for (const chatId of Object.keys(messagesToCache)) {
+        const chat = messagesToCache[chatId];
+        if (!chat || !Array.isArray(chat.all)) continue;
+
+        await Promise.all(
+          chat.all.map(async (msg: IMessage) => {
+            try {
+              // Check if msg.image is a backend reference (not a local file URI)
+              if (msg.image && typeof msg.image === "string" && !msg.image.startsWith("file://")) {
+                const imageName = getFileName(msg.image); // Extracts the filename
+                const localUri = await downloadChatImageToLocal(
+                  chatId,
+                  String(msg._id),
+                  imageName); // Download using the filename
+                if (localUri) {
+                  console.log(`Downloaded image for chat ${chatId}, message ${msg._id} to ${localUri}`);
+                  msg.image = localUri;
+                }
+              }
+            } catch (e) {
+              console.warn(`Failed to download chat image for ${chatId}/${msg._id}:`, e);
+            }
+          })
+        );
+      }
+
       await AsyncStorage.setItem(ALL_CHATS_STORAGE_KEY, JSON.stringify(messagesToCache));
       return agentChatList; // Return the list for the UI
     } else {
@@ -99,7 +109,28 @@ export const fetchAllChatsAndCache = async (
 
       if (userChat && userChat.id && userChat.all) {
         messagesToCache[userChat.id] = userChat;
+
+        // Download any referenced backend images for the single user chat
+        const chat = messagesToCache[userChat.id];
+        await Promise.all(
+          chat.all.map(async (msg: IMessage) => {
+            try {
+              // Check if msg.image is a backend reference (not a local file URI)
+              if (msg.image && typeof msg.image === "string" && !msg.image.startsWith("file://")) {
+                const imageName = getFileName(msg.image); // Extracts the filename
+                const localUri = await downloadChatImageToLocal(
+                  chat.id,
+                  String(msg._id),
+                  imageName); // Download using the filename
+                if (localUri) msg.image = localUri;
+              }
+            } catch (e) {
+              console.warn(`Failed to download chat image for ${chat.id}/${msg._id}:`, e);
+            }
+          })
+        );
       }
+
       await AsyncStorage.setItem(ALL_CHATS_STORAGE_KEY, JSON.stringify(messagesToCache));
     }
     console.log(`Successfully fetched and cached all chats for ${role}.`);
@@ -111,8 +142,7 @@ export const fetchAllChatsAndCache = async (
 /**
  * Loads the cached list of agent conversations, including all details.
  */
-export const loadAgentChatListFromCache = async (): Promise<AgentChatListItem[] | null
-> => {
+export const loadAgentChatListFromCache = async (): Promise<AgentChatListItem[] | null> => {
   try {
     const allChatsJSON = await AsyncStorage.getItem(ALL_CHATS_STORAGE_KEY);
     if (!allChatsJSON) return null;
@@ -150,7 +180,7 @@ export const updateChat = async (
   userId: string,
   message: IMessage,
   role: "user" | "agent"
-): Promise<void> => {
+): Promise<IMessage> => {
   try {
     const allChatsJSON = await AsyncStorage.getItem(ALL_CHATS_STORAGE_KEY);
     const allChats: Record<string, AgentChatListItem> = allChatsJSON
@@ -173,5 +203,14 @@ export const updateChat = async (
     console.log(`Successfully updated chat for ${role} ${userId}.`);
   } catch (error) {
     console.error(`Failed to update chat for ${role} ${userId}:`, error);
+  }
+  
+  try {
+    // This function can modify the message object, e.g., by changing the image URI
+    await processChatImageMessage(message, userId, role);
+    return message; // Always return the original message object
+  } catch (e) {
+    console.error(`Failed to save image to backend for message for ${role} ${userId}:`, e);
+    return message; // Return original message on error
   }
 };

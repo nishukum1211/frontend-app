@@ -34,6 +34,7 @@ export default function AgentChatDetail() {
 
   const ws = useRef<WebSocket | null>(null);
   const isClosing = useRef(false);
+  const initialHistoryReceived = useRef(false); // Flag to track initial history
 
   // Establish WebSocket connection when the screen is focused
   useFocusEffect(
@@ -58,6 +59,7 @@ export default function AgentChatDetail() {
       };
       loadCachedMessages();
       isClosing.current = false;
+      initialHistoryReceived.current = false; // Reset on new connection
       setConnectionStatus("Connecting...");
       const websocketUrl = `wss://dev-backend-py-23809827867.us-east1.run.app/chat/ws/${userId}/${agentId}/agent`;
       ws.current = new WebSocket(websocketUrl);
@@ -70,37 +72,8 @@ export default function AgentChatDetail() {
 
       };
       ws.current.onmessage = (event) => {
-        try {
-          const incomingData = JSON.parse(event.data);
-          // console.log("Received data:", incomingData);
-
-          // Handle both history ({ messages: [...] }) and single message objects
-          const messagesFromServer = incomingData.messages || incomingData;
-
-          const newMessages: IMessage[] = Array.isArray(messagesFromServer)
-            ? messagesFromServer
-            : messagesFromServer ? [messagesFromServer] : [];
-          if (newMessages.length === 0) return;
-
-          setMessages((previousMessages) => {
-            // On first message from websocket, if cache was used, decide whether to append or replace.
-            // This simple logic appends, assuming backend sends history first, then new messages.
-            // A more robust solution might involve checking message timestamps.
-            const isHistory = Array.isArray(messagesFromServer) && messagesFromServer.length > 1;
-            const currentMessages = (previousMessages && !isHistory) ? previousMessages : [];
-
-            // Filter out any messages that are already in the state
-            const uniqueNewMessages = newMessages.filter(
-              (msg) => msg && !currentMessages.some((prevMsg) => prevMsg._id === msg._id)
-            );
-            if (uniqueNewMessages.length === 0) return currentMessages;
-            const allMessages = GiftedChat.append(currentMessages, uniqueNewMessages);
-            // Sort all messages by date to ensure correct order.
-            // GiftedChat expects newest messages to be at the start of the array.
-            return allMessages.sort((a, b) => new Date(b.createdAt).getTime() - new Date(a.createdAt).getTime());
-          });
-        } catch (e) {
-        }
+        // Ignoring all incoming data from the WebSocket as requested.
+        return;
       };
 
       ws.current.onerror = (error) => {
@@ -122,18 +95,37 @@ export default function AgentChatDetail() {
   );
 
   const onSend = useCallback(
-    (newMessages: IMessage[] = []) => {
+    async (newMessages: IMessage[] = []) => {
       if (!agentId || !ws.current || ws.current.readyState !== WebSocket.OPEN) {
         console.error("WebSocket not connected or agent not available");
         return;
       }
 
-      const message = newMessages[0];
+      const sentMessage = newMessages[0];
+
+      // 1. Optimistically update the UI with the initial message (with temporary image URI)
+      setMessages((previousMessages) =>
+        GiftedChat.append(previousMessages, newMessages)
+      );
+
+      // 2. Process the image and get the updated message with the final URI
+      const updatedMessage = await updateChat(userId, sentMessage, "agent");
+
+      // 3. Update the UI again with the correct image URI
+      setMessages((previousMessages) => {
+        // Find the original message by its ID and replace it with the updated one
+        const newMsgs = previousMessages.map((msg) =>
+          msg._id === updatedMessage._id ? updatedMessage : msg
+        );
+        return newMsgs;
+      });
+
+      // 4. Send the message through the websocket
       const messageToSend = {
-        _id: message._id,
-        text: message.text,
-        image: message.image, // The ID of the image, if it exists
-        createdAt: message.createdAt,
+        _id: updatedMessage._id,
+        text: updatedMessage.text,
+        image: updatedMessage.image, // This will now be the correct URI
+        createdAt: updatedMessage.createdAt,
         user: {
           _id: agentId,
           name: "Agent", // Or a dynamic agent name if available
@@ -141,15 +133,6 @@ export default function AgentChatDetail() {
       };
 
       ws.current.send(JSON.stringify(messageToSend));
-
-      // Optimistically update the UI
-      setMessages((previousMessages) =>
-        GiftedChat.append(previousMessages, newMessages)
-      );
-
-      updateChat(userId, message, "agent").catch(error => {
-              console.error("Failed to update chat cache on send:", error);
-            });
     },
     [agentId, userId]
   );

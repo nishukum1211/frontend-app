@@ -3,6 +3,7 @@ import * as ImagePicker from "expo-image-picker";
 import { useState } from "react";
 import {
   Alert,
+  Image,
   StyleSheet,
   Text,
   TouchableOpacity,
@@ -15,7 +16,6 @@ import {
   IMessage,
   InputToolbar,
   InputToolbarProps,
-  MessageImage,
   Send,
   User
 } from "react-native-gifted-chat";
@@ -76,19 +76,29 @@ export default function ChatView({ messages, onSend, user }: ChatViewProps) {
               right: { color: "#fff", fontSize: 16 },
               left: { color: "#111827", fontSize: 16 }, // Increased font size for left bubble
             }}
-            renderMessageImage={(bubbleProps) => {
-              const imageUrl = bubbleProps.currentMessage?.image;
-              if (!imageUrl) return null;
-              return (
-                <TouchableOpacity onPress={() => setFullScreenImage(imageUrl)}>
-                  <MessageImage
-                    {...bubbleProps}
-                  />
-                </TouchableOpacity>
-              );
-            }}
           />
         )}
+        renderMessageImage={(props) => {
+          const { currentMessage } = props;
+          const imageUrl = currentMessage?.image;
+          if (!imageUrl) return null;
+
+          // This will be rendered inside the bubble if the message contains an image
+          return (
+            <View style={{ padding: 2, borderRadius: 8 }}>
+              <TouchableOpacity onPress={() => {
+                console.log("ChatView: opening full screen image ->", imageUrl);
+                setFullScreenImage(imageUrl);
+              }}>
+                <Image
+                  source={{ uri: imageUrl }}
+                  style={{ width: 200, height: 150, borderRadius: 8, backgroundColor: '#eee' }}
+                  resizeMode="cover"
+                />
+              </TouchableOpacity>
+            </View>
+          );
+        }}
         renderInputToolbar={(props: InputToolbarProps<IMessage>) => (
           <InputToolbar
             {...props}
