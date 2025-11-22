@@ -1,5 +1,5 @@
 import { useFocusEffect, useRouter } from "expo-router";
-import { useCallback, useEffect, useRef, useState } from "react";
+import { useCallback, useEffect, useState } from "react";
 import {
   ActivityIndicator,
   Dimensions,
@@ -7,12 +7,13 @@ import {
   StyleSheet,
   Text,
   TouchableOpacity,
-  View
+  View,
 } from "react-native"; // Removed unused `Dimensions` import
 import { GiftedChat, IMessage } from "react-native-gifted-chat";
 import { getUserData } from "../auth/action";
 import { DecodedToken, getLoginJwtToken, removeUserData } from "../auth/auth";
 import { fetchAllChatsAndCache, loadAgentChatListFromCache, loadAllChatsFromCache, updateChat } from "../chat/chatCache";
+import { webSocketManager } from "../chat/websocketOps";
 import ChatView from "../components/ChatView";
 
 const { width } = Dimensions.get("window");
@@ -58,8 +59,6 @@ export default function Chat() {
       checkAuthStatus();
     }, [router])
   );
-
-  const ws = useRef<WebSocket | null>(null);
 
   // Fetch agent chats when user is an agent
   useEffect(() => {
@@ -113,64 +112,67 @@ export default function Chat() {
     };
     loadCachedMessages();
 
-    setConnectionStatus("Connecting...");
-    // Establish WebSocket connection
-    const websocketUrl = `wss://dev-backend-py-23809827867.us-east1.run.app/chat/ws/${user.id}/${SUPPORT_AGENT_ID}/user`;
-    ws.current = new WebSocket(websocketUrl);
+    // Connect WebSocket using the manager
+    webSocketManager.connect(
+      { userId: user.id, agentId: SUPPORT_AGENT_ID, role: "user" },
+      {
+        onOpen: () => {
+          setConnectionStatus("Connected");
+        },
+        onMessage: (event) => {
+          // console.log("Received message:", event.data);
+          // You can handle incoming messages here if needed in the future
+        },
+        onError: (error) => {
+          console.log("WebSocket Error:", error);
+        },
+        onClose: (event) => {
+          console.log("WebSocket Disconnected:", event.code, event.reason);
+          setConnectionStatus("Disconnected");
+        },
+      }
+    );
 
-    ws.current.onopen = () => {
-      console.log("WebSocket Connected for user:", user.id);
-      setConnectionStatus("Connected");
-    };
-
-    ws.current.onmessage = (event) => {
-      // console.log("Received message:", event.data);
-      return;
-    };
-
-    ws.current.onerror = (error) => {
-      console.error("WebSocket Error:", error);
-    };
-
-    ws.current.onclose = (event) => {
-      console.log("WebSocket Disconnected:", event.code, event.reason);
-      setConnectionStatus("Disconnected");
-    };
-
-    // Clean up WebSocket on component unmount
+    // The webSocketManager handles persistent connection, but if you want to
+    // disconnect when the user navigates away from the entire app/logs out,
+    // that logic is handled elsewhere (e.g., on logout).
+    // For screen-specific cleanup, you can use the return function.
     return () => {
-      ws.current?.close();
+      // Disconnect if leaving the chat tab. The manager will auto-reconnect
+      // when the user comes back if the connection is needed.
+      // webSocketManager.disconnect(); // Optional: uncomment if you want to disconnect on tab change
     };
   }, [user]); // Reconnect if user changes
 
   const onSend = useCallback(
-    (messages: IMessage[] = []) => {
-      if (!user || !ws.current || ws.current.readyState !== WebSocket.OPEN) {
+    async (messages: IMessage[] = []) => {
+      if (!user || !webSocketManager.isConnected(undefined, "user")) {
         console.error("WebSocket not connected or user not available");
         return;
       }
 
-      const message = messages[0];
-      const messageToSend = {
-        _id: message._id, // The unique ID of the message
-        text: message.text, // The text content of the message
-        createdAt: message.createdAt, // The timestamp of the message
-        image: message.image, // The ID of the image, if it exists
+      const sentMessage = messages[0];
+
+      setMessages((previousMessages) =>
+        GiftedChat.append(previousMessages, messages)
+      );
+
+      // Call updateChat for sent message
+      updateChat(user.id, sentMessage, "user").catch(error => {
+        console.error("Failed to update chat cache on send:", error);
+      });
+
+      // The webSocketManager's sendChat expects an IMessage object.
+      // It will handle the JSON stringification.
+      const messageToSend: IMessage = {
+        ...sentMessage,
         user: {
           _id: user.id,
           name: user.name,
         },
       };
 
-      ws.current.send(JSON.stringify(messageToSend));
-      setMessages((previousMessages) =>
-        GiftedChat.append(previousMessages, messages)
-      );
-
-      // Call updateChat for sent message
-      updateChat(user.id, message, "user").catch(error => {
-        console.error("Failed to update chat cache on send:", error);
-      });
+      webSocketManager.sendChat(messageToSend);
     },
     [user]
   );

@@ -87,7 +87,7 @@ export default function ChatView({ messages, onSend, user }: ChatViewProps) {
           return (
             <View style={{ padding: 2, borderRadius: 8 }}>
               <TouchableOpacity onPress={() => {
-                console.log("ChatView: opening full screen image ->", imageUrl);
+                // console.log("ChatView: opening full screen image ->", imageUrl);
                 setFullScreenImage(imageUrl);
               }}>
                 <Image
