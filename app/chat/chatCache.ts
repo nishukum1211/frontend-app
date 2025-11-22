@@ -21,9 +21,19 @@ type AgentChatListItem = {
  * @returns For agents, it returns the list of conversations for display. For users, it returns void.
  */
 export const fetchAllChatsAndCache = async (
-  role: "user" | "agent"
+  role: "user" | "agent",
+  forceRefresh: boolean = false
 ): Promise<AgentChatListItem[] | void> => {
-  console.log(`Attempting to fetch and cache all chats for ${role}...`);
+  if (!forceRefresh) {
+    const cachedData = await AsyncStorage.getItem(ALL_CHATS_STORAGE_KEY);
+    if (cachedData) {
+      // console.log(`Chats found in cache for ${role}. Skipping fetch.`);
+      const allChats: Record<string, AgentChatListItem> = JSON.parse(cachedData);
+      return role === "agent" ? Object.values(allChats) : undefined;
+    }
+  }
+
+  // console.log(`Attempting to fetch and cache all chats for ${role}...`);
   try {
     const token = await getLoginJwtToken();
     if (!token) {
