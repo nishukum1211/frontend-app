@@ -122,6 +122,7 @@ export default function Chat() {
         user: { _id: user.id, name: user.name },
       };
       onSend([newMessage]); // Programmatically send the message
+      router.setParams({ callRequest: undefined }); // Clear the param
     }
     // Connect WebSocket using the manager
     webSocketManager.connect(
@@ -153,7 +154,7 @@ export default function Chat() {
       // when the user comes back if the connection is needed.
       // webSocketManager.disconnect(); // Optional: uncomment if you want to disconnect on tab change
     };
-  }, [user]); // Reconnect if user changes
+  }, [user, callRequest]); // Reconnect if user changes
 
   const onSend = useCallback(
     async (messages: IMessage[] = []) => {

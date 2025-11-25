@@ -116,6 +116,7 @@ export default function CallRequestScreen() {
                       router.push({
                         pathname: "/(tabs)/chat",
                         params: { callRequest: requestMessage },
+                        
                       });
                     }}
                   >
