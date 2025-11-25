@@ -1,4 +1,4 @@
-import { useFocusEffect, useRouter } from "expo-router";
+import { useFocusEffect, useLocalSearchParams, useRouter } from "expo-router";
 import { useCallback, useEffect, useState } from "react";
 import {
   ActivityIndicator,
@@ -29,6 +29,7 @@ const SUPPORT_AGENT_ID = "ecc71288-6403-48ed-8058-dad2a6dc8c76";
 
 export default function Chat() {
   const router = useRouter();
+  const { callRequest } = useLocalSearchParams();
   const [user, setUser] = useState<DecodedToken | null>(null);
   const [loading, setLoading] = useState(true);
   const [messages, setMessages] = useState<IMessage[]>([]);
@@ -112,6 +113,16 @@ export default function Chat() {
     };
     loadCachedMessages();
 
+    // Add the call request message if it exists
+    if (callRequest) {
+      const newMessage: IMessage = {
+        _id: Math.random().toString(),
+        text: callRequest as string,
+        createdAt: new Date(),
+        user: { _id: user.id, name: user.name },
+      };
+      onSend([newMessage]); // Programmatically send the message
+    }
     // Connect WebSocket using the manager
     webSocketManager.connect(
       { userId: user.id, agentId: SUPPORT_AGENT_ID, role: "user" },

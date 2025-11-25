@@ -4,11 +4,11 @@ import { useFocusEffect, useNavigation } from "@react-navigation/native";
 import { onAuthStateChanged, User } from "firebase/auth";
 import { useCallback, useEffect, useState } from "react";
 import { FlatList, Image, TouchableOpacity, View } from "react-native";
-import Call from "../call/call";
 import VegetableCoursesSection from "../vegetableCoursesSection/vegetableCoursesSection";
 import VegetableSubscription from "../vegetableSubscription/vegetableSubscription";
 
 import * as ImagePicker from "expo-image-picker";
+import CallCard from "../call/CallCard";
 //import AnimatedSplash from "../animatedSplash";
 
 export default function Home() {
@@ -113,7 +113,7 @@ export default function Home() {
       renderItem={() => (
         <View>
           <View>
-            <Call />
+            <CallCard />
             <VegetableSubscription />
           </View>
           <View>
