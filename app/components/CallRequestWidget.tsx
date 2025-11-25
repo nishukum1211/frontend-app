@@ -72,7 +72,7 @@ const CallRequestWidget: React.FC<CallRequestWidgetProps> = ({
         <TouchableOpacity
           style={[
             styles.button,
-            data.status === 0 ? styles.approvedButton : styles.approveButton,
+            data.status === 1 ? styles.approvedButton : styles.approveButton,
           ]}
           onPress={handleApprove}
           disabled={data.status === 1}
