@@ -21,6 +21,7 @@ import {
 } from "react-native-gifted-chat";
 import ImageViewer from 'react-native-image-zoom-viewer';
 import Modal from 'react-native-modal';
+import CallRequestWidget from "./CallRequestWidget";
 
 interface ChatViewProps {
   messages: IMessage[];
@@ -64,6 +65,15 @@ export default function ChatView({ messages, onSend, user }: ChatViewProps) {
         messageIdGenerator={() => `${Date.now()}-${Math.random()}`}
         textInputProps={{
           style: { color: "#000", flex: 1, marginLeft: 10 },
+        }}
+        renderCustomView={(props) => { //
+          const { currentMessage } = props; //
+          if (currentMessage && currentMessage.type === "call-request" && currentMessage.data) { //
+            return ( //
+              <CallRequestWidget data={currentMessage.data} currentUser={currentMessage.user} /> //
+            );
+          }
+          return null;
         }}
         renderBubble={(props: BubbleProps<IMessage>) => (
           <Bubble

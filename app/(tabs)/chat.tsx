@@ -14,6 +14,7 @@ import { getUserData } from "../auth/action";
 import { DecodedToken, getLoginJwtToken, removeUserData } from "../auth/auth";
 import { fetchAllChatsAndCache, loadAgentChatListFromCache, loadAllChatsFromCache, updateChat } from "../chat/chatCache";
 import { webSocketManager } from "../chat/websocketOps";
+import { CallRequest } from "../components/CallRequestWidget";
 import ChatView from "../components/ChatView";
 
 const { width } = Dimensions.get("window");
@@ -115,14 +116,21 @@ export default function Chat() {
 
     // Add the call request message if it exists
     if (callRequest) {
-      const newMessage: IMessage = {
-        _id: Math.random().toString(),
-        text: callRequest as string,
-        createdAt: new Date(),
-        user: { _id: user.id, name: user.name },
-      };
-      onSend([newMessage]); // Programmatically send the message
-      router.setParams({ callRequest: undefined }); // Clear the param
+      try {
+        const callRequestData: CallRequest = JSON.parse(callRequest as string);
+        const newMessage: IMessage = {
+          _id: callRequestData.id,
+          text: '', // Text is empty because the widget will be shown
+          createdAt: new Date(),
+          user: { _id: user.id, name: user.name },
+          type: 'call-request', // Set the custom type
+          data: callRequestData, // Attach custom data to the 'data' property
+        };
+        onSend([newMessage]); // Programmatically send the message
+        router.setParams({ callRequest: undefined }); // Clear the param
+      } catch (e) {
+        console.error("Failed to parse callRequest parameter:", e);
+      }
     }
     // Connect WebSocket using the manager
     webSocketManager.connect(
@@ -158,9 +166,27 @@ export default function Chat() {
 
   const onSend = useCallback(
     async (messages: IMessage[] = []) => {
-      if (!user || !webSocketManager.isConnected(undefined, "user")) {
-        console.error("WebSocket not connected or user not available");
+      if (!user) {
+        console.error("User not available");
         return;
+      }
+
+      if (!webSocketManager.isConnected(undefined, "user")) {
+        console.log("WebSocket not connected. Attempting to reconnect...");
+        setConnectionStatus("Reconnecting...");
+        try {
+          await webSocketManager.connect(
+            { userId: user.id, agentId: SUPPORT_AGENT_ID, role: "user" },
+            {
+              onOpen: () => setConnectionStatus("Connected"),
+              onError: (error) => console.log("WebSocket Error:", error),
+              onClose: () => setConnectionStatus("Disconnected"),
+            }
+          );
+        } catch (error) {
+          console.error("Failed to reconnect WebSocket:", error);
+          return; // Don't send if reconnection fails
+        }
       }
 
       const sentMessage = messages[0];

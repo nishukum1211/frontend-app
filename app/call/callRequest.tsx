@@ -2,17 +2,19 @@ import { MaterialIcons } from "@expo/vector-icons";
 import { Stack, useRouter } from "expo-router";
 import { useState } from "react";
 import {
-    FlatList,
-    KeyboardAvoidingView,
-    Modal,
-    Platform,
-    StyleSheet,
-    Text,
-    TextInput,
-    TouchableOpacity,
-    View,
+  Alert,
+  FlatList,
+  KeyboardAvoidingView,
+  Modal,
+  Platform,
+  StyleSheet,
+  Text,
+  TextInput,
+  TouchableOpacity,
+  View,
 } from "react-native";
 import { SafeAreaView } from "react-native-safe-area-context";
+import { CallRequest } from "../components/CallRequestWidget";
 import styles from "./callStyles";
 
 export default function CallRequestScreen() {
@@ -23,16 +25,26 @@ export default function CallRequestScreen() {
   const [query, setQuery] = useState("");
   const router = useRouter();
 
+  const handleFreeCallPress = () => {
+    if (!query.trim() || !selected) {
+      Alert.alert("आवश्यक", "आगे बढ़ने से पहले कृपया अपना प्रश्न लिखें और एक फसल का चयन करें।");
+      return;
+    }
+    setConfirmationModalVisible(true);
+  };
+
   return (
     <>
       <Stack.Screen
         options={{
-          title: "सहायता फ़ॉर्म",
-          headerTitleStyle: {
-            fontWeight: "bold",
-          },
-          headerTitleAlign: "left",
-
+          headerTitle: () => (
+            <View style={{ flexDirection: "row", alignItems: "center" }}>
+              <MaterialIcons name="phone" size={20} color="#0F172A" />
+              <Text style={{ fontWeight: "bold", fontSize: 18, color: "#0F172A", marginLeft: 10 }}>
+                कॉल अनुरोध फ़ॉर्म 
+              </Text>
+            </View>
+          ),
         }}
       />
       <SafeAreaView style={pageStyles.container}>
@@ -47,7 +59,7 @@ export default function CallRequestScreen() {
               onChangeText={setQuery}
               value={query}
               multiline={true}
-              placeholder="Type here..."
+              placeholder="आप अपना प्रश्न यहाँ हिंदी या अंग्रेजी में टाइप करें."
             />
             {/* Custom Dropdown Trigger */}
             <TouchableOpacity
@@ -82,7 +94,7 @@ export default function CallRequestScreen() {
             <View style={pageStyles.buttonContainer}>
               <TouchableOpacity
                 style={[pageStyles.button, pageStyles.buttonFree]}
-                onPress={() => setConfirmationModalVisible(true)}
+                onPress={handleFreeCallPress}
               >
                 <Text style={styles.textStyle}>Free Call</Text>
               </TouchableOpacity>
@@ -112,11 +124,20 @@ export default function CallRequestScreen() {
                     style={confirmationModalStyles.sendButton}
                     onPress={() => {
                       setConfirmationModalVisible(false);
-                      const requestMessage = `Query: ${query || "N/A"}\nCrop: ${selectedLabel || "N/A"}`;
+                      const callRequestPayload: CallRequest = {
+                        id: `call-${Date.now()}`,
+                        type: "call-request",
+                        heading: "Free Call",
+                        message: query || "No message provided.",
+                        crops: selectedLabel !== "फसल चुने" ? [selectedLabel] : [],
+                        status: 0,
+                      };
+
                       router.push({
                         pathname: "/(tabs)/chat",
-                        params: { callRequest: requestMessage },
-                        
+                        params: {
+                          callRequest: JSON.stringify(callRequestPayload),
+                        },
                       });
                     }}
                   >

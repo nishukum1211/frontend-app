@@ -12,7 +12,7 @@ export default function CallCard() {
         <TouchableOpacity
           activeOpacity={0.85}
           style={styles.card}
-          onPress={() => router.push("../call/callRequest")}
+          onPress={() => router.push("/call/callRequest")}
         >
           {/* SMALLER IMAGE */}
           <Image
