@@ -46,7 +46,7 @@ const ImageCarousel: React.FC<ImageCarouselProps> = ({
     <View>
       <Animated.Image
         source={images[index]}
-        style={[{ opacity: fadeAnim, borderRadius: 10 }, style]}
+        style={[{ opacity: fadeAnim }, style]}
         resizeMode="contain"
       />
     </View>

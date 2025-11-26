@@ -62,6 +62,13 @@ export default function TabsLayout() {
           href: null, // 👈 hides from tab bar
         }}
       />
+
+      <Tabs.Screen
+        name="pdfCourse"
+        options={{
+          href: null, // 👈 hides from tab bar
+        }}
+      />
     </Tabs>
   );
 }

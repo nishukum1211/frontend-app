@@ -1,21 +1,42 @@
-import React from "react";
-import { FlatList, Text, TouchableOpacity, View } from "react-native";
+import { useRouter } from "expo-router";
+import React, { useEffect, useState } from "react";
+import {
+  ActivityIndicator,
+  FlatList,
+  Text,
+  TouchableOpacity,
+  View,
+} from "react-native";
 import styles from "./vegetableCoursesStyles";
 
 interface CourseItem {
   id: string;
-  name: string;
+  crops: string;
   price: number;
 }
 
-const courses: CourseItem[] = [
-  { id: "1", name: "खीरा", price: 149 },
-  { id: "2", name: "टमाटर", price: 249 },
-  { id: "3", name: "मिर्ची", price: 199 },
-  { id: "4", name: "बैंगन", price: 249 },
-];
-
 const VegetableCoursesSection: React.FC = () => {
+  const router = useRouter();
+  const [courses, setCourses] = useState<CourseItem[]>([]);
+  const [loading, setLoading] = useState(true);
+
+  useEffect(() => {
+    fetch("https://dev-backend-py-23809827867.us-east1.run.app/agent/sell/item")
+      .then((res) => res.json())
+      .then((data) => {
+        setCourses(data);
+        setLoading(false);
+      })
+      .catch((err) => {
+        console.log(err);
+        setLoading(false);
+      });
+  }, []);
+
+  if (loading) {
+    return <ActivityIndicator size="large" style={{ marginTop: 20 }} />;
+  }
+
   return (
     <View style={styles.container}>
       <FlatList
@@ -25,19 +46,28 @@ const VegetableCoursesSection: React.FC = () => {
         keyExtractor={(item) => item.id}
         renderItem={({ item }) => (
           <TouchableOpacity style={styles.card}>
-            {/* Row: price → मात्र → > → item name (inside small card) */}
             <View style={styles.row}>
+              {/* Price */}
               <Text style={styles.price}>{item.price}</Text>
               <Text style={styles.unit}>₹</Text>
 
-              {/* Small card for item name */}
+              {/* Crop name */}
               <View style={styles.nameCard}>
-                <Text style={styles.itemName}>{item.name}</Text>
+                <Text style={styles.itemName}>{item.crops}</Text>
               </View>
             </View>
 
-            {/* PDF Course (second line) */}
-            <Text style={styles.subtitle}>PDF Course</Text>
+            <Text
+              style={styles.subtitle}
+              onPress={() => {
+                router.push({
+                  pathname: "./pdfCourse",
+                  params: { id: item.id },
+                });
+              }}
+            >
+              PDF Course
+            </Text>
           </TouchableOpacity>
         )}
       />
