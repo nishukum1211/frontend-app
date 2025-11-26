@@ -1,4 +1,4 @@
-import { useFocusEffect, useRouter } from "expo-router";
+import { useFocusEffect, useLocalSearchParams, useRouter } from "expo-router";
 import { useCallback, useEffect, useState } from "react";
 import {
   ActivityIndicator,
@@ -14,6 +14,7 @@ import { getUserData } from "../auth/action";
 import { DecodedToken, getLoginJwtToken, removeUserData } from "../auth/auth";
 import { fetchAllChatsAndCache, loadAgentChatListFromCache, loadAllChatsFromCache, updateChat } from "../chat/chatCache";
 import { webSocketManager } from "../chat/websocketOps";
+import { CallRequest } from "../components/CallRequestWidget";
 import ChatView from "../components/ChatView";
 
 const { width } = Dimensions.get("window");
@@ -29,6 +30,7 @@ const SUPPORT_AGENT_ID = "ecc71288-6403-48ed-8058-dad2a6dc8c76";
 
 export default function Chat() {
   const router = useRouter();
+  const { callRequest } = useLocalSearchParams();
   const [user, setUser] = useState<DecodedToken | null>(null);
   const [loading, setLoading] = useState(true);
   const [messages, setMessages] = useState<IMessage[]>([]);
@@ -112,6 +114,24 @@ export default function Chat() {
     };
     loadCachedMessages();
 
+    // Add the call request message if it exists
+    if (callRequest) {
+      try {
+        const callRequestData: CallRequest = JSON.parse(callRequest as string);
+        const newMessage: IMessage = {
+          _id: callRequestData.id,
+          text: '', // Text is empty because the widget will be shown
+          createdAt: new Date(),
+          user: { _id: user.id, name: user.name },
+          type: 'call-request', // Set the custom type
+          data: callRequestData, // Attach custom data to the 'data' property
+        };
+        onSend([newMessage]); // Programmatically send the message
+        router.setParams({ callRequest: undefined }); // Clear the param
+      } catch (e) {
+        console.error("Failed to parse callRequest parameter:", e);
+      }
+    }
     // Connect WebSocket using the manager
     webSocketManager.connect(
       { userId: user.id, agentId: SUPPORT_AGENT_ID, role: "user" },
@@ -142,13 +162,31 @@ export default function Chat() {
       // when the user comes back if the connection is needed.
       // webSocketManager.disconnect(); // Optional: uncomment if you want to disconnect on tab change
     };
-  }, [user]); // Reconnect if user changes
+  }, [user, callRequest]); // Reconnect if user changes
 
   const onSend = useCallback(
     async (messages: IMessage[] = []) => {
-      if (!user || !webSocketManager.isConnected(undefined, "user")) {
-        console.error("WebSocket not connected or user not available");
+      if (!user) {
+        console.error("User not available");
         return;
+      }
+
+      if (!webSocketManager.isConnected(undefined, "user")) {
+        console.log("WebSocket not connected. Attempting to reconnect...");
+        setConnectionStatus("Reconnecting...");
+        try {
+          await webSocketManager.connect(
+            { userId: user.id, agentId: SUPPORT_AGENT_ID, role: "user" },
+            {
+              onOpen: () => setConnectionStatus("Connected"),
+              onError: (error) => console.log("WebSocket Error:", error),
+              onClose: () => setConnectionStatus("Disconnected"),
+            }
+          );
+        } catch (error) {
+          console.error("Failed to reconnect WebSocket:", error);
+          return; // Don't send if reconnection fails
+        }
       }
 
       const sentMessage = messages[0];

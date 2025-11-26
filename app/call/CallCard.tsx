@@ -1,12 +1,10 @@
 import { MaterialIcons } from "@expo/vector-icons";
-import { Image, Linking, Text, TouchableOpacity, View } from "react-native";
-import styles from "./callStyles";
+import { useRouter } from "expo-router";
+import { Image, Text, TouchableOpacity, View } from "react-native";
+import styles from "../call/callStyles";
 
-export default function CallScreen() {
-  const onCallPress = () => {
-    const phone = "+917764029102";
-    Linking.openURL(`tel:${phone}`);
-  };
+export default function CallCard() {
+  const router = useRouter();
 
   return (
     <View style={styles.container}>
@@ -14,7 +12,7 @@ export default function CallScreen() {
         <TouchableOpacity
           activeOpacity={0.85}
           style={styles.card}
-          onPress={onCallPress}
+          onPress={() => router.push("/call/callRequest")}
         >
           {/* SMALLER IMAGE */}
           <Image
