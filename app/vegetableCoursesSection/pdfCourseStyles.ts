@@ -6,7 +6,6 @@ export default StyleSheet.create({
     justifyContent: "flex-start",
 
     width: "100%",
-    marginTop: 65,
   },
   carouselImage: {
     height: 190,
