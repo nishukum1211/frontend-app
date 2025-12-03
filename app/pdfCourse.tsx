@@ -1,7 +1,8 @@
-import { useLocalSearchParams, useNavigation } from "expo-router";
+import { useLocalSearchParams, useRouter } from "expo-router";
 import { useState } from "react";
 import { ActivityIndicator, Alert, FlatList, Modal, View } from "react-native";
 import { SafeAreaView } from "react-native-safe-area-context";
+import { getUserData } from "./auth/action";
 import HeaderWithBackButton from "./components/HeaderWithBackButton";
 import ImageCarousel from "./components/ImageCarousel";
 import PaymentSuccessModal from "./components/PaymentSuccessModal";
@@ -16,7 +17,7 @@ import IntroductionPdf from "./vegetableCoursesSection/introductionPdf";
 import styles from "./vegetableCoursesSection/pdfCourseStyles";
 
 export default function PdfCourse() {
-  const navigation = useNavigation();
+  const router = useRouter();
   const params = useLocalSearchParams();
   const images = [
     require("../assets/images/img-3.jpg"),
@@ -27,10 +28,28 @@ export default function PdfCourse() {
   const [isLoading, setIsLoading] = useState(false);
   const [isPaymentVisible, setPaymentVisible] = useState(false);
   const [isSuccessModalVisible, setSuccessModalVisible] = useState(false);
+  const [userPrefillData, setUserPrefillData] = useState<{ name?: string; email?: string; contact?: string } | undefined>(undefined);
   const price = params.price ? Number(params.price) : 0;
   const crops = params.crops || "Farming";
 
   const handleJoinPress = async () => {
+    const user = await getUserData();
+    if (!user) {
+      Alert.alert(
+        "Login Required",
+        "You need to be logged in to join a course.",
+        [{ text: "OK", onPress: () => router.push("/phoneLoginScreen") }]
+      );
+      return;
+    }
+
+    // Extract user details for prefill
+    setUserPrefillData({
+      name: user.name || undefined,
+      email: user.email_id || undefined,
+      contact: user.mobile_number || undefined,
+    });
+
     setIsLoading(true);
     try {
       const newOrderId = await createRazorpayOrder(price);
@@ -41,8 +60,11 @@ export default function PdfCourse() {
         Alert.alert("Error", "Could not create a payment order.");
       }
     } catch (error) {
-      console.error(error);
-      Alert.alert("Error", "An error occurred while trying to create a payment order.");
+      console.error("Error creating Razorpay order:", error);
+      Alert.alert(
+        "Error",
+        "An error occurred while trying to create a payment order."
+      );
     } finally {
       setIsLoading(false);
     }
@@ -56,7 +78,7 @@ export default function PdfCourse() {
 
   const handleCloseSuccessModal = () => {
     setSuccessModalVisible(false);
-    navigation.goBack(); // Go back to the previous screen after success
+    router.back(); // Go back to the previous screen after success
   };
 
   return (
@@ -79,7 +101,7 @@ export default function PdfCourse() {
         </View>
       </Modal>
 
-      <HeaderWithBackButton title={`${crops} PDF Course`} />
+      <HeaderWithBackButton title={`${crops}`} />
 
       <FlatList
         style={{ flex: 1 }}
@@ -113,12 +135,13 @@ export default function PdfCourse() {
         onJoinPress={handleJoinPress}
       />
 
-      {orderId && (
+      {orderId && userPrefillData && (
         <RazorpayCheckout
           visible={isPaymentVisible}
           orderId={orderId}
           onSuccess={handlePaymentSuccess}
           onCancel={() => setPaymentVisible(false)}
+          prefill={userPrefillData}
         />
       )}
 
