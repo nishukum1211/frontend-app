@@ -47,7 +47,7 @@ const CallInfoSection = ({
           </Text>
 
           <TouchableOpacity style={styles.paidButton} onPress={onPaidPress}>
-            <Text style={styles.buttonText}>Call Now</Text>
+            <Text style={styles.buttonText}>Pay ₹49/-</Text>
           </TouchableOpacity>
         </View>
       </View>

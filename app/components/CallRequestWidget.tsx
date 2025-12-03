@@ -6,7 +6,7 @@ import { User } from "react-native-gifted-chat";
 
 export type CallRequest = {
   id: string;
-  type: string;
+  type: "call-request" | "call-request-paid";
   heading: string;
   message: string;
   crops: string[];
@@ -16,7 +16,7 @@ export type CallRequest = {
 // Extend the IMessage interface to include our custom data
 declare module "react-native-gifted-chat" {
   interface IMessage {
-    type?: "call-request"; // Discriminator for custom message type
+    type?: "call-request" | "call-request-paid"; // Discriminator for custom message type
     data?: CallRequest; // The actual data for the call request
   }
 }
@@ -53,7 +53,15 @@ const CallRequestWidget: React.FC<CallRequestWidgetProps> = ({
     <View
       style={[
         styles.widgetContainer,
-        { borderColor: isAgent ? "#E5E7EB" : "#4F46E5", borderWidth: 2 },
+        {
+          borderColor:
+            data.type === "call-request-paid"
+              ? "#8b0707ff"
+              : isAgent ? "#E5E7EB" : "#4F46E5",
+          borderWidth: 2,
+          backgroundColor:
+            data.type === "call-request-paid" ? "#FEE2E2" : "#ffffffff",
+        },
       ]}
     >
       <View style={styles.headingContainer}>
@@ -92,7 +100,7 @@ const CallRequestWidget: React.FC<CallRequestWidgetProps> = ({
 
 const styles = StyleSheet.create({
   widgetContainer: {
-    backgroundColor: "#ffffffff", // Soft white background
+    // backgroundColor is now set dynamically
     borderRadius: 10,
     padding: 15,
     width: "100%",

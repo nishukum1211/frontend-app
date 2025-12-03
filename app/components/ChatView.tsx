@@ -68,7 +68,11 @@ export default function ChatView({ messages, onSend, user }: ChatViewProps) {
         }}
         renderCustomView={(props) => { //
           const { currentMessage } = props; //
-          if (currentMessage && currentMessage.type === "call-request" && currentMessage.data) { //
+          if (
+            currentMessage &&
+            (currentMessage.type === "call-request" || currentMessage.type === "call-request-paid") &&
+            currentMessage.data
+          ) {
             return ( //
               <CallRequestWidget data={currentMessage.data} currentUser={currentMessage.user} /> //
             );
