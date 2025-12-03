@@ -11,8 +11,12 @@ import {
   TouchableOpacity,
   View,
 } from "react-native";
+import { ActivityIndicator } from "react-native-paper";
 import { SafeAreaView } from "react-native-safe-area-context";
+import { getUserData } from "../auth/action";
 import { CallRequest } from "../components/CallRequestWidget";
+import RazorpayCheckout from "../pay/RazorpayCheckout";
+import { createRazorpayOrder } from "../pay/razorpay_api";
 import CallInfoSection from "./callInfoSection";
 import callRequestStyles from "./callRequestStyles";
 
@@ -34,17 +38,74 @@ export default function CallRequestScreen() {
   const [selected, setSelected] = useState("");
   const [selectedLabel, setSelectedLabel] = useState("फसल चुने");
   const [query, setQuery] = useState("");
+  const [orderId, setOrderId] = useState<string | null>(null);
+  const [isLoading, setIsLoading] = useState(false);
+  const [isPaymentVisible, setPaymentVisible] = useState(false);
+  const [isPaidCallConfirmation, setIsPaidCallConfirmation] = useState(false);
+  const [userPrefillData, setUserPrefillData] = useState<
+    { name?: string; email?: string; contact?: string } | undefined
+  >(undefined);
+  const paidCallPrice = 49;
   const router = useRouter();
 
   const handleFreeCallPress = () => {
     if (!selected) {
       Alert.alert(
         "आवश्यक",
-        "आगे बढ़ने से पहले कृपया अपना प्रश्न लिखें और एक फसल का चयन करें।"
+        "आगे बढ़ने से पहले कृपया फसल का चयन करें।"
       );
       return;
     }
+    setIsPaidCallConfirmation(false);
     setConfirmationModalVisible(true);
+  };
+
+  const handlePaidCallPress = async () => {
+    if (!selected) {
+      Alert.alert("आवश्यक", "आगे बढ़ने से पहले कृपया फसल का चयन करें।");
+      return;
+    }
+
+    const user = await getUserData();
+    if (!user) {
+      Alert.alert(
+        "Login Required",
+        "You need to be logged in for a paid call.",
+        [{ text: "OK", onPress: () => router.push("/phoneLoginScreen") }]
+      );
+      return;
+    }
+
+    setUserPrefillData({
+      name: user.name || undefined,
+      email: user.email_id || undefined,
+      contact: user.mobile_number || undefined,
+    });
+
+    setIsLoading(true);
+    try {
+      const newOrderId = await createRazorpayOrder(paidCallPrice); // price in paise
+      if (newOrderId) {
+        setOrderId(newOrderId);
+        setPaymentVisible(true);
+        setIsPaidCallConfirmation(true); // Set to true for paid call confirmation
+      } else {
+        Alert.alert("Error", "Could not create a payment order.");
+      }
+    } catch (error) {
+      console.error("Error creating Razorpay order:", error);
+      Alert.alert(
+        "Error",
+        "An error occurred while trying to create a payment order."
+      );
+    } finally {
+      setIsLoading(false);
+    }
+  };
+
+  const handlePaymentSuccess = () => {
+    setPaymentVisible(false);
+    setConfirmationModalVisible(true); // Show confirmation modal after payment
   };
 
   return (
@@ -94,7 +155,7 @@ export default function CallRequestScreen() {
             {/* Info Cards */}
             <CallInfoSection
               onFreePress={handleFreeCallPress}
-              onPaidPress={() => router.back()}
+              onPaidPress={handlePaidCallPress}
             />
           </View>
 
@@ -130,19 +191,20 @@ export default function CallRequestScreen() {
                 </Text>
 
                 <Text style={callRequestStyles.modalLabel}>Selected Crop:</Text>
-                <Text style={callRequestStyles.modalValue}>
-                  {selectedLabel}
-                </Text>
+                <Text style={callRequestStyles.modalValue}>{selectedLabel}</Text>
 
                 <TouchableOpacity
                   style={callRequestStyles.sendButton}
                   onPress={() => {
+                    // This will now handle both free and paid call request sending
                     setConfirmationModalVisible(false);
                     const callRequestPayload: CallRequest = {
                       id: `call-${Date.now()}`,
-                      type: "call-request",
-                      heading: "Free Call",
-                      message: query || "No message provided.",
+                      type: isPaidCallConfirmation
+                        ? "call-request-paid"
+                        : "call-request",
+                      heading: isPaidCallConfirmation ? "Paid Call" : "Free Call",
+                      message: query || (isPaidCallConfirmation ? "Paid call request." : "Free call request."),
                       crops:
                         selectedLabel !== "फसल चुने" ? [selectedLabel] : [],
                       status: 0,
@@ -169,6 +231,31 @@ export default function CallRequestScreen() {
               </View>
             </View>
           </Modal>
+
+          {/* Loading Modal */}
+          <Modal transparent={true} animationType="none" visible={isLoading}>
+            <View
+              style={{
+                flex: 1,
+                alignItems: "center",
+                justifyContent: "center",
+                backgroundColor: "rgba(0,0,0,0.5)",
+              }}
+            >
+              <ActivityIndicator size="large" color="#fff" />
+            </View>
+          </Modal>
+
+          {/* Razorpay Checkout Modal */}
+          {orderId && userPrefillData && (
+            <RazorpayCheckout
+              visible={isPaymentVisible}
+              orderId={orderId}
+              onSuccess={handlePaymentSuccess}
+              onCancel={() => setPaymentVisible(false)}
+              prefill={userPrefillData}
+            />
+          )}
         </KeyboardAvoidingView>
       </SafeAreaView>
     </>
