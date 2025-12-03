@@ -1,8 +1,8 @@
-import { Ionicons } from "@expo/vector-icons";
-import { useNavigation } from "@react-navigation/native";
+import { useLocalSearchParams, useNavigation } from "expo-router";
 import { useState } from "react";
-import { ActivityIndicator, Alert, FlatList, Modal, TouchableOpacity, View } from "react-native";
+import { ActivityIndicator, Alert, FlatList, Modal, View } from "react-native";
 import { SafeAreaView } from "react-native-safe-area-context";
+import HeaderWithBackButton from "./components/HeaderWithBackButton";
 import ImageCarousel from "./components/ImageCarousel";
 import PaymentSuccessModal from "./components/PaymentSuccessModal";
 import ScrollingText from "./components/ScrollingText";
@@ -17,6 +17,7 @@ import styles from "./vegetableCoursesSection/pdfCourseStyles";
 
 export default function PdfCourse() {
   const navigation = useNavigation();
+  const params = useLocalSearchParams();
   const images = [
     require("../assets/images/img-3.jpg"),
     require("../assets/images/img-2.jpg"),
@@ -26,7 +27,8 @@ export default function PdfCourse() {
   const [isLoading, setIsLoading] = useState(false);
   const [isPaymentVisible, setPaymentVisible] = useState(false);
   const [isSuccessModalVisible, setSuccessModalVisible] = useState(false);
-  const price = 199;
+  const price = params.price ? Number(params.price) : 0;
+  const crops = params.crops || "Farming";
 
   const handleJoinPress = async () => {
     setIsLoading(true);
@@ -76,22 +78,11 @@ export default function PdfCourse() {
           <ActivityIndicator size="large" color="#fff" />
         </View>
       </Modal>
-      {/* Using FlatList instead of ScrollView */}
-      <TouchableOpacity
-        onPress={() => navigation.goBack()}
-        style={{
-          position: "absolute",
-          top: 40,
-          left: 4,
-          zIndex: 20,
-          backgroundColor: "rgba(0,0,0,0.4)",
-          padding: 8,
-          borderRadius: 20,
-        }}
-      >
-        <Ionicons name="arrow-back" size={24} color="#fff" />
-      </TouchableOpacity>
+
+      <HeaderWithBackButton title={`${crops} PDF Course`} />
+
       <FlatList
+        style={{ flex: 1 }}
         data={[1]} // dummy data
         keyExtractor={(item, index) => index.toString()}
         renderItem={() => (
