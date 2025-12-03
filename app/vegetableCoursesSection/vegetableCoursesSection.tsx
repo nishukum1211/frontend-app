@@ -62,7 +62,7 @@ const VegetableCoursesSection: React.FC = () => {
               onPress={() => {
                 router.push({
                   pathname: "./pdfCourse",
-                  params: { id: item.id },
+                  params: { id: item.id, price: item.price, crops: item.crops },
                 });
               }}
             >

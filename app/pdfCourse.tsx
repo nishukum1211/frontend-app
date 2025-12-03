@@ -1,92 +1,13 @@
-// import { useLocalSearchParams } from "expo-router";
-// import { useEffect, useState } from "react";
-// import { Image, ScrollView, Text, TouchableOpacity, View } from "react-native";
-// import styles from "../vegetableCoursesSection/pdfCourseStyles";
-
-// interface PdfItem {
-//   id: number;
-//   name: string;
-//   price: number;
-// }
-
-// const PdfCourse = () => {
-//   const { id } = useLocalSearchParams(); // item id from previous screen
-//   const [item, setItem] = useState<PdfItem | null>(null);
-
-//   useEffect(() => {
-//     fetch("https://dev-backend-py-23809827867.us-east1.run.app/agent/sell/item")
-//       .then((res) => res.json())
-//       .then((data: PdfItem[]) => {
-//         const selectedItem = data.find((pdf) => String(pdf.id) === String(id));
-
-//         setItem(selectedItem || null);
-//       })
-//       .catch((err) => console.log("API Error:", err));
-//   }, [id]);
-
-//   if (!item) return <Text style={{ padding: 20 }}>Loading...</Text>;
-
-//   const imageUrl = `https://dev-backend-py-23809827867.us-east1.run.app/agent/sell/item/photo/${item.id}`;
-
-//   return (
-//     <ScrollView style={styles.container}>
-//       {/* IMAGE SECTION */}
-//       <View style={styles.imageContainer}>
-//         <Image
-//           source={{ uri: imageUrl }}
-//           style={styles.image}
-//           resizeMode="cover"
-//         />
-
-//         {/* Rating + Expiry */}
-//         <View style={styles.overlay}>
-//           <View style={styles.ratingBox}>
-//             <Text style={styles.ratingText}>4.2★</Text>
-//             <Text style={styles.reviews}> 3.7K+</Text>
-//           </View>
-
-//           <View style={styles.expiryBox}>
-//             <Text style={styles.expiryText}>Expiry 02 Dec 2025</Text>
-//           </View>
-//         </View>
-//       </View>
-
-//       {/* CONTENT SECTION */}
-//       <View style={styles.content}>
-//         <Text style={styles.title}>PDF Course - {item.name}</Text>
-
-//         <View style={styles.offerTag}>
-//           <Text style={styles.offerText}>Lowest Price in 30 days</Text>
-//         </View>
-
-//         <View style={styles.priceRow}>
-//           <Text style={styles.discount}>50% OFF</Text>
-//           <Text style={styles.oldPrice}>₹{item.price * 2}</Text>
-//           <Text style={styles.newPrice}>₹{item.price}</Text>
-//         </View>
-
-//         <Text style={styles.quantityText}>Selected Quantity: 70-80g</Text>
-
-//         <View style={styles.wowDeal}>
-//           <Text style={styles.wowText}>WOW! DEAL Buy at ₹8</Text>
-//           <Text style={styles.saveText}>Apply offers for maximum savings!</Text>
-//         </View>
-
-//         <TouchableOpacity style={styles.cartButton}>
-//           <Text style={styles.buttonText}>Add to Cart</Text>
-//         </TouchableOpacity>
-//       </View>
-//     </ScrollView>
-//   );
-// };
-
-// export default PdfCourse;
-
-import { Ionicons } from "@expo/vector-icons";
-import { useNavigation } from "@react-navigation/native";
-import { FlatList, TouchableOpacity, View } from "react-native";
+import { useLocalSearchParams, useNavigation } from "expo-router";
+import { useState } from "react";
+import { ActivityIndicator, Alert, FlatList, Modal, View } from "react-native";
+import { SafeAreaView } from "react-native-safe-area-context";
+import HeaderWithBackButton from "./components/HeaderWithBackButton";
 import ImageCarousel from "./components/ImageCarousel";
+import PaymentSuccessModal from "./components/PaymentSuccessModal";
 import ScrollingText from "./components/ScrollingText";
+import RazorpayCheckout from "./pay/RazorpayCheckout";
+import { createRazorpayOrder } from "./pay/razorpay_api";
 import FarmingGoalsSection from "./stickyJoinBar/farmingGoals";
 import StickyJoinBar from "./stickyJoinBar/stickyJoinBar";
 import StrugglesSection from "./stickyJoinBar/strugglesSection";
@@ -96,30 +17,72 @@ import styles from "./vegetableCoursesSection/pdfCourseStyles";
 
 export default function PdfCourse() {
   const navigation = useNavigation();
+  const params = useLocalSearchParams();
   const images = [
     require("../assets/images/img-3.jpg"),
     require("../assets/images/img-2.jpg"),
     require("../assets/images/img-3.jpg"),
   ];
+  const [orderId, setOrderId] = useState<string | null>(null);
+  const [isLoading, setIsLoading] = useState(false);
+  const [isPaymentVisible, setPaymentVisible] = useState(false);
+  const [isSuccessModalVisible, setSuccessModalVisible] = useState(false);
+  const price = params.price ? Number(params.price) : 0;
+  const crops = params.crops || "Farming";
+
+  const handleJoinPress = async () => {
+    setIsLoading(true);
+    try {
+      const newOrderId = await createRazorpayOrder(price);
+      if (newOrderId) {
+        setOrderId(newOrderId);
+        setPaymentVisible(true);
+      } else {
+        Alert.alert("Error", "Could not create a payment order.");
+      }
+    } catch (error) {
+      console.error(error);
+      Alert.alert("Error", "An error occurred while trying to create a payment order.");
+    } finally {
+      setIsLoading(false);
+    }
+  };
+
+  const handlePaymentSuccess = (paymentId: string, orderId: string, signature: string) => {
+    setPaymentVisible(false);
+    setSuccessModalVisible(true);
+    // TODO: Verify payment signature on your backend and grant access to the course
+  };
+
+  const handleCloseSuccessModal = () => {
+    setSuccessModalVisible(false);
+    navigation.goBack(); // Go back to the previous screen after success
+  };
 
   return (
-    <View style={{ flex: 1 }}>
-      {/* Using FlatList instead of ScrollView */}
-      <TouchableOpacity
-        onPress={() => navigation.goBack()}
-        style={{
-          position: "absolute",
-          top: 40,
-          left: 4,
-          zIndex: 20,
-          backgroundColor: "rgba(0,0,0,0.4)",
-          padding: 8,
-          borderRadius: 20,
-        }}
+    <SafeAreaView style={{ flex: 1 }}>
+      <Modal
+        transparent={true}
+        animationType="none"
+        visible={isLoading}
+        onRequestClose={() => {}}
       >
-        <Ionicons name="arrow-back" size={24} color="#fff" />
-      </TouchableOpacity>
+        <View
+          style={{
+            flex: 1,
+            alignItems: "center",
+            justifyContent: "center",
+            backgroundColor: "rgba(0,0,0,0.5)",
+          }}
+        >
+          <ActivityIndicator size="large" color="#fff" />
+        </View>
+      </Modal>
+
+      <HeaderWithBackButton title={`${crops} PDF Course`} />
+
       <FlatList
+        style={{ flex: 1 }}
         data={[1]} // dummy data
         keyExtractor={(item, index) => index.toString()}
         renderItem={() => (
@@ -146,9 +109,24 @@ export default function PdfCourse() {
 
       {/* Sticky Footer */}
       <StickyJoinBar
-        price={2499}
-        onJoinPress={() => console.log("Join clicked")}
+        price={price}
+        onJoinPress={handleJoinPress}
       />
-    </View>
+
+      {orderId && (
+        <RazorpayCheckout
+          visible={isPaymentVisible}
+          orderId={orderId}
+          onSuccess={handlePaymentSuccess}
+          onCancel={() => setPaymentVisible(false)}
+        />
+      )}
+
+      <PaymentSuccessModal
+        visible={isSuccessModalVisible}
+        onClose={handleCloseSuccessModal}
+        price={price}
+      />
+    </SafeAreaView>
   );
 }
