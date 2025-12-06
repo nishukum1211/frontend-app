@@ -72,7 +72,6 @@ const styles = StyleSheet.create({
     fontSize: 15,
     lineHeight: 26,
     color: "#4a3b2d",
-    marginLeft: 6,
   },
 });
 

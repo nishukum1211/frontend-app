@@ -3,7 +3,8 @@ import { StyleSheet } from "react-native";
 export default StyleSheet.create({
   container: {
     padding: 16,
-    backgroundColor: "#fff",
+    backgroundColor: "#F4FBF5",
+    paddingBottom: 20,
   },
 
   heading: {
@@ -28,7 +29,7 @@ export default StyleSheet.create({
 
   card: {
     width: "48%",
-    backgroundColor: "#E9F7EC",
+    backgroundColor: "#DDF0E1",
     borderRadius: 14,
     paddingTop: 30, // space below icon
     paddingHorizontal: 12,

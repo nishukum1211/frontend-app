@@ -80,9 +80,10 @@ const styles = StyleSheet.create({
   },
   agreementText: {
     textAlign: "center",
-    marginTop: 18,
+    marginTop: 10,
     fontSize: 14,
     color: "#000", // normal text color
+    paddingBottom: 40,
   },
   linkText: {
     color: "#4a90e2", // blue color
