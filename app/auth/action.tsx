@@ -67,10 +67,12 @@ export const fetchAndSaveUser = async (
     // After successfully getting user data, fetch and cache all chats
     await fetchAllChatsAndCache(role);
 
-    // Sync course assets in the background
-    CourseService.syncCourseAssets().catch((error) => {
-      console.error("Failed to sync course assets on login:", error);
-    });
+    if (role === "user") {
+      // Sync course assets in the background only for users
+      CourseService.syncCourseAssets().catch((error) => {
+        console.error("Failed to sync course assets on login:", error);
+      });
+    }
 
     return userData;
   } catch (error) {
