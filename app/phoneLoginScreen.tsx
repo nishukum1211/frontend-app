@@ -268,6 +268,7 @@ const styles = StyleSheet.create({
     justifyContent: "flex-end", // Pushes agreement text to the bottom
     alignItems: "center",
     paddingHorizontal: 20,
+    paddingBottom: 40,
   },
   message: {
     textAlign: "center",

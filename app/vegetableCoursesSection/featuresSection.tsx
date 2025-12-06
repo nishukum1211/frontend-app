@@ -50,6 +50,7 @@ const styles = StyleSheet.create({
     padding: 16,
     backgroundColor: "#fff",
     paddingBottom: 80,
+    marginBottom: 50,
   },
 
   grid: {

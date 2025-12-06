@@ -84,10 +84,11 @@ const styles = StyleSheet.create({
     bottom: 0,
     width: "100%",
     padding: 12,
-    backgroundColor: "#FFF4CC",
+    backgroundColor: "#8B0000",
     flexDirection: "row",
     alignItems: "center",
     justifyContent: "space-between",
+    marginBottom: 40,
   },
 
   textBox: {
@@ -97,11 +98,12 @@ const styles = StyleSheet.create({
   title: {
     fontWeight: "bold",
     fontSize: 14,
+    color: "white",
   },
 
   subtitle: {
     fontSize: 12,
-    color: "#555",
+    color: "white",
   },
 
   glowLayer: {
@@ -110,19 +112,19 @@ const styles = StyleSheet.create({
     height: 50,
     width: 140,
     borderRadius: 10,
-    backgroundColor: "#2E7D32",
+    backgroundColor: "white",
   },
 
   button: {
     marginRight: 15,
-    backgroundColor: "#2E7D32",
+    backgroundColor: "white",
     paddingVertical: 6,
     paddingHorizontal: 15,
     borderRadius: 10,
   },
 
   buttonText: {
-    color: "#fff",
+    color: "black",
     fontWeight: "bold",
     fontSize: 15,
   },
