@@ -1,5 +1,6 @@
 import AsyncStorage from "@react-native-async-storage/async-storage";
 import * as SecureStore from "expo-secure-store";
+import { CourseService } from "../course/courseCache";
 
 export type DecodedToken = {
   id: string;
@@ -83,6 +84,9 @@ export const logoutPostProcess = async (): Promise<void> => {
 
     // Clear all cached chat data from AsyncStorage
     await AsyncStorage.removeItem(ALL_CHATS_STORAGE_KEY);
+
+    // Clear all cached course assets
+    await CourseService.removeAllAssets();
 
     console.log("Logout post-process completed successfully: user data, token, and chat cache cleared.");
   } catch (error) {

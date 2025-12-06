@@ -135,15 +135,6 @@ export default function Profile() {
         )} */}
       </View>
 
-      {user?.role === "agent" && (
-        <TouchableOpacity
-          style={styles.uploadButton}
-          onPress={() => router.push("../agentForm/agentUploadForm")}
-        >
-          <Text style={styles.uploadButtonText}>Upload PDF / Sell Item</Text>
-        </TouchableOpacity>
-      )}
-
       <TouchableOpacity style={styles.editButton} onPress={handleLogout}>
         <Text style={styles.editButtonText}>Logout</Text>
       </TouchableOpacity>

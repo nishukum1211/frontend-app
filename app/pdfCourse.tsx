@@ -31,6 +31,7 @@ export default function PdfCourse() {
   const [userPrefillData, setUserPrefillData] = useState<{ name?: string; email?: string; contact?: string } | undefined>(undefined);
   const price = params.price ? Number(params.price) : 0;
   const crops = params.crops || "Farming";
+  const course_id = params.id;
 
   const handleJoinPress = async () => {
     const user = await getUserData();

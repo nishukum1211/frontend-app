@@ -1,5 +1,6 @@
 import * as SecureStore from "expo-secure-store";
 import { fetchAllChatsAndCache } from "../chat/chatCache";
+import { CourseService } from "../course/courseCache";
 import { DecodedToken, getLoginJwtToken, saveUserData } from "./auth";
 
 
@@ -65,6 +66,13 @@ export const fetchAndSaveUser = async (
 
     // After successfully getting user data, fetch and cache all chats
     await fetchAllChatsAndCache(role);
+
+    if (role === "user") {
+      // Sync course assets in the background only for users
+      CourseService.syncCourseAssets().catch((error) => {
+        console.error("Failed to sync course assets on login:", error);
+      });
+    }
 
     return userData;
   } catch (error) {
