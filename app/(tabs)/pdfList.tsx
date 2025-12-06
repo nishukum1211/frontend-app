@@ -3,7 +3,7 @@ import { useCallback, useEffect, useState } from "react";
 import { ActivityIndicator, FlatList, Image, RefreshControl, StyleSheet, Text, TouchableOpacity, View } from "react-native";
 import { getUserData } from "../auth/action";
 import { DecodedToken, removeUserData } from "../auth/auth";
-import { CourseService, Subscription } from "../course/courseService";
+import { CourseService, Subscription } from "../course/courseCache";
 
 const SubscriptionItem = ({ item, onPress }: { item: Subscription, onPress: () => void }) => {
   const [thumbnail, setThumbnail] = useState<string | null>(null);

@@ -1,6 +1,6 @@
 import AsyncStorage from "@react-native-async-storage/async-storage";
 import * as SecureStore from "expo-secure-store";
-import { CourseService } from "../course/courseService";
+import { CourseService } from "../course/courseCache";
 
 export type DecodedToken = {
   id: string;

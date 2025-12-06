@@ -2,7 +2,7 @@ import { useLocalSearchParams } from 'expo-router';
 import React, { useEffect, useState } from 'react';
 import { ActivityIndicator, StyleSheet, Text, View } from 'react-native';
 import { WebView } from 'react-native-webview';
-import { CourseService } from './courseService';
+import { CourseService } from './courseCache';
 
 const PdfView: React.FC = () => {
   const { pdfId } = useLocalSearchParams<{ pdfId: string }>();

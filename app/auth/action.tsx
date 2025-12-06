@@ -1,6 +1,6 @@
 import * as SecureStore from "expo-secure-store";
 import { fetchAllChatsAndCache } from "../chat/chatCache";
-import { CourseService } from "../course/courseService";
+import { CourseService } from "../course/courseCache";
 import { DecodedToken, getLoginJwtToken, saveUserData } from "./auth";
 
 
