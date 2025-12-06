@@ -1,6 +1,6 @@
 import AsyncStorage from '@react-native-async-storage/async-storage';
-import { AppConfig } from '../Config';
 import { getLoginJwtToken } from '../auth/auth';
+import { AppConfig } from '../config';
 
 /**
  * Defines the structure of a subscription item received from the API.

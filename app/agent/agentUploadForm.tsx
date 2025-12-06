@@ -1,27 +1,37 @@
+import { Picker } from "@react-native-picker/picker";
 import * as DocumentPicker from "expo-document-picker";
 import * as ImagePicker from "expo-image-picker";
 import { useState } from "react";
 import {
   Image,
+  ScrollView,
   StyleSheet,
   Text,
   TextInput,
   TouchableOpacity,
   View,
 } from "react-native";
+import { AgentService } from "../api/agent";
+import { crops } from "./crops";
 
-export default function AgentSellItemForm() {
-  const [url, setUrl] = useState("");
+export default function AgentSellItemForm({
+  onUploadSuccess,
+}: {
+  onUploadSuccess: () => void;
+}) {
   const [name, setName] = useState("");
   const [desc, setDesc] = useState("");
   const [descHn, setDescHn] = useState("");
   const [price, setPrice] = useState("");
+  const [crop, setCrop] = useState("");
 
   const [pdfFile, setPdfFile] =
     useState<DocumentPicker.DocumentPickerAsset | null>(null);
   const [imageFile, setImageFile] = useState<string | null>(null);
 
   const [loading, setLoading] = useState(false);
+
+  
 
   // Pick PDF
   const pickPDF = async () => {
@@ -54,8 +64,8 @@ export default function AgentSellItemForm() {
 
   // Submit API
   const handleSubmit = async () => {
-    if (!name || !price || !imageFile) {
-      alert("Name, Price, and Image are required.");
+    if (!name || !price || !imageFile || !crop) {
+      alert("Name, Crop, Price, and Image are required.");
       return;
     }
 
@@ -63,13 +73,11 @@ export default function AgentSellItemForm() {
 
     const formData = new FormData();
 
-    // Optional
-    formData.append("url", url);
-
     // Required
     formData.append("name", name);
     formData.append("content", "PDF");
     formData.append("price", price);
+    formData.append("crops", crop);
 
     // Optional text
     formData.append("desc", desc);
@@ -92,21 +100,13 @@ export default function AgentSellItemForm() {
     }
 
     try {
-      const response = await fetch(
-        "https://your-api-domain.com/agent/sell/item",
-        {
-          method: "POST",
-          headers: {
-            "Content-Type": "multipart/form-data",
-          },
-          body: formData,
-        }
-      );
+      const success = await AgentService.createResource(formData);
 
-      const data = await response.json();
-      console.log("API Response:", data);
-
-      alert("Item uploaded successfully!");
+      if (success) {
+        onUploadSuccess();
+      } else {
+        alert("Failed to upload!");
+      }
     } catch (err) {
       console.log("Error submitting:", err);
       alert("Failed to upload!");
@@ -116,15 +116,8 @@ export default function AgentSellItemForm() {
   };
 
   return (
-    <View style={styles.container}>
+    <ScrollView style={styles.container} showsVerticalScrollIndicator={false}>
       <Text style={styles.title}>Sell Item Form</Text>
-
-      <TextInput
-        style={styles.input}
-        placeholder="URL (optional)"
-        value={url}
-        onChangeText={setUrl}
-      />
 
       <TextInput
         style={styles.input}
@@ -132,6 +125,22 @@ export default function AgentSellItemForm() {
         value={name}
         onChangeText={setName}
       />
+
+      <View style={styles.rowContainer}>
+        <Text style={styles.label}>Crop *</Text>
+        <View style={styles.pickerContainer}>
+          <Picker
+            selectedValue={crop}
+            onValueChange={(itemValue) => setCrop(itemValue)}
+            style={styles.picker}
+          >
+            <Picker.Item label="Select" value="" />
+            {crops.map((c) => (
+              <Picker.Item key={c.name} label={`${c.name} (${c.hindi})`} value={c.name} />
+            ))}
+          </Picker>
+        </View>
+      </View>
 
       <TextInput
         style={styles.input}
@@ -176,33 +185,81 @@ export default function AgentSellItemForm() {
           {loading ? "Submitting..." : "Submit"}
         </Text>
       </TouchableOpacity>
-    </View>
+    </ScrollView>
   );
 }
 
 const styles = StyleSheet.create({
-  container: { padding: 20, flex: 1, backgroundColor: "#fff", paddingTop: 70 },
-  title: { fontSize: 22, fontWeight: "bold", marginBottom: 16 },
+  container: {
+    width: "100%",
+  },
+  title: {
+    fontSize: 20,
+    fontWeight: "bold",
+    marginBottom: 20,
+    textAlign: "center",
+  },
+  label: {
+    fontSize: 16,
+    fontWeight: "600",
+    marginRight: 10,
+    color: "#1F2937",
+  },
   input: {
+    height: 50,
+    borderColor: "#D1D5DB",
     borderWidth: 1,
-    borderColor: "#ccc",
     borderRadius: 8,
-    padding: 12,
-    marginBottom: 12,
+    paddingHorizontal: 15,
+    marginBottom: 15,
+    backgroundColor: "#F9FAFB",
+  },
+  rowContainer: {
+    flexDirection: "row",
+    alignItems: "center",
+    marginBottom: 15,
+  },
+  pickerContainer: {
+    flex: 1,
+    height: 50,
+    borderColor: "#D1D5DB",
+    borderWidth: 1,
+    borderRadius: 8,
+    backgroundColor: "#F9FAFB",
+    justifyContent: "center",
+  },
+  picker: {
+    height: 50,
+    width: "100%",
   },
   button: {
-    backgroundColor: "#0066FF",
-    padding: 12,
+    backgroundColor: "#E5E7EB",
+    padding: 15,
     borderRadius: 8,
-    marginBottom: 12,
+    alignItems: "center",
+    marginBottom: 15,
   },
-  buttonText: { color: "#fff", textAlign: "center" },
+  buttonText: {
+    color: "#1F2937",
+    fontWeight: "600",
+  },
   preview: {
-    width: 120,
-    height: 120,
-    marginVertical: 10,
+    width: 100,
+    height: 100,
     borderRadius: 8,
+    alignSelf: "center",
+    marginVertical: 10,
   },
-  submitButton: { backgroundColor: "green", padding: 14, borderRadius: 8 },
-  submitText: { color: "#fff", textAlign: "center", fontSize: 18 },
+  submitButton: {
+    backgroundColor: "#007AFF",
+    padding: 15,
+    borderRadius: 8,
+    alignItems: "center",
+    marginTop: 10,
+  },
+  submitText: {
+    color: "white",
+    fontWeight: "bold",
+    fontSize: 16,
+  },
 });
