@@ -1,4 +1,4 @@
-import { useFocusEffect } from "expo-router";
+import { useFocusEffect, useRouter } from "expo-router";
 import { useCallback, useEffect, useState } from "react";
 import {
   ActivityIndicator,
@@ -66,6 +66,7 @@ export default function AgentResources() {
   const [loading, setLoading] = useState(true);
   const [refreshing, setRefreshing] = useState(false);
   const [isModalVisible, setModalVisible] = useState(false);
+  const router = useRouter();
 
   const loadSellableItems = useCallback(async (forceRefresh = false) => {
     if (!forceRefresh) {
@@ -138,7 +139,14 @@ export default function AgentResources() {
         renderItem={({ item }) => (
           <ItemCard
             item={item}
-            onUpdate={() => console.log("Update item:", item.id)}
+            onUpdate={() =>
+              router.push({
+                pathname: "/agent/updateItem", // Ensure this path is correct
+                params: {
+                  item: JSON.stringify(item),
+                },
+              })
+            }
             onRemove={() => console.log("Remove item:", item.id)}
           />
         )}

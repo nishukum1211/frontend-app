@@ -96,4 +96,38 @@ export class AgentService {
       return false;
     }
   }
+
+  public static async updateSellableItem(id: string, name: string | null, price: number | null, desc: string | null, desc_hn: string | null ): Promise<boolean> {
+    const data = {
+      name: name,
+      price: price,
+      desc: desc,
+      desc_hn: desc_hn
+    }
+    try {
+      const token = await getLoginJwtToken();
+      if (!token) {
+        console.error("Authentication error. Please log in again.");
+        return false;
+      }
+
+      const response = await fetch(`${AppConfig.API_BASE_URL}/agent/sell/item/${id}`, {
+        method: "PUT",
+        headers: {
+          Authorization: `Bearer ${token}`,
+          "Content-Type": "application/json",
+        },
+        body: JSON.stringify(data),
+      });
+
+      if (!response.ok) {
+        throw new Error("Update failed with status: " + response.status);
+      }
+      await AsyncStorage.removeItem(SELLABLE_ITEMS_CACHE_KEY);
+      return true;
+    } catch (err) {
+      console.error("Error updating item:", err);
+      return false;
+    }
+  }
 }
