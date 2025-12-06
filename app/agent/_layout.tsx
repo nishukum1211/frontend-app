@@ -1,0 +1,10 @@
+import { Stack } from "expo-router";
+
+export default function AgentLayout() {
+  return (
+    <Stack>
+      <Stack.Screen name="agentResources" options={{ title: "Resources" }} />
+      <Stack.Screen name="updateItem" options={{ title: "Update Item" }} />
+    </Stack>
+  );
+}
