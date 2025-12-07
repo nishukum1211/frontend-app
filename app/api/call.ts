@@ -104,14 +104,12 @@ export class CallService {
         console.error("Authentication error. Please log in again.");
         return false;
       }
-
-      const response = await fetch(`${AppConfig.API_BASE_URL}/chat/fulfilled/${id}`, {
+      // console.log(remarks);
+      const response = await fetch(`${AppConfig.API_BASE_URL}/chat/fulfilled/${id}?remarks=${encodeURIComponent(remarks)}`, {
         method: "PUT",
         headers: {
           Authorization: `Bearer ${token}`,
-          "Content-Type": "application/json",
         },
-        body: JSON.stringify({ remarks }),
       });
 
       if (!response.ok) {
