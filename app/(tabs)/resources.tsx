@@ -3,7 +3,7 @@ import { useCallback, useState } from "react";
 import { ActivityIndicator, StyleSheet, View } from "react-native";
 import { getUserData } from "../auth/action";
 import { DecodedToken } from "../auth/auth";
-import AgentResources from "../agent/resources";
+import AgentResources from "../course/agent/resources";
 import PdfList from "./pdfList";
 
 export default function Resources() {

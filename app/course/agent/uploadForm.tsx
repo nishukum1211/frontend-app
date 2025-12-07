@@ -11,7 +11,7 @@ import {
   TouchableOpacity,
   View,
 } from "react-native";
-import { AgentService } from "../api/agent";
+import { AgentService } from "../../api/agent";
 import { crops } from "./crops";
 
 export default function AgentSellItemForm({

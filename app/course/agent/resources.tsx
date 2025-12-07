@@ -12,8 +12,8 @@ import {
   TouchableWithoutFeedback,
   View,
 } from "react-native";
-import { AgentService, SellableItem } from "../api/agent";
-import { CourseService } from "../course/courseCache";
+import { AgentService, SellableItem } from "../../api/agent";
+import { CourseService } from "../courseCache";
 import AgentSellItemForm from "./uploadForm";
 
 const ItemCard = ({
@@ -38,7 +38,7 @@ const ItemCard = ({
         source={
           thumbnail
             ? { uri: thumbnail }
-            : require("../../assets/images/logo.png")
+            : require("../../../assets/images/logo.png")
         }
         style={styles.thumbnail}
       />
