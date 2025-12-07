@@ -1,5 +1,6 @@
+import { FontAwesome } from '@expo/vector-icons';
 import { NavigationProp, RouteProp, useNavigation, useRoute } from '@react-navigation/native';
-import { useEffect, useState } from 'react';
+import { useCallback, useEffect, useState } from 'react';
 import {
   ActivityIndicator,
   Alert,
@@ -44,24 +45,44 @@ const AgentCallRequestsScreen = () => {
   const [refreshing, setRefreshing] = useState(false);
 
   //---------------------------------------------------------------------------
-  // Fetch call requests
+  // Refresh handler
   //---------------------------------------------------------------------------
-  const fetchRequests = async (isRefresh = false) => {
-    if (!isRefresh) setLoading(true);
-    else setRefreshing(true);
-
+  const onRefresh = useCallback(async () => {
+    setRefreshing(true);
     setError(null);
-
     try {
       const requests = await CallService.getAllCallRequests();
-      if (requests) setAllRequests(requests);
-      else setError('Failed to fetch call requests or no requests found.');
+      if (requests) {
+        setAllRequests(requests);
+      } else {
+        setError('Failed to fetch call requests or no requests found.');
+      }
     } catch (e) {
       console.error(e);
       setError('An error occurred while fetching data.');
     } finally {
-      if (!isRefresh) setLoading(false);
       setRefreshing(false);
+    }
+  }, []);
+
+  //---------------------------------------------------------------------------
+  // Initial data fetch
+  //---------------------------------------------------------------------------
+  const fetchInitialRequests = async () => {
+    setLoading(true);
+    setError(null);
+    try {
+      const requests = await CallService.getAllCallRequests();
+      if (requests) {
+        setAllRequests(requests);
+      } else {
+        setError('Failed to fetch call requests or no requests found.');
+      }
+    } catch (e) {
+      console.error(e);
+      setError('An error occurred while fetching data.');
+    } finally {
+      setLoading(false);
     }
   };
 
@@ -69,7 +90,7 @@ const AgentCallRequestsScreen = () => {
   // First load
   //---------------------------------------------------------------------------
   useEffect(() => {
-    fetchRequests();
+    fetchInitialRequests();
   }, []);
 
   //---------------------------------------------------------------------------
@@ -78,9 +99,9 @@ const AgentCallRequestsScreen = () => {
   useEffect(() => {
     if (route.params?.refresh) {
       navigation.setParams({ refresh: false });
-      fetchRequests();
+      onRefresh();
     }
-  }, [route.params?.refresh]);
+  }, [route.params?.refresh, onRefresh]);
 
   //---------------------------------------------------------------------------
   // Filtering + sorting
@@ -145,7 +166,7 @@ const AgentCallRequestsScreen = () => {
             prev.map(req => (req.id === updatedRequest.id ? updatedRequest : req))
           );
         } else {
-          fetchRequests();
+          onRefresh();
         }
 
         Alert.alert('Success', 'Call request has been fulfilled.');
@@ -184,10 +205,7 @@ const AgentCallRequestsScreen = () => {
       style={[styles.row, getStatusStyle(item.status).row]}
       onPress={() => handleRowPress(item)}
     >
-      <Text style={[styles.cell, { flex: 2 }]}>
-        {item.user_name}
-        {item.paid && <Text style={styles.paidText}> (Paid)</Text>}
-      </Text>
+      <Text style={[styles.cell, { flex: 2 }]}>{item.user_name}</Text>
 
       <Text style={[styles.cell, { flex: 3 }]} numberOfLines={1}>
         {item.message}
@@ -201,7 +219,8 @@ const AgentCallRequestsScreen = () => {
         })}
       </Text>
 
-      <View style={[styles.cell, { flex: 2 }]}>
+      <View style={[styles.cell, { flex: 2, flexDirection: 'column', alignItems: 'center', justifyContent: 'center', gap: 4 }]}>
+        {item.paid && <Text style={styles.paidBadge}>Paid</Text>}
         <Text style={[styles.statusBadge, getStatusStyle(item.status).text]}>
           {item.status}
         </Text>
@@ -212,8 +231,9 @@ const AgentCallRequestsScreen = () => {
   //---------------------------------------------------------------------------
   // Counters
   //---------------------------------------------------------------------------
-  const paidCallsCount = allRequests.filter(r => r.paid).length;
-  const freeCallsCount = allRequests.length - paidCallsCount;
+  const pendingRequests = allRequests.filter(r => r.status === CallStatus.REQUESTED);
+  const paidCallsCount = pendingRequests.filter(r => r.paid).length;
+  const freeCallsCount = pendingRequests.filter(r => !r.paid).length;
 
   //---------------------------------------------------------------------------
   // Loading / error
@@ -310,10 +330,7 @@ const AgentCallRequestsScreen = () => {
         keyExtractor={item => item.id}
         renderItem={renderItem}
         refreshControl={
-          <RefreshControl
-            refreshing={refreshing}
-            onRefresh={() => fetchRequests(true)}
-          />
+          <RefreshControl refreshing={refreshing} onRefresh={onRefresh} />
         }
 
         ListEmptyComponent={<Text style={styles.centered}>No call requests found.</Text>}
@@ -321,9 +338,23 @@ const AgentCallRequestsScreen = () => {
           <>
             {/* TOP BAR (now scrollable, enables pull-to-refresh) */}
             <View style={styles.topBar}>
-              <Text style={styles.title}>Call Dashboard</Text>
+              <View style={styles.titleContainer}>
+                <FontAwesome name="phone" size={22} color="#333" />
+                <Text style={styles.title}>Dashboard</Text>
+                <TouchableOpacity
+                  onPress={onRefresh}
+                  style={{ width: 22, height: 22, justifyContent: 'center', alignItems: 'center' }}
+                  disabled={refreshing}
+                >
+                  {refreshing ? (
+                    <ActivityIndicator color="#333" />
+                  ) : (
+                    <FontAwesome name="refresh" size={22} color="#333" />
+                  )}
+                </TouchableOpacity>
+              </View>
 
-              <View style={{ flexDirection: 'row' }}>
+              <View style={{ flexDirection: 'row', alignItems: 'center' }}>
                 <TouchableOpacity
                   onPress={() => setFilterType(prev => (prev === 'free' ? 'all' : 'free'))}
                 >
@@ -419,6 +450,12 @@ const styles = StyleSheet.create({
 
   title: { fontSize: 22, fontWeight: 'bold', color: '#333' },
 
+  titleContainer: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 8
+  },
+
   headerRow: {
     flexDirection: 'row',
     backgroundColor: '#eef2f5',
@@ -437,13 +474,14 @@ const styles = StyleSheet.create({
     paddingVertical: 12,
     paddingHorizontal: 5,
     backgroundColor: '#fff',
-    borderRadius: 8,
-    marginVertical: 4,
-    elevation: 1
+    borderBottomWidth: 1,
+    borderBottomColor: '#eee',
+    alignItems: 'center'
   },
 
   cell: { flex: 1, paddingHorizontal: 5, color: '#555' },
 
+  // Keep background colors for status, but remove row-specific styles that interfere with new border look
   fulfilledRow: { backgroundColor: '#e8f5e9' },
   requestedRow: { backgroundColor: '#fffde7' },
 
@@ -457,7 +495,7 @@ const styles = StyleSheet.create({
   },
 
   statusFulfilled: { backgroundColor: '#4CAF50', color: 'white' },
-  statusRequested: { backgroundColor: '#FFC107', color: 'white' },
+  statusRequested: { backgroundColor: '#FFC107', color: 'white', fontSize: 11,paddingHorizontal: 5 },
 
   modalView: {
     margin: 20,
@@ -507,7 +545,15 @@ const styles = StyleSheet.create({
 
   buttonText: { color: 'white', fontWeight: 'bold', textAlign: 'center' },
 
-  paidText: { color: 'red', fontWeight: 'bold' },
+  paidBadge: {
+    backgroundColor: '#e91e63',
+    color: 'white',
+    fontWeight: 'bold',
+    paddingHorizontal: 8,
+    paddingVertical: 2,
+    borderRadius: 12,
+    fontSize: 12
+  },
 
   counterContainer: {
     borderRadius: 15,
