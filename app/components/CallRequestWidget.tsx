@@ -4,13 +4,15 @@ import React, { useEffect, useState } from "react";
 import { StyleSheet, Text, TouchableOpacity, View } from "react-native";
 import { User } from "react-native-gifted-chat";
 
+// This type should now match the `callRequestPayload` from `callRequest.tsx`
 export type CallRequest = {
   id: string;
-  type: "call-request" | "call-request-paid";
-  heading: string;
+  paid: boolean;
+  user_id: string;
+  user_name: string;
   message: string;
-  crops: string[];
-  status: 0 | 1; // 0: pending, 1: approved
+  request_time: string;
+  status: "requested" | "fulfilled" | "cancelled";
 };
 
 // Extend the IMessage interface to include our custom data
@@ -22,10 +24,12 @@ declare module "react-native-gifted-chat" {
 }
 type CallRequestWidgetProps = {
   data: CallRequest;
+  heading: string;
   currentUser: User;
 };
 
 const CallRequestWidget: React.FC<CallRequestWidgetProps> = ({
+  heading,
   data,
 }) => {
   const [isAgent, setIsAgent] = useState(false);
@@ -46,7 +50,7 @@ const CallRequestWidget: React.FC<CallRequestWidgetProps> = ({
   const handleApprove = () => {
     // In a real app, you would call an API to update the status
     console.log("Approving call request:", data.id);
-    alert(`Call request for "${data.crops.join(", ")}" approved!`);
+    alert(`Call request for "${data.message}" approved!`);
   };
 
   return (
@@ -54,39 +58,34 @@ const CallRequestWidget: React.FC<CallRequestWidgetProps> = ({
       style={[
         styles.widgetContainer,
         {
-          borderColor:
-            data.type === "call-request-paid"
-              ? "#8b0707ff"
-              : isAgent ? "#E5E7EB" : "#4F46E5",
+          borderColor: data.paid
+            ? "#8b0707ff"
+            : isAgent
+            ? "#E5E7EB"
+            : "#4F46E5",
           borderWidth: 2,
-          backgroundColor:
-            data.type === "call-request-paid" ? "#FEE2E2" : "#ffffffff",
+          backgroundColor: data.paid ? "#FEE2E2" : "#ffffffff",
         },
       ]}
     >
       <View style={styles.headingContainer}>
         <MaterialIcons name="call" size={20} color="#1F2937" />
-        <Text style={styles.heading}>{data.heading}</Text>
+        <Text style={styles.heading}>{heading}</Text>
       </View>
       <View style={styles.divider} />
       <Text style={styles.message}>{data.message}</Text>
-
-      <View style={styles.cropsContainer}>
-        {/* <Text style={styles.cropsLabel}>Crop:</Text> */}
-        <Text style={styles.cropsText}>{data.crops.join(", ")}</Text> 
-      </View>
 
       {isAgent ? (
         <TouchableOpacity
           style={[
             styles.button,
-            data.status === 1 ? styles.approvedButton : styles.approveButton,
+            data.status === "fulfilled" ? styles.approvedButton : styles.approveButton,
           ]}
           onPress={handleApprove}
-          disabled={data.status === 1}
+          disabled={data.status === "fulfilled"}
         >
           <Text style={styles.buttonText}>
-            {data.status === 1 ? "Approved" : "Approve"}
+            {data.status === "fulfilled" ? "Approved" : "Approve"}
           </Text>
         </TouchableOpacity>
       ) : (

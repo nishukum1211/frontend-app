@@ -1,19 +1,19 @@
-import { auth } from "@/app/firebaseConfig";
 import { MaterialCommunityIcons } from "@expo/vector-icons";
 import { useFocusEffect, useNavigation } from "@react-navigation/native";
-import { onAuthStateChanged, User } from "firebase/auth";
+import * as ImagePicker from "expo-image-picker";
 import { useCallback, useEffect, useState } from "react";
 import { FlatList, Image, TouchableOpacity, View } from "react-native";
+import { getUserData } from "../auth/action";
+import { DecodedToken } from "../auth/auth";
+import CallCard from "../call/CallCard";
+import AgentCallRequestsScreen from "../home/AgentCallDashboard";
 import VegetableCoursesSection from "../vegetableCoursesSection/vegetableCoursesSection";
 import VegetableSubscription from "../vegetableSubscription/vegetableSubscription";
-
-import * as ImagePicker from "expo-image-picker";
-import CallCard from "../call/CallCard";
 //import AnimatedSplash from "../animatedSplash";
 
 export default function Home() {
   const navigation = useNavigation();
-  const [user, setUser] = useState<User | null>(null);
+  const [user, setUser] = useState<DecodedToken | null>(null);
   const [loading, setLoading] = useState(true);
 
   const openCamera = async () => {
@@ -39,10 +39,11 @@ export default function Home() {
   // Run auth check every time screen comes into focus
   useFocusEffect(
     useCallback(() => {
-      const unsubscribe = onAuthStateChanged(auth, (user) => {
-        setUser(user);
-      });
-      return unsubscribe;
+      const loadUser = async () => {
+        const userData = await getUserData();
+        setUser(userData);
+      };
+      loadUser();
     }, [])
   );
 
@@ -111,42 +112,17 @@ export default function Home() {
       data={[1]} // dummy data
       keyExtractor={() => "home"}
       renderItem={() => (
-        <View>
+        user?.role !== "agent" ? (
           <View>
-            <CallCard />
-            <VegetableSubscription />
+            <View>
+              <CallCard />
+              <VegetableSubscription />
+            </View>
+            <View>
+              <VegetableCoursesSection />
+            </View>
           </View>
-          <View>
-            <VegetableCoursesSection />
-          </View>
-          {/* <View style={{ alignItems: "center", marginBottom: 10 }}>
-            <IntroMessage />
-          </View>
-
-          <View
-            style={{
-              flex: 1,
-              width: "100%",
-              height: 250,
-              justifyContent: "center",
-              alignItems: "center",
-              overflow: "hidden",
-            }}
-          >
-            <ImageCarousel
-              images={[
-                require("../../assets/images/img-4.jpg"),
-                require("../../assets/images/img-1.jpg"),
-                require("../../assets/images/img-2.jpg"),
-                require("../../assets/images/img-3.jpg"),
-                require("../../assets/images/img-5.jpg"),
-              ]}
-              duration={2000}
-            />
-          </View> */}
-
-          {/* <AgentWidget /> */}
-        </View>
+        ) : <AgentCallRequestsScreen />
       )}
     />
   );

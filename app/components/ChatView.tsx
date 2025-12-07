@@ -74,7 +74,13 @@ export default function ChatView({ messages, onSend, user }: ChatViewProps) {
             currentMessage.data
           ) {
             return ( //
-              <CallRequestWidget data={currentMessage.data} currentUser={currentMessage.user} /> //
+              <CallRequestWidget
+                data={currentMessage.data}
+                currentUser={currentMessage.user}
+                heading={
+                  currentMessage.data.paid ? "Paid Call" : "Free Call"
+                }
+              /> //
             );
           }
           return null;

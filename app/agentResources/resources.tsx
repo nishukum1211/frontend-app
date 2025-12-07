@@ -14,7 +14,7 @@ import {
 } from "react-native";
 import { AgentService, SellableItem } from "../api/agent";
 import { CourseService } from "../course/courseCache";
-import AgentSellItemForm from "./agentUploadForm";
+import AgentSellItemForm from "./uploadForm";
 
 const ItemCard = ({
   item,
@@ -33,7 +33,7 @@ const ItemCard = ({
   }, [item.id]);
 
   return (
-    <View style={styles.itemContainer}>
+    <TouchableOpacity style={styles.itemContainer} onPress={onUpdate}>
       <Image
         source={
           thumbnail
@@ -46,9 +46,6 @@ const ItemCard = ({
         <Text style={styles.itemName}>{item.name}</Text>
         <Text style={styles.itemPrice}>₹{item.price}</Text>
         <View style={styles.buttonContainer}>
-          <TouchableOpacity style={styles.button} onPress={onUpdate}>
-            <Text style={styles.buttonText}>Update</Text>
-          </TouchableOpacity>
           <TouchableOpacity
             style={[styles.button, styles.removeButton]}
             onPress={onRemove}
@@ -57,7 +54,7 @@ const ItemCard = ({
           </TouchableOpacity>
         </View>
       </View>
-    </View>
+    </TouchableOpacity>
   );
 };
 
@@ -141,7 +138,7 @@ export default function AgentResources() {
             item={item}
             onUpdate={() =>
               router.push({
-                pathname: "/agent/updateItem", // Ensure this path is correct
+                pathname: "../agent/updateItem", // Ensure this path is correct
                 params: {
                   item: JSON.stringify(item),
                 },
@@ -198,11 +195,12 @@ const styles = StyleSheet.create({
     shadowRadius: 4,
   },
   thumbnail: {
-    width: 120,
-    height: "100%",
+    width: 100,
+    height: 100,
     borderTopLeftRadius: 12,
     borderBottomLeftRadius: 12,
     backgroundColor: "#E5E7EB",
+    alignSelf: "center",
   },
   itemDetails: {
     flex: 1,
@@ -215,14 +213,15 @@ const styles = StyleSheet.create({
     color: "#1F2937",
   },
   itemPrice: {
-    fontSize: 15,
-    color: "#4B5563",
-    marginTop: 4,
+    fontSize: 18,
+    color: "#059669",
+    fontWeight: "bold",
+    marginTop: 8,
   },
   buttonContainer: {
     flexDirection: "row",
     marginTop: 12,
-    gap: 8,
+    justifyContent: "flex-end",
   },
   button: {
     backgroundColor: "#007AFF",

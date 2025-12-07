@@ -8,7 +8,9 @@ import {
 import { useRef, useState } from "react";
 import {
   Image,
+  ActivityIndicator,
   KeyboardAvoidingView,
+  Modal,
   Platform,
   StyleSheet,
   Text,
@@ -32,10 +34,13 @@ export default function PhoneLoginScreen() {
   const [otp, setOtp] = useState("");
   const [verificationId, setVerificationId] = useState<string | null>(null);
   const [message, setMessage] = useState("");
+  const [loading, setLoading] = useState(false);
+  const [isFetchingData, setIsFetchingData] = useState(false);
   const [countryCode, setCountryCode] = useState<CountryCode>("IN");
   const [callingCode, setCallingCode] = useState("91");
 
   const sendOtp = async () => {
+    setLoading(true);
     try {
       const phoneProvider = new PhoneAuthProvider(auth);
       const fullPhoneNumber = phone; // phone already contains +91
@@ -48,6 +53,8 @@ export default function PhoneLoginScreen() {
       setMessage("OTP sent!");
     } catch (err: any) {
       setMessage(`Error: ${err.message}`);
+    } finally {
+      setLoading(false);
     }
   };
 
@@ -74,6 +81,7 @@ export default function PhoneLoginScreen() {
   };
 
   const confirmOtp = async () => {
+    setLoading(true);
     try {
       const credential = PhoneAuthProvider.credential(verificationId!, otp);
 
@@ -96,16 +104,29 @@ export default function PhoneLoginScreen() {
         );
       } else {
         // Existing user, go to home
+        setIsFetchingData(true);
         await fetchAndSaveUser();
         router.replace("./(tabs)");
       }
     } catch (err: any) {
       setMessage(`Error: ${err.message}`);
+      // In case of error, hide the full-screen loader
+      setIsFetchingData(false);
+    } finally {
+      setLoading(false);
     }
   };
 
   return (
     <SafeAreaView style={{ flex: 1 }}>
+      <Modal transparent={true} animationType="none" visible={isFetchingData}>
+        <View style={styles.modalBackground}>
+          <View style={styles.activityIndicatorWrapper}>
+            <ActivityIndicator size="large" color="#4CAF50" />
+            <Text style={styles.loadingText}>Fetching Data...</Text>
+          </View>
+        </View>
+      </Modal>
       <View style={styles.container}>
         {/* Recaptcha */}
         <FirebaseRecaptchaVerifierModal
@@ -161,8 +182,16 @@ export default function PhoneLoginScreen() {
                   onChangeText={handlePhoneChange}
                 />
               </View>
-              <TouchableOpacity style={styles.button} onPress={sendOtp}>
-                <Text style={styles.buttonText}>Proceed</Text>
+              <TouchableOpacity
+                style={[styles.button, loading && styles.buttonDisabled]}
+                onPress={sendOtp}
+                disabled={loading}
+              >
+                {loading ? (
+                  <ActivityIndicator color="#fff" />
+                ) : (
+                  <Text style={styles.buttonText}>Proceed</Text>
+                )}
               </TouchableOpacity>
             </>
           ) : (
@@ -190,8 +219,16 @@ export default function PhoneLoginScreen() {
                   />
                 </View>
 
-                <TouchableOpacity style={styles.button} onPress={confirmOtp}>
-                  <Text style={styles.buttonText}>Login</Text>
+                <TouchableOpacity
+                  style={[styles.button, loading && styles.buttonDisabled]}
+                  onPress={confirmOtp}
+                  disabled={loading}
+                >
+                  {loading ? (
+                    <ActivityIndicator color="#fff" />
+                  ) : (
+                    <Text style={styles.buttonText}>Login</Text>
+                  )}
                 </TouchableOpacity>
               </KeyboardAvoidingView>
             </>
@@ -254,6 +291,9 @@ const styles = StyleSheet.create({
     backgroundColor: "#4CAF50",
     padding: 15,
     borderRadius: 8,
+  },
+  buttonDisabled: {
+    backgroundColor: "#A5D6A7",
   },
   buttonText: {
     color: "#fff",
@@ -347,5 +387,25 @@ const styles = StyleSheet.create({
     color: "transparent",
     fontSize: 24, // Make it large enough to be easily tapped
     letterSpacing: 30, // Adjust spacing to align with boxes
+  },
+  modalBackground: {
+    flex: 1,
+    alignItems: "center",
+    flexDirection: "column",
+    justifyContent: "space-around",
+    backgroundColor: "#00000040",
+  },
+  activityIndicatorWrapper: {
+    backgroundColor: "#FFFFFF",
+    height: 120,
+    width: 200,
+    borderRadius: 10,
+    display: "flex",
+    alignItems: "center",
+    justifyContent: "space-around",
+  },
+  loadingText: {
+    marginTop: 10,
+    fontSize: 16,
   },
 });

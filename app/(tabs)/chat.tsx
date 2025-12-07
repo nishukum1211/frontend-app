@@ -14,7 +14,7 @@ import { getUserData } from "../auth/action";
 import { DecodedToken, getLoginJwtToken, removeUserData } from "../auth/auth";
 import { fetchAllChatsAndCache, loadAgentChatListFromCache, loadAllChatsFromCache, updateChat } from "../chat/chatCache";
 import { webSocketManager } from "../chat/websocketOps";
-import { CallRequest } from "../components/CallRequestWidget";
+import { CallRequest as CallRequestType } from "../components/CallRequestWidget";
 import ChatView from "../components/ChatView";
 
 const { width } = Dimensions.get("window");
@@ -117,7 +117,7 @@ export default function Chat() {
     // Add the call request message if it exists
     if (callRequest) {
       try {
-        const callRequestData: CallRequest = JSON.parse(callRequest as string);
+        const callRequestData: CallRequestType = JSON.parse(callRequest as string);
         const newMessage: IMessage = {
           _id: callRequestData.id,
           text: '', // Text is empty because the widget will be shown

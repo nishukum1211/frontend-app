@@ -1,9 +1,9 @@
 import { useFocusEffect } from "expo-router";
 import { useCallback, useState } from "react";
 import { ActivityIndicator, StyleSheet, View } from "react-native";
+import AgentResources from "../agentResources/resources";
 import { getUserData } from "../auth/action";
 import { DecodedToken } from "../auth/auth";
-import AgentResources from "../agent/agentResources";
 import PdfList from "./pdfList";
 
 export default function Resources() {

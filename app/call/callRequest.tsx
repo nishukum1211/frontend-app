@@ -14,7 +14,6 @@ import {
 import { ActivityIndicator } from "react-native-paper";
 import { SafeAreaView } from "react-native-safe-area-context";
 import { getUserData } from "../auth/action";
-import { CallRequest } from "../components/CallRequestWidget";
 import RazorpayCheckout from "../pay/RazorpayCheckout";
 import { createRazorpayOrder } from "../pay/razorpay_api";
 import CallInfoSection from "./callInfoSection";
@@ -195,19 +194,37 @@ export default function CallRequestScreen() {
 
                 <TouchableOpacity
                   style={callRequestStyles.sendButton}
-                  onPress={() => {
+                  onPress={async () => {
                     // This will now handle both free and paid call request sending
                     setConfirmationModalVisible(false);
-                    const callRequestPayload: CallRequest = {
+
+                    const user = await getUserData();
+                    if (!user) {
+                      // This should ideally not happen if checks are in place
+                      // but as a fallback, we can alert and redirect.
+                      Alert.alert(
+                        "Login Required",
+                        "You need to be logged in to make a call request.",
+                        [
+                          {
+                            text: "OK",
+                            onPress: () => router.push("/phoneLoginScreen"),
+                          },
+                        ]
+                      );
+                      return;
+                    }
+
+                    const message = `Crop: ${selectedLabel}`;
+
+                    const callRequestPayload = {
                       id: `call-${Date.now()}`,
-                      type: isPaidCallConfirmation
-                        ? "call-request-paid"
-                        : "call-request",
-                      heading: isPaidCallConfirmation ? "Paid Call" : "Free Call",
-                      message: query || (isPaidCallConfirmation ? "Paid call request." : "Free call request."),
-                      crops:
-                        selectedLabel !== "फसल चुने" ? [selectedLabel] : [],
-                      status: 0,
+                      paid: isPaidCallConfirmation,
+                      user_id: user.id,
+                      user_name: user.name || "Unknown User",
+                      message: message,
+                      request_time: new Date().toISOString(),
+                      status: "requested",
                     };
 
                     router.push({
