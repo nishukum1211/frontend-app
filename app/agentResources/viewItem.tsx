@@ -18,7 +18,7 @@ export default function ViewItemScreen() {
         source={{ uri: 'URL_TO_YOUR_IMAGE' }} // Replace with actual image URL
         style={styles.image}
       />
-      <Text style={styles.description}>{item.desc}</Text>
+      <Text style={styles.description}>{item.desc_hn}</Text>
       <Text style={styles.price}>Price: ${item.price}</Text>
       {/* Add more details as needed */}
     </View>
