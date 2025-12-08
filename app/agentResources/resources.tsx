@@ -138,7 +138,7 @@ export default function AgentResources() {
             item={item}
             onUpdate={() =>
               router.push({
-                pathname: "../agent/updateItem", // Ensure this path is correct
+                pathname: "/agentResources/updateItem", // Ensure this path is correct
                 params: {
                   item: JSON.stringify(item),
                 },
