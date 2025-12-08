@@ -1,5 +1,5 @@
-import { useLocalSearchParams, useRouter } from "expo-router";
-import { useCallback, useState } from "react";
+import { useLocalSearchParams, useNavigation, useRouter } from "expo-router";
+import { useCallback, useEffect, useState } from "react";
 import {
     Alert,
     KeyboardAvoidingView,
@@ -15,6 +15,7 @@ import { AgentService, SellableItem } from "../api/agent";
 
 export default function UpdateItemScreen() {
     const router = useRouter();
+    const navigation = useNavigation();
     const params = useLocalSearchParams();
     const item: SellableItem = JSON.parse(params.item as string);
 
@@ -57,7 +58,7 @@ export default function UpdateItemScreen() {
                     {
                         text: "OK",
                         onPress: () => {
-                            router.replace("/agent/agentResources");
+                            router.replace("/agentResources/resources");
                         },
                     },
                 ]);
@@ -68,6 +69,16 @@ export default function UpdateItemScreen() {
             Alert.alert("An Error Occurred", "An unexpected error occurred during the update.");
         }
     }, [item, name, price, desc, descHn, router]);
+
+    useEffect(() => {
+        navigation.setOptions({
+            headerRight: () => (
+                <TouchableOpacity style={styles.headerButton} onPress={handleUpdate}>
+                    <Text style={styles.headerButtonText}>Save</Text>
+                </TouchableOpacity>
+            ),
+        });
+    }, [navigation, handleUpdate]);
 
     return (
         <KeyboardAvoidingView
@@ -115,10 +126,6 @@ export default function UpdateItemScreen() {
                     placeholder="Item Description (Hindi)"
                     multiline
                 />
-
-                <TouchableOpacity style={styles.button} onPress={handleUpdate}>
-                    <Text style={styles.buttonText}>Save Changes</Text>
-                </TouchableOpacity>
             </ScrollView>
         </KeyboardAvoidingView>
     );
@@ -178,4 +185,16 @@ const styles = StyleSheet.create({
         fontSize: 16,
         fontWeight: "bold",
     },
+    headerButton: {
+        backgroundColor: '#28a745', // green color
+        paddingVertical: 8,
+        paddingHorizontal: 18,
+        borderRadius: 8,
+        marginRight: 15,
+    },
+    headerButtonText: {
+        color: 'white',
+        fontSize: 16,
+        fontWeight: 'bold',
+    }
 });
