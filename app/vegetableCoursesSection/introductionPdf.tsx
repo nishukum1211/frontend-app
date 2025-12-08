@@ -1,11 +1,61 @@
-import { StyleSheet, Text, View } from "react-native";
+import { useLocalSearchParams } from "expo-router";
+import { useEffect, useState } from "react";
+import { ActivityIndicator, StyleSheet, Text, View } from "react-native";
+import { AgentService, SellableItem } from "../api/agent";
 
 const IntroductionPdf = () => {
+  const { id } = useLocalSearchParams(); // ← GET ID FROM ROUTER
+
+  const [item, setItem] = useState<SellableItem | null>(null);
+  const [loading, setLoading] = useState(true);
+
+  useEffect(() => {
+    const loadItems = async () => {
+      const items = await AgentService.getSellableItems();
+
+      if (items && items.length > 0) {
+        // FIND ITEM BY ID
+        const selected = items.find((i) => i.id === id);
+
+        if (selected) {
+          let text = selected.desc_hn;
+
+          // CLEAN TEXT SPACING
+          text = text
+            .replace(/\s+/g, " ")
+            .replace(/\n\s*\n/g, "\n")
+            .replace(/[^\S\r\n]+/g, " ")
+            .trim();
+
+          setItem({ ...selected, desc_hn: text });
+        }
+      }
+
+      setLoading(false);
+    };
+
+    loadItems();
+  }, [id]);
+
+  if (loading) {
+    return (
+      <View style={styles.center}>
+        <ActivityIndicator size="large" color="green" />
+      </View>
+    );
+  }
+
+  if (!item) {
+    return (
+      <View style={styles.center}>
+        <Text>डेटा उपलब्ध नहीं है</Text>
+      </View>
+    );
+  }
+
   return (
     <View style={styles.container}>
-      {/* Card */}
       <View style={styles.card}>
-        {/* Header Badge */}
         <View style={styles.badge}>
           <Text style={styles.badgeText}>📗 शीर्ष उत्तम खेती PDF कोर्स</Text>
           <Text style={styles.badgeSub}>
@@ -13,16 +63,13 @@ const IntroductionPdf = () => {
           </Text>
         </View>
 
-        {/* Body Content */}
         <Text style={styles.bodyText}>
           ● किसान भाइयों मैं Duleshwar, Chhattisgarh से हूँ।{"\n"}
           पिछले कई सालों से खीरा 🥒, टमाटर 🍅, बैंगन 🍆, मिर्च 🌶️ और करेला 🍃 की
-          उत्तम खेती कर रहा हूँ। मैं कुल 16 एकड़ में खेती करता हूँ।{"\n"}
-          {"\n"} ● अगर आप खीरा की खेती को वैज्ञानिक तरीके से सीखकर ज्यादा
-          पैदावार और अधिक मुनाफा कमाना चाहते हैं, तो यह एडवांस PDF कोर्स आपके
-          लिए एकदम सही है।
-          {"\n\n"} ● अपने लंबे अनुभव, कई किसानों के खेत पर जाकर, उनकी समस्याओं
-          को समझकर वास्तविक समाधान एवं किसानों की जरूरतों को ध्यान में रखते हुए
+          उत्तम खेती कर रहा हूँ। मैं कुल 16 एकड़ में खेती करता हूँ।{"\n\n"}●{" "}
+          {item.desc_hn}
+          {"\n\n"}● अपने लंबे अनुभव, कई किसानों के खेत पर जाकर, उनकी समस्याओं को
+          समझकर वास्तविक समाधान एवं किसानों की जरूरतों को ध्यान में रखते हुए
           मैंने यह PDF तैयार किया है।
         </Text>
       </View>
@@ -68,10 +115,10 @@ const styles = StyleSheet.create({
     color: "#4a3b2d",
   },
 
-  point: {
-    fontSize: 15,
-    lineHeight: 26,
-    color: "#4a3b2d",
+  center: {
+    flex: 1,
+    justifyContent: "center",
+    alignItems: "center",
   },
 });
 

@@ -45,7 +45,19 @@ const VegetableCoursesSection: React.FC = () => {
         columnWrapperStyle={{ justifyContent: "space-between" }}
         keyExtractor={(item) => item.id}
         renderItem={({ item }) => (
-          <TouchableOpacity style={styles.card}>
+          <TouchableOpacity
+            style={styles.card}
+            onPress={() =>
+              router.push({
+                pathname: "./pdfCourse",
+                params: {
+                  id: item.id,
+                  price: item.price,
+                  crops: item.crops,
+                },
+              })
+            }
+          >
             <View style={styles.row}>
               {/* Price */}
               <Text style={styles.price}>{item.price}</Text>
@@ -57,17 +69,7 @@ const VegetableCoursesSection: React.FC = () => {
               </View>
             </View>
 
-            <Text
-              style={styles.subtitle}
-              onPress={() => {
-                router.push({
-                  pathname: "./pdfCourse",
-                  params: { id: item.id, price: item.price, crops: item.crops },
-                });
-              }}
-            >
-              PDF Course
-            </Text>
+            <Text style={styles.subtitle}>PDF Course</Text>
           </TouchableOpacity>
         )}
       />

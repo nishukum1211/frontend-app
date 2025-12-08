@@ -28,7 +28,9 @@ export default function PdfCourse() {
   const [isLoading, setIsLoading] = useState(false);
   const [isPaymentVisible, setPaymentVisible] = useState(false);
   const [isSuccessModalVisible, setSuccessModalVisible] = useState(false);
-  const [userPrefillData, setUserPrefillData] = useState<{ name?: string; email?: string; contact?: string } | undefined>(undefined);
+  const [userPrefillData, setUserPrefillData] = useState<
+    { name?: string; email?: string; contact?: string } | undefined
+  >(undefined);
   const price = params.price ? Number(params.price) : 0;
   const crops = params.crops || "Farming";
   const course_id = params.id;
@@ -71,7 +73,11 @@ export default function PdfCourse() {
     }
   };
 
-  const handlePaymentSuccess = (paymentId: string, orderId: string, signature: string) => {
+  const handlePaymentSuccess = (
+    paymentId: string,
+    orderId: string,
+    signature: string
+  ) => {
     setPaymentVisible(false);
     setSuccessModalVisible(true);
     // TODO: Verify payment signature on your backend and grant access to the course
@@ -102,7 +108,7 @@ export default function PdfCourse() {
         </View>
       </Modal>
 
-      <HeaderWithBackButton title={`${crops}`} />
+      <HeaderWithBackButton title={`${crops} Pdf Course`} />
 
       <FlatList
         style={{ flex: 1 }}
@@ -131,10 +137,7 @@ export default function PdfCourse() {
       />
 
       {/* Sticky Footer */}
-      <StickyJoinBar
-        price={price}
-        onJoinPress={handleJoinPress}
-      />
+      <StickyJoinBar price={price} onJoinPress={handleJoinPress} />
 
       {orderId && userPrefillData && (
         <RazorpayCheckout
