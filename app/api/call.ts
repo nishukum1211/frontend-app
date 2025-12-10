@@ -18,6 +18,7 @@ export interface CallRequest {
   paid: boolean;
   user_id: string;
   user_name: string;
+  user_mobile: string;
   agent_id?: string;
   message: string;
   request_time: string;
