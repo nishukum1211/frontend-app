@@ -1,10 +1,12 @@
-import { Image, Text, View } from "react-native";
+import { useRouter } from "expo-router";
+import { Image, Text, TouchableOpacity, View } from "react-native";
 import styles from "./vegetableStyles";
 
 export default function VegetableSubscription() {
+  const router = useRouter();
+
   return (
     <View style={styles.card}>
-      {/* TOP IMAGES ROW */}
       <View style={styles.imageRow}>
         <Image
           source={require("../../assets/images/chilli.webp")}
@@ -24,13 +26,14 @@ export default function VegetableSubscription() {
         />
       </View>
 
-      {/* TITLE */}
       <Text style={styles.title}>Vegetable Farming</Text>
 
-      {/* SUBSCRIPTION BADGE */}
-      <View style={styles.badge}>
+      <TouchableOpacity
+        style={styles.badge}
+        onPress={() => router.push("/vegetableSubscription/SubscriptionPage")}
+      >
         <Text style={styles.badgeText}>Subscription</Text>
-      </View>
+      </TouchableOpacity>
     </View>
   );
 }
