@@ -18,6 +18,7 @@ export interface CallRequest {
   paid: boolean;
   user_id: string;
   user_name: string;
+  user_mobile: string;
   agent_id?: string;
   message: string;
   request_time: string;
@@ -49,7 +50,8 @@ export class CallService {
       });
 
       if (!response.ok) {
-        throw new Error(`Failed to fetch call requests: ${response.status} ${response.statusText}`);
+        console.log(`Failed to fetch call requests: ${response.status} ${response.text}`);
+        return null
       }
 
       const requests: CallRequest[] = await response.json();

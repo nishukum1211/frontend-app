@@ -5,12 +5,14 @@ import {
   ActivityIndicator,
   Alert,
   FlatList,
+  Linking,
   Modal,
   RefreshControl,
   StyleSheet,
   Text,
   TextInput,
   TouchableOpacity,
+  TouchableWithoutFeedback,
   View
 } from 'react-native';
 import { CallRequest, CallService, CallStatus } from '../api/call';
@@ -21,7 +23,7 @@ type RootStackParamList = {
 };
 
 type AgentCallRequestsScreenRouteProp = RouteProp<RootStackParamList, 'AgentCallRequests'>;
-type SortKey = keyof Pick<CallRequest, 'user_name' | 'message' | 'request_time' | 'status'>;
+type SortKey = keyof Pick<CallRequest, 'request_time' | 'status'>;
 type SortDirection = 'asc' | 'desc';
 
 
@@ -42,6 +44,7 @@ const AgentCallRequestsScreen = () => {
   const [modalVisible, setModalVisible] = useState(false);
   const [selectedRequest, setSelectedRequest] = useState<CallRequest | null>(null);
   const [modalRemarks, setModalRemarks] = useState('');
+  const [searchQuery, setSearchQuery] = useState('');
   const [refreshing, setRefreshing] = useState(false);
 
   //---------------------------------------------------------------------------
@@ -109,6 +112,16 @@ const AgentCallRequestsScreen = () => {
   useEffect(() => {
     let requests = [...allRequests];
 
+    if (searchQuery) {
+      const lowercasedQuery = searchQuery.toLowerCase();
+      requests = requests.filter(
+        r =>
+          r.user_name.toLowerCase().includes(lowercasedQuery) ||
+          (r.user_mobile && r.user_mobile.includes(lowercasedQuery)) ||
+          r.message.toLowerCase().includes(lowercasedQuery)
+      );
+    }
+
     if (filterType === 'free') requests = requests.filter(r => !r.paid);
     if (filterType === 'paid') requests = requests.filter(r => r.paid);
 
@@ -123,7 +136,7 @@ const AgentCallRequestsScreen = () => {
     }
 
     setFilteredRequests(requests);
-  }, [allRequests, filterType, sortConfig]);
+  }, [allRequests, filterType, sortConfig, searchQuery]);
 
   //---------------------------------------------------------------------------
   // Sorting handler
@@ -200,33 +213,54 @@ const AgentCallRequestsScreen = () => {
   //---------------------------------------------------------------------------
   // Render row
   //---------------------------------------------------------------------------
-  const renderItem = ({ item }: { item: CallRequest }) => (
-    <TouchableOpacity
-      style={[styles.row, getStatusStyle(item.status).row]}
-      onPress={() => handleRowPress(item)}
-    >
-      <Text style={[styles.cell, { flex: 2 }]}>{item.user_name}</Text>
+  const renderItem = ({ item }: { item: CallRequest }) => {
+    const handleCall = () => {
+      if (item.user_mobile) {
+        Linking.openURL(`tel:${item.user_mobile.replace(/\s/g, "")}`);
+      } else {
+        Alert.alert("No Mobile Number", "This user does not have a mobile number.");
+      }
+    };
 
-      <Text style={[styles.cell, { flex: 3 }]} numberOfLines={1}>
-        {item.message}
-      </Text>
+    return (
+      <TouchableWithoutFeedback onPress={() => handleRowPress(item)}>
+        <View style={[styles.card, getStatusStyle(item.status).row]}>
+          <Text style={styles.cardDate}>
+            {new Date(item.request_time).toLocaleDateString('en-GB', {
+              day: 'numeric',
+              month: 'short',
+            })}
+          </Text>
 
-      <Text style={[styles.cell, { flex: 2 }]}>
-        {new Date(item.request_time).toLocaleDateString('en-GB', {
-          day: 'numeric',
-          month: 'short',
-          year: '2-digit'
-        })}
-      </Text>
+          <Text style={styles.cardMessage} numberOfLines={3}>{item.message}</Text>
 
-      <View style={[styles.cell, { flex: 2, flexDirection: 'column', alignItems: 'center', justifyContent: 'center', gap: 4 }]}>
-        {item.paid && <Text style={styles.paidBadge}>Paid</Text>}
-        <Text style={[styles.statusBadge, getStatusStyle(item.status).text]}>
-          {item.status}
-        </Text>
-      </View>
-    </TouchableOpacity>
-  );
+          <View style={styles.badgesContainer}>
+            {item.paid && <Text style={styles.paidBadge}>Paid</Text>}
+            <Text style={[styles.statusBadge, getStatusStyle(item.status).text]}>
+              {item.status}
+            </Text>
+          </View>
+
+          <View style={styles.cardFooter}>
+            <View style={styles.userInfoContainer}>
+              <Text style={styles.cardNameFooter}>{item.user_name}</Text>
+              <Text style={styles.cardMobile}>{item.user_mobile || 'No mobile'}</Text>
+            </View>
+            <View>
+              <TouchableOpacity
+                style={[styles.callButton, (!item.user_mobile || item.status === CallStatus.FULFILLED) && styles.disabledButton]}
+                onPress={handleCall}
+                disabled={!item.user_mobile || item.status === CallStatus.FULFILLED}
+              >
+                <FontAwesome name="phone" size={16} color="white" />
+                <Text style={styles.callButtonText}>Call</Text>
+              </TouchableOpacity>
+            </View>
+          </View>
+        </View>
+      </TouchableWithoutFeedback>
+    );
+  };
 
   //---------------------------------------------------------------------------
   // Counters
@@ -391,40 +425,33 @@ const AgentCallRequestsScreen = () => {
 
             {/* TABLE HEADER */}
             <View style={styles.headerRow}>
-              <TouchableOpacity
-                style={[styles.headerCell, { flex: 2 }]}
-                onPress={() => handleSort('user_name')}
-              >
-                <Text style={styles.headerText}>
-                  Name{getSortIndicator('user_name')}
-                </Text>
-              </TouchableOpacity>
+              <View style={[styles.headerCell, { flex: 3 }]}>
+                <TextInput
+                  style={styles.searchInput}
+                  placeholder="Search"
+                  value={searchQuery}
+                  onChangeText={setSearchQuery}
+                />
+              </View>
 
               <TouchableOpacity
-                style={[styles.headerCell, { flex: 3 }]}
-                onPress={() => handleSort('message')}
-              >
-                <Text style={styles.headerText}>
-                  Message{getSortIndicator('message')}
-                </Text>
-              </TouchableOpacity>
-
-              <TouchableOpacity
-                style={[styles.headerCell, { flex: 2 }]}
+                style={[styles.headerButton, { flex: 2 }]}
                 onPress={() => handleSort('request_time')}
               >
                 <Text style={styles.headerText}>
                   Date{getSortIndicator('request_time')}
                 </Text>
+                <FontAwesome name="sort" size={14} color="#333" />
               </TouchableOpacity>
 
               <TouchableOpacity
-                style={[styles.headerCell, { flex: 2 }]}
+                style={[styles.headerButton, { flex: 2 }]}
                 onPress={() => handleSort('status')}
               >
                 <Text style={styles.headerText}>
                   Status{getSortIndicator('status')}
                 </Text>
+                <FontAwesome name="sort" size={14} color="#333" />
               </TouchableOpacity>
             </View>
           </>
@@ -461,25 +488,40 @@ const styles = StyleSheet.create({
     backgroundColor: '#eef2f5',
     paddingVertical: 10,
     borderBottomWidth: 1,
-    borderBottomColor: '#ccc',
-    paddingHorizontal: 5
-  },
-
-  headerCell: { flex: 1, paddingHorizontal: 5 },
-
-  headerText: { fontWeight: 'bold', color: '#333' },
-
-  row: {
-    flexDirection: 'row',
-    paddingVertical: 12,
+    borderBottomColor: '#ddd',
     paddingHorizontal: 5,
-    backgroundColor: '#fff',
-    borderBottomWidth: 1,
-    borderBottomColor: '#eee',
-    alignItems: 'center'
+    gap: 8,
+    alignItems: 'center',
   },
 
-  cell: { flex: 1, paddingHorizontal: 5, color: '#555' },
+  headerCell: { flex: 1, paddingHorizontal: 5, justifyContent: 'center' },
+
+  nameHeaderContainer: {
+    flexDirection: 'row',
+    justifyContent: 'center',
+    alignItems: 'center',
+    gap: 6,
+  },
+
+  headerButton: {
+    flex: 1,
+    flexDirection: 'row',
+    justifyContent: 'center',
+    alignItems: 'center',
+    backgroundColor: '#e0e0e0',
+    paddingVertical: 8,
+    paddingHorizontal: 5,
+    borderRadius: 8,
+    gap: 6,
+  },
+
+  headerText: { fontWeight: 'bold', color: '#333', fontSize: 14 },
+
+  searchInput: {
+    height: 36,
+    borderColor: '#ccc', borderWidth: 1, borderRadius: 8, paddingHorizontal: 10, backgroundColor: 'white'
+  },
+
 
   // Keep background colors for status, but remove row-specific styles that interfere with new border look
   fulfilledRow: { backgroundColor: '#e8f5e9' },
@@ -566,5 +608,94 @@ const styles = StyleSheet.create({
 
   counterText: { fontWeight: 'bold', fontSize: 16 },
 
-  activeFilter: { borderColor: '#007AFF', elevation: 4 }
+  activeFilter: { borderColor: '#007AFF', elevation: 4 },
+
+  // Card styles
+  card: {
+    backgroundColor: 'white',
+    borderRadius: 12,
+    padding: 15,
+    marginVertical: 8,
+    marginHorizontal: 5,
+    elevation: 3,
+    shadowColor: '#000', // Keep shadow for depth
+    shadowOffset: { width: 0, height: 1 }, // Keep shadow for depth
+    shadowOpacity: 0.2, // Keep shadow for depth
+    shadowRadius: 2, // Keep shadow for depth
+    position: 'relative', // Needed for absolute positioning of the date
+  },
+  cardName: {
+    fontSize: 18,
+    fontWeight: 'bold',
+    flexShrink: 1,
+  },
+  cardBody: {
+    marginBottom: 12,
+  },
+  cardMobile: {
+    fontSize: 16,
+    color: '#0056b3',
+    fontWeight: '600',
+  },
+  cardMessage: {
+    fontSize: 14,
+    marginTop: 30, // Add margin to avoid overlap with absolute positioned elements
+    marginBottom: 12,
+    color: '#555', // Keep color
+    lineHeight: 18,
+  },
+  cardFooter: {
+    flexDirection: 'row',
+    justifyContent: 'flex-end', // Align call button to the right
+    alignItems: 'center',
+    borderTopWidth: 1,
+    borderTopColor: '#eee',
+    paddingTop: 10,
+  },
+  cardDate: {
+    position: 'absolute',
+    top: -1,
+    left: -1,
+    backgroundColor: '#007AFF',
+    color: 'white',
+    paddingHorizontal: 12,
+    paddingVertical: 4,
+    borderTopLeftRadius: 12,
+    borderBottomRightRadius: 12,
+    fontWeight: 'bold',
+    fontSize: 12,
+  },
+  callButton: {
+    flexDirection: 'row',
+    backgroundColor: '#4CAF50',
+    paddingVertical: 8,
+    paddingHorizontal: 15,
+    borderRadius: 20,
+    alignItems: 'center',
+    gap: 8,
+  },
+  callButtonText: {
+    color: 'white',
+    fontWeight: 'bold',
+    fontSize: 14,
+  },
+  disabledButton: {
+    backgroundColor: '#a5d6a7',
+  },
+  userInfoContainer: {
+    flex: 1,
+    marginRight: 10,
+  },
+  cardNameFooter: {
+    fontSize: 16,
+    fontWeight: 'bold',
+    color: '#333',
+  },
+  badgesContainer: {
+    position: 'absolute',
+    top: 8,
+    right: 15,
+    flexDirection: 'row',
+    gap: 4,
+  },
 });

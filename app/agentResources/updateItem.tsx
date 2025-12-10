@@ -72,13 +72,14 @@ export default function UpdateItemScreen() {
 
     useEffect(() => {
         navigation.setOptions({
+            title: name,
             headerRight: () => (
                 <TouchableOpacity style={styles.headerButton} onPress={handleUpdate}>
                     <Text style={styles.headerButtonText}>Save</Text>
                 </TouchableOpacity>
             ),
         });
-    }, [navigation, handleUpdate]);
+    }, [navigation, handleUpdate, name]);
 
     return (
         <KeyboardAvoidingView

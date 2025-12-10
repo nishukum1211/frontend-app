@@ -20,10 +20,12 @@ const ItemCard = ({
   item,
   onUpdate,
   onRemove,
+  onView,
 }: {
   item: SellableItem;
   onUpdate: () => void;
   onRemove: () => void;
+  onView: () => void;
 }) => {
   const [thumbnail, setThumbnail] = useState<string | null>(null);
 
@@ -33,7 +35,18 @@ const ItemCard = ({
   }, [item.id]);
 
   return (
-    <TouchableOpacity style={styles.itemContainer} onPress={onUpdate}>
+    <TouchableOpacity
+      style={styles.itemContainer}
+      onPress={onView}
+      activeOpacity={0.8} // Add activeOpacity for better UX
+    >
+      {/* Remove icon */}
+      <TouchableOpacity
+        style={styles.removeIconContainer}
+        onPress={onRemove}
+      >
+        <Text style={styles.removeIcon}>✕</Text>
+      </TouchableOpacity>
       <Image
         source={
           thumbnail
@@ -45,12 +58,16 @@ const ItemCard = ({
       <View style={styles.itemDetails}>
         <Text style={styles.itemName}>{item.name}</Text>
         <Text style={styles.itemPrice}>₹{item.price}</Text>
+        {/* Edit button */}
         <View style={styles.buttonContainer}>
           <TouchableOpacity
-            style={[styles.button, styles.removeButton]}
-            onPress={onRemove}
+            style={styles.editButton}
+            onPress={(e) => {
+              e.stopPropagation(); // Prevent triggering onView when edit is pressed
+              onUpdate();
+            }}
           >
-            <Text style={styles.buttonText}>Remove</Text>
+            <Text style={styles.buttonText}>✏️ Edit</Text>
           </TouchableOpacity>
         </View>
       </View>
@@ -144,6 +161,14 @@ export default function AgentResources() {
                 },
               })
             }
+             onView={() =>
+              router.push({
+                pathname: "/agentResources/viewItem", // Ensure this path is correct
+                params: {
+                  item: JSON.stringify(item),
+                },
+              })
+            }
             onRemove={() => console.log("Remove item:", item.id)}
           />
         )}
@@ -188,11 +213,33 @@ const styles = StyleSheet.create({
     marginHorizontal: 16,
     marginBottom: 16,
     flexDirection: "row",
-    elevation: 3,
+    elevation: 5,
     shadowColor: "#000",
-    shadowOffset: { width: 0, height: 2 },
-    shadowOpacity: 0.1,
-    shadowRadius: 4,
+    shadowOffset: { width: 0, height: 4 },
+    shadowOpacity: 0.2,
+    shadowRadius: 5,
+  },
+  removeIconContainer: {
+    position: 'absolute',
+    top: 5,
+    right: 5,
+    zIndex: 1,
+    backgroundColor: 'rgba(255, 255, 255, 0.8)',
+    borderRadius: 12,
+    width: 24,
+    height: 24,
+    justifyContent: 'center',
+    alignItems: 'center',
+    shadowColor: '#000',
+    shadowOffset: { width: 0, height: 1 },
+    shadowOpacity: 0.22,
+    shadowRadius: 2.22,
+    elevation: 3,
+  },
+  removeIcon: {
+    color: '#dc2626',
+    fontWeight: '900',
+    fontSize: 14,
   },
   thumbnail: {
     width: 100,
@@ -222,15 +269,19 @@ const styles = StyleSheet.create({
     flexDirection: "row",
     marginTop: 12,
     justifyContent: "flex-end",
+    gap: 8,
   },
-  button: {
-    backgroundColor: "#007AFF",
-    paddingVertical: 8,
-    paddingHorizontal: 16,
+  editButton: {
+    backgroundColor: "#6c757d", // A modern, neutral grey
+    paddingVertical: 10,
+    paddingHorizontal: 15, // Added horizontal padding for better text fit
     borderRadius: 8,
-  },
-  removeButton: {
-    backgroundColor: "#DC2626",
+    alignItems: "center",
+    shadowColor: "#000",
+    shadowOffset: { width: 0, height: 2 },
+    shadowOpacity: 0.25,
+    shadowRadius: 3.84,
+    elevation: 5,
   },
   buttonText: {
     color: "white",
