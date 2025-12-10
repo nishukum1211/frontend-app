@@ -35,7 +35,12 @@ const ItemCard = ({
   }, [item.id]);
 
   return (
-    <View style={styles.itemContainer}>
+    <TouchableOpacity
+      style={styles.itemContainer}
+      onPress={onView}
+      activeOpacity={0.8} // Add activeOpacity for better UX
+    >
+      {/* Remove icon */}
       <TouchableOpacity
         style={styles.removeIconContainer}
         onPress={onRemove}
@@ -53,22 +58,20 @@ const ItemCard = ({
       <View style={styles.itemDetails}>
         <Text style={styles.itemName}>{item.name}</Text>
         <Text style={styles.itemPrice}>₹{item.price}</Text>
+        {/* Edit button */}
         <View style={styles.buttonContainer}>
           <TouchableOpacity
             style={styles.editButton}
-            onPress={onUpdate}
+            onPress={(e) => {
+              e.stopPropagation(); // Prevent triggering onView when edit is pressed
+              onUpdate();
+            }}
           >
-            <Text style={styles.buttonText}>Edit</Text>
-          </TouchableOpacity>
-           <TouchableOpacity
-            style={styles.viewButton}
-            onPress={onView}
-          >
-            <Text style={styles.buttonText}>View</Text>
+            <Text style={styles.buttonText}>✏️ Edit</Text>
           </TouchableOpacity>
         </View>
       </View>
-    </View>
+    </TouchableOpacity>
   );
 };
 
@@ -271,20 +274,8 @@ const styles = StyleSheet.create({
   editButton: {
     backgroundColor: "#6c757d", // A modern, neutral grey
     paddingVertical: 10,
+    paddingHorizontal: 15, // Added horizontal padding for better text fit
     borderRadius: 8,
-    flex: 1,
-    alignItems: "center",
-    shadowColor: "#000",
-    shadowOffset: { width: 0, height: 2 },
-    shadowOpacity: 0.25,
-    shadowRadius: 3.84,
-    elevation: 5,
-  },
-  viewButton: {
-    backgroundColor: "#28a745", // Green color for view
-    paddingVertical: 10,
-    borderRadius: 8,
-    flex: 1,
     alignItems: "center",
     shadowColor: "#000",
     shadowOffset: { width: 0, height: 2 },
