@@ -1,5 +1,6 @@
 import { getLoginJwtToken } from "../auth/auth";
 import { AppConfig } from "../config";
+import { User } from "./user"; // Import the User interface
 
 /**
  * Defines the structure for creating an offline subscription.
@@ -45,6 +46,38 @@ export class SubscriptionService {
         } catch (error) {
             console.error("Error in SubscriptionService.createOfflineSubscription:", error);
             return false;
+        }
+    }
+
+    /**
+     * Fetches all users subscribed to a specific course.
+     * @param {string} courseId - The ID of the course.
+     * @returns {Promise<User[] | null>} A list of User objects or null if an error occurs.
+     */
+    public static async getUsersSubscribedToCourse(courseId: string): Promise<User[] | null> {
+        try {
+            const token = await getLoginJwtToken();
+            if (!token) {
+                console.error("Authentication error. Please log in again.");
+                return null;
+            }
+
+            const response = await fetch(`${AppConfig.API_BASE_URL}/subscription/course/${encodeURIComponent(courseId)}`, {
+                headers: {
+                    Authorization: `Bearer ${token}`,
+                    "X-Token-Source": "password",
+                },
+            });
+            if (!response.ok) {
+                console.log(`Failed to fetch subscribed users: ${response.status} ${response.statusText}`);
+                return null;
+            }
+
+            const users: User[] = await response.json();
+            return users;
+        } catch (error) {
+            console.log("Error in SubscriptionService.getUsersSubscribedToCourse:", error);
+            return null;
         }
     }
 }

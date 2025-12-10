@@ -49,7 +49,8 @@ export class CallService {
       });
 
       if (!response.ok) {
-        throw new Error(`Failed to fetch call requests: ${response.status} ${response.statusText}`);
+        console.log(`Failed to fetch call requests: ${response.status} ${response.text}`);
+        return null
       }
 
       const requests: CallRequest[] = await response.json();
