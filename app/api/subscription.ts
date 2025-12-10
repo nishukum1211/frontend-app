@@ -8,6 +8,7 @@ import { User } from "./user"; // Import the User interface
 export interface SubscriptionCreate {
     course_id: string;
     order_id: string;
+    price_paid: number;
 }
 
 /**
@@ -39,12 +40,13 @@ export class SubscriptionService {
             });
 
             if (!response.ok) {
-                throw new Error(`Failed to create offline subscription: ${response.status} ${response.statusText}`);
+                console.log(`Failed to create offline subscription: ${response.status} ${response.statusText}`);
+                return false;
             }
 
             return true;
         } catch (error) {
-            console.error("Error in SubscriptionService.createOfflineSubscription:", error);
+            console.log("Error in SubscriptionService.createOfflineSubscription:", error);
             return false;
         }
     }

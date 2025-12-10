@@ -38,12 +38,13 @@ export class UserService {
             });
 
             if (!response.ok) {
-                throw new Error(`Failed to fetch user: ${response.status} ${response.statusText}`);
+                console.log(`Failed to fetch user: ${response.status} ${response.statusText}`);
+                return null;
             }
 
             return await response.json() as User;
         } catch (error) {
-            console.error("Error in UserService.fetchUserByMobileNumber:", error);
+            console.log("Error in UserService.fetchUserByMobileNumber:", error);
             return null;
         }
     }
