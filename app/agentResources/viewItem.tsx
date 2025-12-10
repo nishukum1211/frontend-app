@@ -366,7 +366,6 @@ const styles = StyleSheet.create({
   },
   input: {
     flex: 1,
-    height: 50,
     borderColor: "#D1D5DB",
     borderWidth: 1,
     borderRadius: 8,
