@@ -30,7 +30,7 @@ const SUPPORT_AGENT_ID = "ecc71288-6403-48ed-8058-dad2a6dc8c76";
 
 export default function Chat() {
   const router = useRouter();
-  const { callRequest } = useLocalSearchParams();
+  const { callRequest, image_uri } = useLocalSearchParams();
   const [user, setUser] = useState<DecodedToken | null>(null);
   const [loading, setLoading] = useState(true);
   const [messages, setMessages] = useState<IMessage[]>([]);
@@ -58,7 +58,7 @@ export default function Chat() {
         setLoading(false); // Set loading to false after auth check
       };
 
-      checkAuthStatus();
+      void checkAuthStatus();
     }, [router])
   );
 
@@ -132,6 +132,24 @@ export default function Chat() {
         console.error("Failed to parse callRequest parameter:", e);
       }
     }
+
+    // Add the image message if it exists from camera tab
+    if (image_uri && user) {
+      const newMessage: IMessage = {
+        _id: `${Date.now()}-${Math.random()}`,
+        createdAt: new Date(),
+        user: {
+          _id: user.id,
+          name: user.name,
+        },
+        image: image_uri as string,
+        text: "",
+      };
+      onSend([newMessage]); // Programmatically send the message
+      router.setParams({ image_uri: undefined }); // Clear the param
+    }
+
+
     // Connect WebSocket using the manager
     webSocketManager.connect(
       { userId: user.id, agentId: SUPPORT_AGENT_ID, role: "user" },
@@ -162,7 +180,7 @@ export default function Chat() {
       // when the user comes back if the connection is needed.
       // webSocketManager.disconnect(); // Optional: uncomment if you want to disconnect on tab change
     };
-  }, [user, callRequest]); // Reconnect if user changes
+  }, [user, callRequest, image_uri]); // Reconnect if user changes
 
   const onSend = useCallback(
     async (messages: IMessage[] = []) => {

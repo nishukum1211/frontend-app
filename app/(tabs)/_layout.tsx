@@ -5,10 +5,9 @@ import {
   Ionicons,
   MaterialCommunityIcons,
 } from "@expo/vector-icons";
-import * as ImagePicker from "expo-image-picker";
 import { Tabs } from "expo-router";
 import { useEffect, useState } from "react";
-import { Alert, Platform, Text, TouchableOpacity, View } from "react-native";
+import { Platform, Text, TouchableOpacity, View } from "react-native";
 
 /**
  * Tabs layout:
@@ -50,33 +49,6 @@ export default function TabsLayout() {
 
   // Don't render tabs until fonts are loaded (prevents glyphs missing)
   if (!fontsLoaded) return null;
-
-  // Camera action when center tab pressed
-  const openCameraFromTab = async () => {
-    try {
-      const permission = await ImagePicker.requestCameraPermissionsAsync();
-      if (!permission.granted) {
-        Alert.alert(
-          "Permission required",
-          "Camera permission is required to take photos."
-        );
-        return;
-      }
-
-      const result = await ImagePicker.launchCameraAsync({
-        mediaTypes: ImagePicker.MediaTypeOptions.Images,
-        allowsEditing: true,
-        quality: 0.7,
-      });
-
-      if (!result.canceled) {
-        console.log("Captured Image URI:", result.assets[0].uri);
-        // TODO: handle the captured image (upload / navigate / etc.)
-      }
-    } catch (err) {
-      console.warn("Failed to open camera:", err);
-    }
-  };
 
   // Custom floating camera tab button
   const CameraTabButton = ({ children, onPress, accessibilityState }: any) => (
@@ -150,10 +122,7 @@ export default function TabsLayout() {
           title: "Camera",
           tabBarLabel: "Camera",
           tabBarButton: (props) => (
-            <CameraTabButton
-              onPress={openCameraFromTab}
-              accessibilityState={props.accessibilityState}
-            >
+            <CameraTabButton {...props}>
               <MaterialCommunityIcons name="camera" size={30} color="gray" />
             </CameraTabButton>
           ),
