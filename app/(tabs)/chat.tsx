@@ -1,9 +1,11 @@
+import { MaterialCommunityIcons } from "@expo/vector-icons";
 import { useFocusEffect, useLocalSearchParams, useRouter } from "expo-router";
 import { useCallback, useEffect, useState } from "react";
 import {
   ActivityIndicator,
   Dimensions,
   FlatList,
+  RefreshControl,
   StyleSheet,
   Text,
   TouchableOpacity,
@@ -11,7 +13,7 @@ import {
 } from "react-native"; // Removed unused `Dimensions` import
 import { GiftedChat, IMessage } from "react-native-gifted-chat";
 import { getUserData } from "../auth/action";
-import { DecodedToken, getLoginJwtToken, removeUserData } from "../auth/auth";
+import { DecodedToken, removeUserData } from "../auth/auth";
 import { fetchAllChatsAndCache, loadAgentChatListFromCache, loadAllChatsFromCache, updateChat } from "../chat/chatCache";
 import { webSocketManager } from "../chat/websocketOps";
 import { CallRequest as CallRequestType } from "../components/CallRequestWidget";
@@ -36,6 +38,7 @@ export default function Chat() {
   const [messages, setMessages] = useState<IMessage[]>([]);
   const [connectionStatus, setConnectionStatus] = useState("Connecting...");
   const [agentChats, setAgentChats] = useState<AgentChatItem[]>([]);
+  const [isRefreshing, setIsRefreshing] = useState(false);
 
   useFocusEffect(
     // This effect runs when the screen comes into focus
@@ -62,31 +65,29 @@ export default function Chat() {
     }, [router])
   );
 
+  const loadAgentChats = useCallback(async (forceRefresh = false) => {
+    if (user?.role !== "agent") return;
+
+    if (forceRefresh) {
+      setIsRefreshing(true);
+    } else {
+      setLoading(true);
+    }
+
+    await fetchAllChatsAndCache("agent", forceRefresh);
+    const updatedChats = await loadAgentChatListFromCache();
+    if (updatedChats) {
+      setAgentChats(updatedChats);
+    }
+
+    setLoading(false);
+    setIsRefreshing(false);
+  }, [user?.role]);
+
   // Fetch agent chats when user is an agent
   useEffect(() => {
-    const initializeAgentView = async () => {
-      if (user?.role !== "agent") return;
-
-      setLoading(true);
-
-      const getLoginJwtToken = async (): Promise<string | null> => {
-        return await require("expo-secure-store").getItemAsync("loginJwtToken");
-      };
-      const token = await getLoginJwtToken();
-      if (token) {
-        await fetchAllChatsAndCache("agent"); // This fetches and updates the cache
-        const updatedChats = await loadAgentChatListFromCache();
-        // Pretty-print the JSON to the console for better readability
-        // console.log("Agent chats from cache:", JSON.stringify(updatedChats, null, 2));
-        if (updatedChats) setAgentChats(updatedChats);
-      } else {
-        console.error("Agent is logged in but no token found.");
-      }
-      setLoading(false);
-    };
-
-    initializeAgentView();
-  }, [user]); // Re-fetch if the user object changes
+    loadAgentChats(false);
+  }, [user, loadAgentChats]); // Re-fetch if the user object changes
 
   const onSend = useCallback(
     async (messages: IMessage[] = []) => {
@@ -152,6 +153,7 @@ export default function Chat() {
     
     // Load cached messages for the user
     const loadCachedMessages = async () => {
+      const { getLoginJwtToken } = require("../auth/auth");
       try {
         const token = await getLoginJwtToken();
         if (token) {
@@ -257,10 +259,22 @@ export default function Chat() {
   if (user?.role === "agent") {
     return (
       <View style={styles.agentContainer}>
-        <Text style={styles.header}>Conversations</Text>
+        <View style={styles.headerTitleContainer}>
+          <Text style={styles.header}>Conversations</Text>
+          <TouchableOpacity onPress={() => loadAgentChats(true)} style={styles.refreshButton} disabled={isRefreshing}>
+            {isRefreshing ? (
+              <ActivityIndicator size="small" color="#4F46E5" />
+            ) : (
+              <MaterialCommunityIcons name="refresh" size={28} color="#4F46E5" />
+            )}
+          </TouchableOpacity>
+        </View>
         <FlatList
           data={agentChats}
           keyExtractor={(item) => item.id}
+          refreshControl={
+            <RefreshControl refreshing={isRefreshing} onRefresh={() => loadAgentChats(true)} colors={["#4F46E5"]} />
+          }
           contentContainerStyle={{ paddingHorizontal: 16, paddingBottom: 20 }}
           renderItem={({ item }) => (
             <TouchableOpacity
@@ -349,13 +363,21 @@ const styles = StyleSheet.create({
     flex: 1,
     backgroundColor: "#F9FAFB",
   },
+  headerTitleContainer: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    paddingHorizontal: 16,
+    paddingVertical: 20,
+    backgroundColor: "#F9FAFB",
+  },
   header: {
     fontSize: 26,
     fontWeight: "700",
-    paddingHorizontal: 16,
-    paddingVertical: 20,
     color: "#1F2937",
-    backgroundColor: "#F9FAFB",
+  },
+  refreshButton: {
+    marginLeft: 12,
+    padding: 4,
   },
   chatItem: {
     flexDirection: "row",
