@@ -16,7 +16,7 @@ const styles = StyleSheet.create({
 
   card: {
     width: "100%",
-    height: 200,
+    height: 100,
     backgroundColor: "#fff",
     borderRadius: 20,
     overflow: "hidden",
@@ -30,7 +30,7 @@ const styles = StyleSheet.create({
 
   smallImage: {
     width: "100%",
-    height: 260, // make it a bit taller than the card
+    height: 120, // make it a bit taller than the card
     resizeMode: "cover",
     position: "absolute",
   },
@@ -84,7 +84,7 @@ const styles = StyleSheet.create({
     marginTop: 22,
   },
   modalView: {
-    position: 'relative', // Add this line
+    position: "relative", // Add this line
     margin: 20,
     backgroundColor: "white",
     borderRadius: 20,
@@ -104,7 +104,7 @@ const styles = StyleSheet.create({
     padding: 10,
     elevation: 2,
     marginTop: 15,
-    width: Dimensions.get('window').width * 0.5, // Adjust width as needed
+    width: Dimensions.get("window").width * 0.5, // Adjust width as needed
   },
   buttonFree: {
     backgroundColor: "#2196F3",
@@ -128,21 +128,20 @@ const styles = StyleSheet.create({
     margin: 12,
     borderWidth: 1,
     padding: 10,
-    width: Dimensions.get('window').width * 0.7, // Adjust width as needed
+    width: Dimensions.get("window").width * 0.7, // Adjust width as needed
     borderRadius: 5,
-    textAlignVertical: 'top', // Align text to the top for multiline
+    textAlignVertical: "top", // Align text to the top for multiline
   },
   buttonContainer: {
-    flexDirection: 'row',
-    justifyContent: 'space-between',
-    width: Dimensions.get('window').width * 0.7,
+    flexDirection: "row",
+    justifyContent: "space-between",
+    width: Dimensions.get("window").width * 0.7,
     marginTop: 15,
   },
   dropdown: {
-    width: Dimensions.get('window').width * 0.7, // Match input width
+    width: Dimensions.get("window").width * 0.7, // Match input width
     marginTop: 15,
   },
 });
-
 
 export default styles;
