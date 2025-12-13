@@ -214,13 +214,13 @@ export const updateChat = async (
   } catch (error) {
     console.error(`Failed to update chat for ${role} ${userId}:`, error);
   }
-  
+
   try {
     // This function can modify the message object, e.g., by changing the image URI
     await processChatImageMessage(message, userId, role);
-    return message; // Always return the original message object
   } catch (e) {
     console.error(`Failed to save image to backend for message for ${role} ${userId}:`, e);
-    return message; // Return original message on error
   }
+
+  return message; // Always return the original message object
 };

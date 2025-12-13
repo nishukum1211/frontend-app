@@ -88,6 +88,58 @@ export default function Chat() {
     initializeAgentView();
   }, [user]); // Re-fetch if the user object changes
 
+  const onSend = useCallback(
+    async (messages: IMessage[] = []) => {
+      if (!user) {
+        console.error("User not available");
+        return;
+      }
+
+      if (!webSocketManager.isConnected(undefined, "user")) {
+        // console.log("WebSocket not connected. Attempting to reconnect...");
+        setConnectionStatus("Reconnecting...");
+        try {
+          await webSocketManager.connect(
+            { userId: user.id, agentId: SUPPORT_AGENT_ID, role: "user" },
+            {
+              onOpen: () => setConnectionStatus("Connected"),
+              onError: (error) => console.log("WebSocket Error:", error),
+              onClose: () => setConnectionStatus("Disconnected"),
+            }
+          );
+        } catch (error) {
+          console.error("Failed to reconnect WebSocket:", error);
+          return; // Don't send if reconnection fails
+        }
+      }
+
+      const sentMessage = messages[0];
+
+      setMessages((previousMessages) =>
+        GiftedChat.append(previousMessages, messages)
+      );
+
+      // Call updateChat for sent message
+      // console.log("Updating chat cache on send:", JSON.stringify(sentMessage, null, 2));
+      updateChat(user.id, sentMessage, "user").catch(error => {
+        console.error("Failed to update chat cache on send:", error);
+      });
+
+      // The webSocketManager's sendChat expects an IMessage object.
+      // It will handle the JSON stringification.
+      const messageToSend: IMessage = {
+        ...sentMessage,
+        user: {
+          _id: user.id,
+          name: user.name,
+        },
+      };
+      // console.log("Sending message via WebSocket:", JSON.stringify(messageToSend, null, 2));
+      webSocketManager.sendChat(messageToSend);
+    },
+    [user]
+  );
+
   useEffect(() => {
     if (!user || user.role === "agent") return; // Only connect if it's a regular user
     
@@ -133,23 +185,6 @@ export default function Chat() {
       }
     }
 
-    // Add the image message if it exists from camera tab
-    if (image_uri && user) {
-      const newMessage: IMessage = {
-        _id: `${Date.now()}-${Math.random()}`,
-        createdAt: new Date(),
-        user: {
-          _id: user.id,
-          name: user.name,
-        },
-        image: image_uri as string,
-        text: "",
-      };
-      onSend([newMessage]); // Programmatically send the message
-      router.setParams({ image_uri: undefined }); // Clear the param
-    }
-
-
     // Connect WebSocket using the manager
     webSocketManager.connect(
       { userId: user.id, agentId: SUPPORT_AGENT_ID, role: "user" },
@@ -180,58 +215,28 @@ export default function Chat() {
       // when the user comes back if the connection is needed.
       // webSocketManager.disconnect(); // Optional: uncomment if you want to disconnect on tab change
     };
-  }, [user, callRequest, image_uri]); // Reconnect if user changes
+  }, [user, callRequest, onSend, router]); // Reconnect if user changes
 
-  const onSend = useCallback(
-    async (messages: IMessage[] = []) => {
-      if (!user) {
-        console.error("User not available");
-        return;
-      }
-
-      if (!webSocketManager.isConnected(undefined, "user")) {
-        console.log("WebSocket not connected. Attempting to reconnect...");
-        setConnectionStatus("Reconnecting...");
-        try {
-          await webSocketManager.connect(
-            { userId: user.id, agentId: SUPPORT_AGENT_ID, role: "user" },
-            {
-              onOpen: () => setConnectionStatus("Connected"),
-              onError: (error) => console.log("WebSocket Error:", error),
-              onClose: () => setConnectionStatus("Disconnected"),
-            }
-          );
-        } catch (error) {
-          console.error("Failed to reconnect WebSocket:", error);
-          return; // Don't send if reconnection fails
-        }
-      }
-
-      const sentMessage = messages[0];
-
-      setMessages((previousMessages) =>
-        GiftedChat.append(previousMessages, messages)
-      );
-
-      // Call updateChat for sent message
-      updateChat(user.id, sentMessage, "user").catch(error => {
-        console.error("Failed to update chat cache on send:", error);
-      });
-
-      // The webSocketManager's sendChat expects an IMessage object.
-      // It will handle the JSON stringification.
-      const messageToSend: IMessage = {
-        ...sentMessage,
+  // Separate effect to handle sending an image from the camera tab
+  useEffect(() => {
+    if (image_uri && user) {
+      // console.log("Received image_uri:", image_uri);
+      const newMessage: IMessage = {
+        _id: `${Date.now()}-${Math.random()}`,
+        createdAt: new Date(),
         user: {
           _id: user.id,
           name: user.name,
         },
+        image: image_uri as string,
+        text: "📷",
       };
-
-      webSocketManager.sendChat(messageToSend);
-    },
-    [user]
-  );
+      // console.log("Creating IMessage object for image:", JSON.stringify(newMessage, null, 2));
+      onSend([newMessage]); // Programmatically send the message
+      // Clear the param so it doesn't re-send on focus
+      router.setParams({ image_uri: undefined });
+    }
+  }, [image_uri, user, onSend, router]);
 
   if (loading) {
     return (

@@ -1,7 +1,7 @@
-import * as ImagePicker from "expo-image-picker";
-import { useFocusEffect, useRouter } from 'expo-router';
-import { useCallback } from 'react';
-import { ActivityIndicator, View } from 'react-native';
+import { useFocusEffect, useRouter } from "expo-router";
+import { useCallback } from "react";
+import { ActivityIndicator, View } from "react-native";
+import { pickImageFromCamera } from "../components/imagePicker";
 
 export default function CameraScreen() {
   const router = useRouter();
@@ -9,15 +9,9 @@ export default function CameraScreen() {
   useFocusEffect(
     useCallback(() => {
       const launchCamera = async () => {
-        // Launch camera
-        const result = await ImagePicker.launchCameraAsync({
-          mediaTypes: ImagePicker.MediaTypeOptions.Images,
-          allowsEditing: false,
-          quality: 0.7,
-        });
+        const imageUri = await pickImageFromCamera();
 
-        if (!result.canceled) {
-          const imageUri = result.assets[0].uri;
+        if (imageUri) {
           // Navigate to the chat tab and pass the image URI as a parameter
           router.push({
             pathname: "/(tabs)/chat",
