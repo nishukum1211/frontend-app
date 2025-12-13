@@ -1,9 +1,11 @@
+import { MaterialCommunityIcons } from "@expo/vector-icons";
 import { useFocusEffect, useLocalSearchParams, useRouter } from "expo-router";
 import { useCallback, useEffect, useState } from "react";
 import {
   ActivityIndicator,
   Dimensions,
   FlatList,
+  RefreshControl,
   StyleSheet,
   Text,
   TouchableOpacity,
@@ -11,7 +13,7 @@ import {
 } from "react-native"; // Removed unused `Dimensions` import
 import { GiftedChat, IMessage } from "react-native-gifted-chat";
 import { getUserData } from "../auth/action";
-import { DecodedToken, getLoginJwtToken, removeUserData } from "../auth/auth";
+import { DecodedToken, removeUserData } from "../auth/auth";
 import { fetchAllChatsAndCache, loadAgentChatListFromCache, loadAllChatsFromCache, updateChat } from "../chat/chatCache";
 import { webSocketManager } from "../chat/websocketOps";
 import { CallRequest as CallRequestType } from "../components/CallRequestWidget";
@@ -30,12 +32,13 @@ const SUPPORT_AGENT_ID = "ecc71288-6403-48ed-8058-dad2a6dc8c76";
 
 export default function Chat() {
   const router = useRouter();
-  const { callRequest } = useLocalSearchParams();
+  const { callRequest, image_uri } = useLocalSearchParams();
   const [user, setUser] = useState<DecodedToken | null>(null);
   const [loading, setLoading] = useState(true);
   const [messages, setMessages] = useState<IMessage[]>([]);
   const [connectionStatus, setConnectionStatus] = useState("Connecting...");
   const [agentChats, setAgentChats] = useState<AgentChatItem[]>([]);
+  const [isRefreshing, setIsRefreshing] = useState(false);
 
   useFocusEffect(
     // This effect runs when the screen comes into focus
@@ -58,41 +61,99 @@ export default function Chat() {
         setLoading(false); // Set loading to false after auth check
       };
 
-      checkAuthStatus();
+      void checkAuthStatus();
     }, [router])
   );
 
+  const loadAgentChats = useCallback(async (forceRefresh = false) => {
+    if (user?.role !== "agent") return;
+
+    if (forceRefresh) {
+      setIsRefreshing(true);
+    } else {
+      setLoading(true);
+    }
+
+    await fetchAllChatsAndCache("agent", forceRefresh);
+    const updatedChats = await loadAgentChatListFromCache();
+    if (updatedChats) {
+      setAgentChats(updatedChats);
+    }
+
+    setLoading(false);
+    setIsRefreshing(false);
+  }, [user?.role]);
+
   // Fetch agent chats when user is an agent
   useEffect(() => {
-    const initializeAgentView = async () => {
-      if (user?.role !== "agent") return;
+    loadAgentChats(false);
+  }, [user, loadAgentChats]); // Re-fetch if the user object changes
 
-      setLoading(true);
-
-      const getLoginJwtToken = async (): Promise<string | null> => {
-        return await require("expo-secure-store").getItemAsync("loginJwtToken");
-      };
-      const token = await getLoginJwtToken();
-      if (token) {
-        await fetchAllChatsAndCache("agent"); // This fetches and updates the cache
-        const updatedChats = await loadAgentChatListFromCache();
-        // Pretty-print the JSON to the console for better readability
-        // console.log("Agent chats from cache:", JSON.stringify(updatedChats, null, 2));
-        if (updatedChats) setAgentChats(updatedChats);
-      } else {
-        console.error("Agent is logged in but no token found.");
+  const onSend = useCallback(
+    async (messages: IMessage[] = []) => {
+      if (!user) {
+        console.error("User not available");
+        return;
       }
-      setLoading(false);
-    };
 
-    initializeAgentView();
-  }, [user]); // Re-fetch if the user object changes
+      // Wait for connection if not already connected
+      if (!webSocketManager.isConnected()) {
+        setConnectionStatus("Reconnecting...");
+        const connected = await new Promise<boolean>((resolve) => {
+          webSocketManager.connect(
+            { userId: user.id, agentId: SUPPORT_AGENT_ID, role: "user" },
+            {
+              onOpen: () => {
+                setConnectionStatus("Connected");
+                resolve(true);
+              },
+              onError: (error) => {
+                console.log("WebSocket Error:", error);
+                resolve(false);
+              },
+              onClose: () => setConnectionStatus("Disconnected"),
+            }
+          );
+        });
+        if (!connected) {
+          console.error("Failed to connect WebSocket. Message not sent.");
+          return;
+        }
+      }
+
+      const sentMessage = messages[0];
+
+      setMessages((previousMessages) =>
+        GiftedChat.append(previousMessages, messages)
+      );
+
+      // Call updateChat for sent message
+      // console.log("Updating chat cache on send:", JSON.stringify(sentMessage, null, 2));
+      updateChat(user.id, sentMessage, "user").catch(error => {
+        console.error("Failed to update chat cache on send:", error);
+      });
+
+      // The webSocketManager's sendChat expects an IMessage object.
+      // It will handle the JSON stringification.
+      const messageToSend: IMessage = {
+        ...sentMessage,
+        user: {
+          _id: user.id,
+          name: user.name,
+        },
+      };
+      // console.log("Sending message via WebSocket:", JSON.stringify(messageToSend, null, 2));
+      webSocketManager.sendChat(messageToSend);
+    },
+    [user]
+  );
 
   useEffect(() => {
     if (!user || user.role === "agent") return; // Only connect if it's a regular user
     
     // Load cached messages for the user
     const loadCachedMessages = async () => {
+      const { getLoginJwtToken } = require("../auth/auth");
       try {
         const token = await getLoginJwtToken();
         if (token) {
@@ -120,7 +181,7 @@ export default function Chat() {
         const callRequestData: CallRequestType = JSON.parse(callRequest as string);
         const newMessage: IMessage = {
           _id: callRequestData.id,
-          text: '', // Text is empty because the widget will be shown
+          text: '📞', // Text is empty because the widget will be shown
           createdAt: new Date(),
           user: { _id: user.id, name: user.name },
           type: 'call-request', // Set the custom type
@@ -132,6 +193,7 @@ export default function Chat() {
         console.error("Failed to parse callRequest parameter:", e);
       }
     }
+
     // Connect WebSocket using the manager
     webSocketManager.connect(
       { userId: user.id, agentId: SUPPORT_AGENT_ID, role: "user" },
@@ -162,58 +224,28 @@ export default function Chat() {
       // when the user comes back if the connection is needed.
       // webSocketManager.disconnect(); // Optional: uncomment if you want to disconnect on tab change
     };
-  }, [user, callRequest]); // Reconnect if user changes
+  }, [user, callRequest, router]); // Reconnect if user changes. Removed onSend to avoid re-triggering.
 
-  const onSend = useCallback(
-    async (messages: IMessage[] = []) => {
-      if (!user) {
-        console.error("User not available");
-        return;
-      }
-
-      if (!webSocketManager.isConnected(undefined, "user")) {
-        console.log("WebSocket not connected. Attempting to reconnect...");
-        setConnectionStatus("Reconnecting...");
-        try {
-          await webSocketManager.connect(
-            { userId: user.id, agentId: SUPPORT_AGENT_ID, role: "user" },
-            {
-              onOpen: () => setConnectionStatus("Connected"),
-              onError: (error) => console.log("WebSocket Error:", error),
-              onClose: () => setConnectionStatus("Disconnected"),
-            }
-          );
-        } catch (error) {
-          console.error("Failed to reconnect WebSocket:", error);
-          return; // Don't send if reconnection fails
-        }
-      }
-
-      const sentMessage = messages[0];
-
-      setMessages((previousMessages) =>
-        GiftedChat.append(previousMessages, messages)
-      );
-
-      // Call updateChat for sent message
-      updateChat(user.id, sentMessage, "user").catch(error => {
-        console.error("Failed to update chat cache on send:", error);
-      });
-
-      // The webSocketManager's sendChat expects an IMessage object.
-      // It will handle the JSON stringification.
-      const messageToSend: IMessage = {
-        ...sentMessage,
+  // Separate effect to handle sending an image from the camera tab
+  useEffect(() => {
+    if (image_uri && user) {
+      // console.log("Received image_uri:", image_uri);
+      const newMessage: IMessage = {
+        _id: `${Date.now()}-${Math.random()}`,
+        createdAt: new Date(),
         user: {
           _id: user.id,
           name: user.name,
         },
+        image: image_uri as string,
+        text: "📷",
       };
-
-      webSocketManager.sendChat(messageToSend);
-    },
-    [user]
-  );
+      // console.log("Creating IMessage object for image:", JSON.stringify(newMessage, null, 2));
+      onSend([newMessage]); // Programmatically send the message
+      // Clear the param so it doesn't re-send on focus
+      router.setParams({ image_uri: undefined });
+    }
+  }, [image_uri, user, onSend, router]);
 
   if (loading) {
     return (
@@ -227,10 +259,22 @@ export default function Chat() {
   if (user?.role === "agent") {
     return (
       <View style={styles.agentContainer}>
-        <Text style={styles.header}>Conversations</Text>
+        <View style={styles.headerTitleContainer}>
+          <Text style={styles.header}>Conversations</Text>
+          <TouchableOpacity onPress={() => loadAgentChats(true)} style={styles.refreshButton} disabled={isRefreshing}>
+            {isRefreshing ? (
+              <ActivityIndicator size="small" color="#4F46E5" />
+            ) : (
+              <MaterialCommunityIcons name="refresh" size={28} color="#4F46E5" />
+            )}
+          </TouchableOpacity>
+        </View>
         <FlatList
           data={agentChats}
           keyExtractor={(item) => item.id}
+          refreshControl={
+            <RefreshControl refreshing={isRefreshing} onRefresh={() => loadAgentChats(true)} colors={["#4F46E5"]} />
+          }
           contentContainerStyle={{ paddingHorizontal: 16, paddingBottom: 20 }}
           renderItem={({ item }) => (
             <TouchableOpacity
@@ -319,13 +363,21 @@ const styles = StyleSheet.create({
     flex: 1,
     backgroundColor: "#F9FAFB",
   },
+  headerTitleContainer: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    paddingHorizontal: 16,
+    paddingVertical: 20,
+    backgroundColor: "#F9FAFB",
+  },
   header: {
     fontSize: 26,
     fontWeight: "700",
-    paddingHorizontal: 16,
-    paddingVertical: 20,
     color: "#1F2937",
-    backgroundColor: "#F9FAFB",
+  },
+  refreshButton: {
+    marginLeft: 12,
+    padding: 4,
   },
   chatItem: {
     flexDirection: "row",

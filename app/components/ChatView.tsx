@@ -1,8 +1,6 @@
 import { Feather } from "@expo/vector-icons";
-import * as ImagePicker from "expo-image-picker";
 import { useState } from "react";
 import {
-  Alert,
   Image,
   StyleSheet,
   Text,
@@ -21,6 +19,7 @@ import {
 } from "react-native-gifted-chat";
 import ImageViewer from 'react-native-image-zoom-viewer';
 import Modal from 'react-native-modal';
+import { pickImageFromCamera } from "../components/imagePicker";
 import CallRequestWidget from "./CallRequestWidget";
 
 interface ChatViewProps {
@@ -33,25 +32,15 @@ export default function ChatView({ messages, onSend, user }: ChatViewProps) {
   const [fullScreenImage, setFullScreenImage] = useState<string | null>(null);
 
   const handlePickImage = async () => {
-    const permissionResult = await ImagePicker.requestCameraPermissionsAsync();
+    const imageUri = await pickImageFromCamera();
 
-    if (permissionResult.granted === false) {
-      Alert.alert("Permission required", "You need to allow camera access to send photos.");
-      return;
-    }
-
-    const result = await ImagePicker.launchCameraAsync({
-      allowsEditing: false,
-    });
-
-    if (!result.canceled) {
-      const imageUri = result.assets[0].uri;
+    if (imageUri) {
       const message: IMessage = {
         _id: `${Date.now()}-${Math.random()}`,
         createdAt: new Date(),
         user: user,
         image: imageUri,
-        text: "",
+        text: "📷",
       };
       onSend([message]);
     }

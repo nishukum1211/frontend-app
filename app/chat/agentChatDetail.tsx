@@ -1,5 +1,4 @@
 import { MaterialCommunityIcons } from "@expo/vector-icons";
-import { useNavigation } from "@react-navigation/native";
 import { useFocusEffect, useLocalSearchParams, useRouter } from "expo-router";
 import { useCallback, useEffect, useState } from "react";
 import { StyleSheet, Text, TouchableOpacity, View } from "react-native";
@@ -12,14 +11,12 @@ import { webSocketManager } from "./websocketOps";
 
 export default function AgentChatDetail() {
   const router = useRouter();
-  const navigation = useNavigation();
   const params = useLocalSearchParams();
   const { id, userName } = params;
   const [connectionStatus, setConnectionStatus] = useState("Connecting...");
   const userId = id as string;
   const [messages, setMessages] = useState<IMessage[]>([]); // Start as empty array
   const [agentId, setAgentId] = useState<string | null>(null);
-
   // Fetch agent's ID from SecureStore
   useEffect(() => {
     const getAgentData = async () => {
@@ -33,26 +30,29 @@ export default function AgentChatDetail() {
     getAgentData();
   }, [router]);
 
+  const loadCachedMessages = useCallback(async () => {
+    try {
+      const allChats = await loadAllChatsFromCache();
+      if (allChats) {
+        const cachedChat = allChats[id as string];
+        if (cachedChat && cachedChat.all && cachedChat.all.length > 0) {
+          // Sort newest first for GiftedChat
+          const sortedMessages = [...cachedChat.all].sort((a, b) => new Date(b.createdAt).getTime() - new Date(a.createdAt).getTime());
+          setMessages(sortedMessages);
+        } else {
+          setMessages([]);
+        }
+      }
+    } catch (error) {
+      console.error("Failed to load cached messages:", error);
+    }
+  }, [id]);
+
   useFocusEffect(
     useCallback(() => {
       if (!agentId || !id) return; // Wait for agentId and userId
 
       // Load cached messages first
-      const loadCachedMessages = async () => {
-        try {
-          const allChats = await loadAllChatsFromCache();
-          if (allChats) {
-            const cachedChat = allChats[id as string];
-            if (cachedChat && cachedChat.all && cachedChat.all.length > 0) {
-              // Sort newest first for GiftedChat
-              const sortedMessages = [...cachedChat.all].sort((a, b) => new Date(b.createdAt).getTime() - new Date(a.createdAt).getTime());
-              setMessages(sortedMessages);
-            }
-          }
-        } catch (error) {
-          console.error("Failed to load cached messages:", error);
-        }
-      };
       loadCachedMessages();
 
       // Connect WebSocket
@@ -80,7 +80,7 @@ export default function AgentChatDetail() {
       return () => {
         // webSocketManager.disconnect(userId);
       };
-    }, [agentId, id]) // Reconnect if agentId or userId changes
+    }, [agentId, id, loadCachedMessages]) // Reconnect if agentId or userId changes
   );
 
   const onSend = useCallback(
@@ -138,7 +138,6 @@ export default function AgentChatDetail() {
             {userName}
           </Text>
         </View>
-
       </View>
       <View style={[
           styles.statusBar,
@@ -200,7 +199,7 @@ const styles = StyleSheet.create({
   },
   nameContainer: {
     flex: 1,
-    marginLeft: 12,
+    marginLeft: 16,
     justifyContent: "center",
   },
   userName: {

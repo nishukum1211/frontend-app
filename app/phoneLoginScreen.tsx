@@ -1,10 +1,4 @@
-import { FirebaseRecaptchaVerifierModal } from "expo-firebase-recaptcha";
 import { useRouter } from "expo-router";
-import {
-  getAdditionalUserInfo,
-  PhoneAuthProvider,
-  signInWithCredential,
-} from "firebase/auth";
 import { useRef, useState } from "react";
 import {
   Image,
@@ -25,14 +19,13 @@ import CountryPicker, {
 import { SafeAreaView } from "react-native-safe-area-context";
 import { fetchAndSaveUser } from "./auth/action";
 import { setLoginJwtToken } from "./auth/auth";
-import { app, auth } from "./firebaseConfig";
+import { UserService, VerifyOtpResponse } from "./api/user";
 
 export default function PhoneLoginScreen() {
   const router = useRouter();
-  const recaptchaVerifier = useRef<any>(null);
   const [phone, setPhone] = useState("+91");
   const [otp, setOtp] = useState("");
-  const [verificationId, setVerificationId] = useState<string | null>(null);
+  const [otpSent, setOtpSent] = useState(false);
   const [message, setMessage] = useState("");
   const [loading, setLoading] = useState(false);
   const [isFetchingData, setIsFetchingData] = useState(false);
@@ -42,15 +35,14 @@ export default function PhoneLoginScreen() {
   const sendOtp = async () => {
     setLoading(true);
     try {
-      const phoneProvider = new PhoneAuthProvider(auth);
-      const fullPhoneNumber = phone; // phone already contains +91
-
-      const verificationId = await phoneProvider.verifyPhoneNumber(
-        fullPhoneNumber,
-        recaptchaVerifier.current
-      );
-      setVerificationId(verificationId);
-      setMessage("OTP sent!");
+      const mobileNumber = phone.replace(/\s/g, "");
+      const response = await UserService.sendOtp(mobileNumber);
+      if (response) {
+        setOtpSent(true);
+        setMessage("OTP sent!");
+      } else {
+        setMessage("Failed to send OTP. Please try again.");
+      }
     } catch (err: any) {
       setMessage(`Error: ${err.message}`);
     } finally {
@@ -58,59 +50,34 @@ export default function PhoneLoginScreen() {
     }
   };
 
-  const handlePhoneChange = (text: string) => {
-    const prefix = `+${callingCode}`;
-    let digits = text.replace(prefix, "").replace(/\D/g, ""); // Remove non-digits
-
-    // Limit to 10 digits
-    if (digits.length > 10) {
-      digits = digits.slice(0, 10);
-    }
-
-    let formattedText = prefix;
-    if (digits.length > 0) {
-      if (digits.length <= 5) {
-        formattedText = `${prefix} ${digits}`;
-      } else {
-        formattedText = `${prefix} ${digits.slice(0, 5)} ${digits.slice(5)}`;
-      }
-    }
-
-    // Handle backspacing
-    setPhone(formattedText);
-  };
-
   const confirmOtp = async () => {
     setLoading(true);
     try {
-      const credential = PhoneAuthProvider.credential(verificationId!, otp);
+      const mobileNumber = phone.replace(/\s/g, "");
+      const response: VerifyOtpResponse | null = await UserService.verifyOtp(
+        mobileNumber,
+        otp
+      );
 
-      const userCredential = await signInWithCredential(auth, credential);
-      const additionalUserInfo = getAdditionalUserInfo(userCredential);
-      const user = userCredential.user;
+      if (response) {
+        await setLoginJwtToken(response.token);
+        setMessage("Phone authentication successful!");
 
-      // Generate JWT token
-      const token = await user.getIdToken(/* forceRefresh */ true);
-      await setLoginJwtToken(token);
-
-      setMessage("Phone authentication successful!");
-
-      if (additionalUserInfo?.isNewUser) {
-        // New user, redirect to a sign-up completion screen
-        router.navigate(
-          `./signup?mobile_number=${encodeURIComponent(
-            phone.replace(/\s/g, "")
-          )}`
-        );
+        if (response.isNew) {
+          router.navigate(
+            `./signup?mobile_number=${encodeURIComponent(mobileNumber)}`
+          );
+        } else {
+          setIsFetchingData(true);
+          await fetchAndSaveUser();
+          router.replace("./(tabs)");
+        }
       } else {
-        // Existing user, go to home
-        setIsFetchingData(true);
-        await fetchAndSaveUser();
-        router.replace("./(tabs)");
+        setMessage("Invalid OTP. Please try again.");
+        setIsFetchingData(false);
       }
     } catch (err: any) {
       setMessage(`Error: ${err.message}`);
-      // In case of error, hide the full-screen loader
       setIsFetchingData(false);
     } finally {
       setLoading(false);
@@ -128,12 +95,6 @@ export default function PhoneLoginScreen() {
         </View>
       </Modal>
       <View style={styles.container}>
-        {/* Recaptcha */}
-        <FirebaseRecaptchaVerifierModal
-          ref={recaptchaVerifier}
-          firebaseConfig={app.options}
-        />
-
         <View style={styles.logoContainer}>
           <Image
             source={require("../assets/images/logo.png")}
@@ -146,13 +107,12 @@ export default function PhoneLoginScreen() {
           style={{ width: "100%" }}
         >
           <Text style={styles.title}>
-            {verificationId ? "Confirm OTP" : "Login with Phone"}
+            {otpSent ? "Confirm OTP" : "Login with Phone"}
           </Text>
 
-          {!verificationId ? (
+          {!otpSent ? (
             <>
               <View style={styles.phoneInputContainer}>
-                {/* Country picker with flag and triangle */}
                 <CountryPicker
                   countryCode={countryCode}
                   withFlag
@@ -162,24 +122,19 @@ export default function PhoneLoginScreen() {
                   onSelect={(country: Country) => {
                     setCountryCode(country.cca2);
                     setCallingCode(country.callingCode[0]);
-                    // Automatically fill input with +code if empty
-                    if (!phone.startsWith(`+${country.callingCode[0]}`)) {
-                      setPhone(`+${country.callingCode[0]}`);
-                    }
+                    setPhone(`+${country.callingCode[0]}`);
                   }}
                   containerButtonStyle={styles.countryPickerButton}
                 />
-                {/* Triangle/dropdown indicator */}
                 <Text style={styles.arrow}>▼</Text>
 
-                {/* Phone input with code prefixed */}
                 <TextInput
                   style={styles.inputWithPrefix}
                   placeholder="Phone Number"
                   keyboardType="phone-pad"
-                  maxLength={15} // +91 XXXXX XXXXX
+                  maxLength={15}
                   value={phone}
-                  onChangeText={handlePhoneChange}
+                  onChangeText={setPhone}
                 />
               </View>
               <TouchableOpacity
@@ -227,7 +182,7 @@ export default function PhoneLoginScreen() {
                   {loading ? (
                     <ActivityIndicator color="#fff" />
                   ) : (
-                    <Text style={styles.buttonText}>Login</Text>
+                  <Text style={styles.buttonText}>Login</Text>
                   )}
                 </TouchableOpacity>
               </KeyboardAvoidingView>
