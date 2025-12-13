@@ -38,7 +38,7 @@ export async function processChatImageMessage(
   const url = `https://dev-backend-py-23809827867.us-east1.run.app/chat/image/${chatId}/${message._id}`;
 
   // Set X-Token-Source based on role
-  const tokenSource = role === "user" ? "firebase" : "password";
+  const tokenSource = role === "user" ? "otp" : "password";
 
   const response = await fetch(url, {
     method: "POST",

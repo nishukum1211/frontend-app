@@ -14,6 +14,15 @@ export interface User {
 }
 
 /**
+ * Defines the structure for the response of OTP verification.
+ */
+export interface VerifyOtpResponse {
+    isNew: boolean;
+    message: string;
+    token: string;
+}
+
+/**
  * Provides services related to user data.
  */
 export class UserService {
@@ -45,6 +54,60 @@ export class UserService {
             return await response.json() as User;
         } catch (error) {
             console.log("Error in UserService.fetchUserByMobileNumber:", error);
+            return null;
+        }
+    }
+
+    /**
+     * Sends an OTP to the given mobile number.
+     * @param {string} mobileNumber - The mobile number to send the OTP to.
+     * @returns {Promise<{message: string} | null>} A message indicating success or null on failure.
+     */
+    public static async sendOtp(mobileNumber: string): Promise<{message: string} | null> {
+        try {
+            const response = await fetch(`${AppConfig.API_BASE_URL}/user/otp/send?mobile_number=${encodeURIComponent(mobileNumber)}`, {
+                method: 'POST',
+                headers: {
+                    'accept': 'application/json'
+                }
+            });
+
+            if (!response.ok) {
+                console.log(`Failed to send OTP: ${response.status} ${response.statusText}`);
+                return null;
+            }
+
+            return await response.json();
+        } catch (error) {
+            console.log("Error in UserService.sendOtp:", error);
+            return null;
+        }
+    }
+
+    /**
+     * Verifies the OTP for the given mobile number.
+     * @param {string} mobileNumber - The mobile number to verify.
+     * @param {string} otp - The OTP to verify.
+     * @returns {Promise<VerifyOtpResponse | null>} User authentication details or null on failure.
+     */
+    public static async verifyOtp(mobileNumber: string, otp: string): Promise<VerifyOtpResponse | null> {
+        try {
+            const response = await fetch(`${AppConfig.API_BASE_URL}/user/otp/verify?mobile_number=${encodeURIComponent(mobileNumber)}&otp=${encodeURIComponent(otp)}`, {
+                method: 'POST',
+                headers: {
+                    'accept': 'application/json',
+                    'X-Role': 'user'
+                }
+            });
+
+            if (!response.ok) {
+                console.log(`Failed to verify OTP: ${response.status} ${response.statusText}`);
+                return null;
+            }
+
+            return await response.json() as VerifyOtpResponse;
+        } catch (error) {
+            console.log("Error in UserService.verifyOtp:", error);
             return null;
         }
     }

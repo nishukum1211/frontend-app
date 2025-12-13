@@ -122,7 +122,7 @@ export default function Signup() {
             "Content-Type": "application/json",
             "X-Role": "user", // default role
             Authorization: `Bearer ${token}`, // use the fetched token
-            "X-Token-Source": "firebase", // or any appropriate value
+            "X-Token-Source": "otp", 
           },
           body: JSON.stringify(payload),
         }

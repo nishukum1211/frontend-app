@@ -138,7 +138,7 @@ export class CourseService {
             const response = await fetch(`${AppConfig.API_BASE_URL}/subscription/active`, {
                 headers: {
                     Authorization: `Bearer ${token}`,
-                    "X-Token-Source": "firebase"
+                    "X-Token-Source": "password"
                 },
             });
 
@@ -177,7 +177,7 @@ export class CourseService {
             const imageResponse = await fetch(imageUrl, {
                 headers: {
                     Authorization: `Bearer ${token}`,
-                    "X-Token-Source": "firebase"
+                    "X-Token-Source": "otp"
                 },
             });
 

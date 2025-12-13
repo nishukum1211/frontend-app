@@ -53,7 +53,7 @@ export const fetchAllChatsAndCache = async (
     if (isAgent) {
       headers["X-Token-Source"] = "password";
     } else {
-      headers["X-Token-Source"] = "firebase";
+      headers["X-Token-Source"] = "otp";
     }
 
     const response = await fetch(url, { method: "GET", headers });

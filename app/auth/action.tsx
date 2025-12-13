@@ -28,7 +28,7 @@ export const getUserData = async (): Promise<DecodedToken | null> => {
  */
 export const fetchAndSaveUser = async (
   role: "user" | "agent" = "user",
-  tokenSource: "firebase" | "password" = "firebase"
+  tokenSource: "otp" | "password" = "otp"
 ): Promise<DecodedToken | null> => {
   try {
     const token = await getLoginJwtToken();
