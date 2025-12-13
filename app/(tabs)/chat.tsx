@@ -95,21 +95,28 @@ export default function Chat() {
         return;
       }
 
-      if (!webSocketManager.isConnected(undefined, "user")) {
-        // console.log("WebSocket not connected. Attempting to reconnect...");
+      // Wait for connection if not already connected
+      if (!webSocketManager.isConnected()) {
         setConnectionStatus("Reconnecting...");
-        try {
-          await webSocketManager.connect(
+        const connected = await new Promise<boolean>((resolve) => {
+          webSocketManager.connect(
             { userId: user.id, agentId: SUPPORT_AGENT_ID, role: "user" },
             {
-              onOpen: () => setConnectionStatus("Connected"),
-              onError: (error) => console.log("WebSocket Error:", error),
+              onOpen: () => {
+                setConnectionStatus("Connected");
+                resolve(true);
+              },
+              onError: (error) => {
+                console.log("WebSocket Error:", error);
+                resolve(false);
+              },
               onClose: () => setConnectionStatus("Disconnected"),
             }
           );
-        } catch (error) {
-          console.error("Failed to reconnect WebSocket:", error);
-          return; // Don't send if reconnection fails
+        });
+        if (!connected) {
+          console.error("Failed to connect WebSocket. Message not sent.");
+          return;
         }
       }
 
@@ -172,7 +179,7 @@ export default function Chat() {
         const callRequestData: CallRequestType = JSON.parse(callRequest as string);
         const newMessage: IMessage = {
           _id: callRequestData.id,
-          text: '', // Text is empty because the widget will be shown
+          text: '📞', // Text is empty because the widget will be shown
           createdAt: new Date(),
           user: { _id: user.id, name: user.name },
           type: 'call-request', // Set the custom type
@@ -215,7 +222,7 @@ export default function Chat() {
       // when the user comes back if the connection is needed.
       // webSocketManager.disconnect(); // Optional: uncomment if you want to disconnect on tab change
     };
-  }, [user, callRequest, onSend, router]); // Reconnect if user changes
+  }, [user, callRequest, router]); // Reconnect if user changes. Removed onSend to avoid re-triggering.
 
   // Separate effect to handle sending an image from the camera tab
   useEffect(() => {

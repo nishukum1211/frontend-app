@@ -40,7 +40,7 @@ export default function ChatView({ messages, onSend, user }: ChatViewProps) {
         createdAt: new Date(),
         user: user,
         image: imageUri,
-        text: "",
+        text: "📷",
       };
       onSend([message]);
     }
