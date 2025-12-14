@@ -1,4 +1,5 @@
 import AsyncStorage from '@react-native-async-storage/async-storage';
+import { File, Paths } from "expo-file-system";
 import { getLoginJwtToken } from '../auth/auth';
 import { AppConfig } from '../config';
 
@@ -90,28 +91,28 @@ export class CourseService {
             }
 
             const remoteUrl = `${AppConfig.API_BASE_URL}/agent/sell/item/${id}`;
-            // const localFilename = `pdf-${id}.pdf`;
-            // const localFile = new File(Paths.cache, localFilename);
+            const localFilename = `pdf-${id}.pdf`;
+            const localFile = new File(Paths.cache, localFilename);
 
-            // // ✅ Delete existing file if forceRefresh or file already exists
-            // const fileInfo = await localFile.info();
-            // if (fileInfo.exists) {
-            //     console.log('Deleting old PDF before download...');
-            //     await localFile.delete();
-            // }
+            // ✅ Delete existing file if forceRefresh or file already exists
+            const fileInfo = await localFile.info();
+            if (fileInfo.exists) {
+                console.log('Deleting old PDF before download...');
+                await localFile.delete();
+            }
 
-            // // Download & write to local file
-            // const downloadResult = await File.downloadFileAsync(remoteUrl, localFile);
-            // if (!downloadResult.exists) {
-            //     throw new Error(`Failed to download PDF for ID ${id}`);
-            // }
+            // Download & write to local file
+            const downloadResult = await File.downloadFileAsync(remoteUrl, localFile);
+            if (!downloadResult.exists) {
+                throw new Error(`Failed to download PDF for ID ${id}`);
+            }
 
-            // const localUri = downloadResult.uri;
-            // await AsyncStorage.setItem(storageKey, localUri);
-            // console.log(`Downloaded PDF for ID ${id} and saved at ${localUri}`);
-            await AsyncStorage.setItem(storageKey, remoteUrl);
-            console.log(`Downloaded PDF for ID ${id} and saved at ${remoteUrl}`);
-            return remoteUrl;
+            const localUri = downloadResult.uri;
+            await AsyncStorage.setItem(storageKey, localUri);
+            console.log(`Downloaded PDF for ID ${id} and saved at ${localUri}`);
+            // await AsyncStorage.setItem(storageKey, remoteUrl);
+            // console.log(`Downloaded PDF for ID ${id} and saved at ${remoteUrl}`);
+            return localUri;
 
         } catch (err) {
             console.error(`Error in getPdfFromStorage(${id}):`, err);

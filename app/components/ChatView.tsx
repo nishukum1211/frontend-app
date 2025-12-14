@@ -18,7 +18,7 @@ import {
 } from "react-native-gifted-chat";
 import ImageViewer from 'react-native-image-zoom-viewer';
 import Modal from 'react-native-modal';
-import CachedImage from "../chat/CachedImage";
+import CachedImage from "../chat/imageCache";
 import { pickImageFromCamera } from "../components/imagePicker";
 import CallRequestWidget from "./CallRequestWidget";
 
