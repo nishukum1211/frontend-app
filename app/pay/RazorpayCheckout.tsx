@@ -29,7 +29,7 @@ const RazorpayHTML = (
         <script>
           const prefill = ${JSON.stringify(prefill || {})};
           var options = {
-            key: "rzp_test_RjxJM60aK3x9Nn", // Replace with your actual key
+            key: "rzp_live_RrZHZ2aRq0gBk9", // Replace with your actual key
             order_id: "${orderId}",
             name: "FoodFarming.in",
             description: "Paid Call Service",
