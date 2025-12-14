@@ -22,18 +22,7 @@ export const useNotificationHandler = () => {
 
   const handleChatMessage = async (data: any) => {
     if (data?.type === "chat-message" && data.chatId && data.messageData) {
-      const messageData = data.messageData as any;
-      const message: IMessage = {
-        _id: messageData._id || `${Date.now()}-${Math.random()}`,
-        text: messageData.text || "",
-        createdAt: new Date(messageData.createdAt || Date.now()),
-        user: {
-          _id: messageData.user._id,
-          name: messageData.user.name,
-          avatar: messageData.user.avatar || undefined,
-        },
-        image: messageData.image || "",
-      };
+      const message: IMessage = data.messageData as any;
       const chatId = data.chatId as string;
       const role = data.recipientRole as "user" | "agent";
 
@@ -51,16 +40,15 @@ export const useNotificationHandler = () => {
   useEffect(() => {
     // Foreground notification
     const notificationReceivedSubscription =
-      Notifications.addNotificationReceivedListener((notification) => {
+      Notifications.addNotificationReceivedListener(async (notification) => {
         const data = notification.request.content.data;
         console.log("Notification received:", data);
 
-        if (AppState.currentState === "active") {
-          // Update chat if chat message
-          handleChatMessage(data);
+        // Update chat in the background when a chat message is received
+        await handleChatMessage(data);
 
-          // Emit refresh if it's a refresh action
-          if (data?.action === "refresh" && data?.target && typeof data.target === "string") {
+        if (AppState.currentState === "active") {
+          if (data?.action === "refresh" && data?.target && typeof data.target === "string" && data?.type !== "chat-message") {
             AppEvents.emit("refresh-screen", data.target);
           }
         }
@@ -72,9 +60,6 @@ export const useNotificationHandler = () => {
         async (response) => {
           const data = response.notification.request.content.data;
           console.log("Notification tapped:", data);
-
-          // Update chat if chat message
-          await handleChatMessage(data);
 
           // Emit refresh if needed
           if (data?.action === "refresh" && data?.target && typeof data.target === "string") {
