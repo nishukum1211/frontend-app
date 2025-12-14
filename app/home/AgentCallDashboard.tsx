@@ -1,6 +1,6 @@
 import { FontAwesome } from '@expo/vector-icons';
 import { NavigationProp, RouteProp, useNavigation, useRoute } from '@react-navigation/native';
-import { useCallback, useEffect, useState } from 'react';
+import { useCallback, useEffect, useRef, useState } from 'react';
 import {
   ActivityIndicator,
   Alert,
@@ -16,6 +16,7 @@ import {
   View
 } from 'react-native';
 import { CallRequest, CallService, CallStatus } from '../api/call';
+import { AppEvents } from '../utils/eventEmitter';
 
 type RootStackParamList = {
   AgentCallRequests: { refresh?: boolean } | undefined;
@@ -24,6 +25,7 @@ type RootStackParamList = {
 
 type AgentCallRequestsScreenRouteProp = RouteProp<RootStackParamList, 'AgentCallRequests'>;
 type SortKey = keyof Pick<CallRequest, 'request_time' | 'status'>;
+const SCREEN_IDENTIFIER = 'AgentCallRequests';
 type SortDirection = 'asc' | 'desc';
 
 
@@ -105,6 +107,22 @@ const AgentCallRequestsScreen = () => {
       onRefresh();
     }
   }, [route.params?.refresh, onRefresh]);
+
+  //---------------------------------------------------------------------------
+  // Listen for refresh events from notifications
+  //---------------------------------------------------------------------------
+  useEffect(() => {
+    const handleRefresh = (targetScreen: string) => {
+      if (targetScreen === SCREEN_IDENTIFIER) {
+        console.log('Refresh event received for AgentCallRequestsScreen, refreshing...');
+        onRefresh();
+      }
+    };
+
+    const unsubscribe = AppEvents.on('refresh-screen', handleRefresh);
+
+    return () => unsubscribe(); // Cleanup subscription on unmount
+  }, [onRefresh]);
 
   //---------------------------------------------------------------------------
   // Filtering + sorting

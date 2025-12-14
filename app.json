@@ -9,7 +9,7 @@
     "newArchEnabled": true,
     "ios": {
       "supportsTablet": true,
-      "bundleIdentifier": "com.food.farming.app"
+      "bundleIdentifier": "com.food.farming"
     },
     "android": {
       "adaptiveIcon": {
@@ -18,7 +18,8 @@
       "edgeToEdgeEnabled": true,
       "predictiveBackGestureEnabled": false,
       "softwareKeyboardLayoutMode": "resize",
-      "package": "com.food.farming.app"
+      "package": "com.food.farming",
+      "googleServicesFile": "./google-services.json"
     },
     "web": {
       "output": "static"
@@ -26,7 +27,8 @@
     "plugins": [
       "expo-router",
       "expo-secure-store",
-      "expo-web-browser"
+      "expo-web-browser",
+      "expo-localization"
     ],
     "experiments": {
       "typedRoutes": true,
@@ -38,6 +40,6 @@
         "projectId": "9ccc0ef6-2f19-4c21-a6fe-31b6666abf2f"
       }
     },
-    "owner": "amitaaranya"
+    "owner": "food-farming"
   }
 }

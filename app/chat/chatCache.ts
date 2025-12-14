@@ -27,13 +27,13 @@ export const fetchAllChatsAndCache = async (
   if (!forceRefresh) {
     const cachedData = await AsyncStorage.getItem(ALL_CHATS_STORAGE_KEY);
     if (cachedData) {
-      // console.log(`Chats found in cache for ${role}. Skipping fetch.`);
+      console.log(`Chats found in cache for ${role}. Skipping fetch.`);
       const allChats: Record<string, AgentChatListItem> = JSON.parse(cachedData);
       return role === "agent" ? Object.values(allChats) : undefined;
     }
   }
 
-  // console.log(`Attempting to fetch and cache all chats for ${role}...`);
+  console.log(`Attempting to fetch and cache all chats for ${role}...`);
   try {
     const token = await getLoginJwtToken();
     if (!token) {
@@ -55,8 +55,10 @@ export const fetchAllChatsAndCache = async (
     } else {
       headers["X-Token-Source"] = "otp";
     }
-
+    // console.log(`Fetching all chats for ${role}...`)
     const response = await fetch(url, { method: "GET", headers });
+    console.log(`Fetched all chats for ${role}.`);
+    // console.log(response);
 
     if (!response.ok) {
       const errorText = await response.text();
@@ -69,6 +71,7 @@ export const fetchAllChatsAndCache = async (
     }
 
     const responseData = await response.json();
+    // console.log(`Successfully fetched all chats for ${role}.`);
 
     if (isAgent) {
       const agentChatList: AgentChatListItem[] = responseData;
@@ -86,26 +89,24 @@ export const fetchAllChatsAndCache = async (
         const chat = messagesToCache[chatId];
         if (!chat || !Array.isArray(chat.all)) continue;
 
-        await Promise.all(
-          chat.all.map(async (msg: IMessage) => {
+        for (const msg of chat.all) {
             try {
               // Check if msg.image is a backend reference (not a local file URI)
-              if (msg.image && typeof msg.image === "string" && !msg.image.startsWith("file://")) {
+              if (msg.image && typeof msg.image === "string") {
                 const imageName = getFileName(msg.image); // Extracts the filename
                 const localUri = await downloadChatImageToLocal(
                   chatId,
                   String(msg._id),
                   imageName); // Download using the filename
                 if (localUri) {
-                  console.log(`Downloaded image for chat ${chatId}, message ${msg._id} to ${localUri}`);
+                  // console.log(`Downloaded image for chat ${chatId}, message ${msg._id} to ${localUri}`);
                   msg.image = localUri;
                 }
               }
             } catch (e) {
               console.warn(`Failed to download chat image for ${chatId}/${msg._id}:`, e);
             }
-          })
-        );
+          }
       }
 
       await AsyncStorage.setItem(ALL_CHATS_STORAGE_KEY, JSON.stringify(messagesToCache));
@@ -122,8 +123,7 @@ export const fetchAllChatsAndCache = async (
 
         // Download any referenced backend images for the single user chat
         const chat = messagesToCache[userChat.id];
-        await Promise.all(
-          chat.all.map(async (msg: IMessage) => {
+        for (const msg of chat.all) {
             try {
               // Check if msg.image is a backend reference (not a local file URI)
               if (msg.image && typeof msg.image === "string" && !msg.image.startsWith("file://")) {
@@ -137,8 +137,7 @@ export const fetchAllChatsAndCache = async (
             } catch (e) {
               console.warn(`Failed to download chat image for ${chat.id}/${msg._id}:`, e);
             }
-          })
-        );
+          }
       }
 
       await AsyncStorage.setItem(ALL_CHATS_STORAGE_KEY, JSON.stringify(messagesToCache));

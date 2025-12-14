@@ -64,7 +64,7 @@ export async function processChatImageMessage(
  * @returns The local file URI or null if download fails.
  */
 export async function downloadChatImageToLocal(
-    userId: string,
+  userId: string,
   messageId: string,
   imageName: string
 ): Promise<string | null> {
@@ -76,19 +76,36 @@ export async function downloadChatImageToLocal(
     const chatImagesDir = new Directory(Paths.cache, `chat/${userId}`);
     await chatImagesDir.create({ intermediates: true, idempotent: true });
 
+     // 🔑 stable base name
+    const baseName = stripExt(imageName);
+    const candidates = [
+      new File(chatImagesDir, `${baseName}.png`),
+      new File(chatImagesDir, `${baseName}.jpg`),
+      new File(chatImagesDir, `${baseName}.jpeg`)
+    ];
+
+    for (const file of candidates) {
+      console.log(`Checking local file ${file.uri}`)
+      if (file.exists) return file.uri;
+    }
+
     // 2. Download the file into that directory
     // The download function doesn't support headers, so the URL must be public or pre-signed.
     // Assuming the image URL is accessible without auth headers for this to work.
     const downloadedFile = await File.downloadFileAsync(
       backendUrl,
       chatImagesDir,
-      {idempotent: true}
+      { idempotent: true }
     );
-
+    console.log(`Downloaded image to ${downloadedFile.uri}`);
     // 3. Return the local URI from the downloaded file
     return downloadedFile.uri;
   } catch (error) {
     console.error("Error downloading chat image:", error);
     return null;
   }
+}
+
+function stripExt(name: string) {
+  return name.replace(/\.[^/.]+$/, "");
 }

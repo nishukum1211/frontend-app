@@ -1,4 +1,5 @@
 import * as SecureStore from "expo-secure-store";
+import notificationService from "../api/NotificationService";
 import { fetchAllChatsAndCache } from "../chat/chatCache";
 import { CourseService } from "../course/courseCache";
 import { DecodedToken, getLoginJwtToken, saveUserData } from "./auth";
@@ -30,6 +31,7 @@ export const fetchAndSaveUser = async (
   role: "user" | "agent" = "user",
   tokenSource: "otp" | "password" = "otp"
 ): Promise<DecodedToken | null> => {
+  console.log("Fetching user data...");
   try {
     const token = await getLoginJwtToken();
     if (!token) {
@@ -65,7 +67,12 @@ export const fetchAndSaveUser = async (
     await saveUserData(userData); // Save the fetched user data
 
     // After successfully getting user data, fetch and cache all chats
-    await fetchAllChatsAndCache(role);
+    await fetchAllChatsAndCache(role, true);
+
+    // Register for push notifications in the background
+    notificationService.registerForPushNotificationsAsync().catch((error) => {
+      console.error("Failed to register for push notifications on login:", error);
+    });
 
     if (role === "user") {
       // Sync course assets in the background only for users
