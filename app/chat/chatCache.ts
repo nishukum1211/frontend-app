@@ -55,10 +55,10 @@ export const fetchAllChatsAndCache = async (
     } else {
       headers["X-Token-Source"] = "otp";
     }
-    // console.log(`Fetching all chats for ${role}...`)
+    console.log(`Fetching all chats for ${role}...`)
     const response = await fetch(url, { method: "GET", headers });
     console.log(`Fetched all chats for ${role}.`);
-    // console.log(response);
+    console.log(response);
 
     if (!response.ok) {
       const errorText = await response.text();
@@ -71,7 +71,7 @@ export const fetchAllChatsAndCache = async (
     }
 
     const responseData = await response.json();
-    // console.log(`Successfully fetched all chats for ${role}.`);
+    console.log(`Successfully fetched all chats for ${role}.`);
 
     if (isAgent) {
       const agentChatList: AgentChatListItem[] = responseData;
@@ -126,7 +126,7 @@ export const fetchAllChatsAndCache = async (
         for (const msg of chat.all) {
             try {
               // Check if msg.image is a backend reference (not a local file URI)
-              if (msg.image && typeof msg.image === "string" && !msg.image.startsWith("file://")) {
+              if (msg.image && typeof msg.image === "string") {
                 const imageName = getFileName(msg.image); // Extracts the filename
                 const localUri = await downloadChatImageToLocal(
                   chat.id,
