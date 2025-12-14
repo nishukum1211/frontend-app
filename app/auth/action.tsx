@@ -31,6 +31,7 @@ export const fetchAndSaveUser = async (
   role: "user" | "agent" = "user",
   tokenSource: "otp" | "password" = "otp"
 ): Promise<DecodedToken | null> => {
+  console.log("Fetching user data...");
   try {
     const token = await getLoginJwtToken();
     if (!token) {
@@ -66,7 +67,7 @@ export const fetchAndSaveUser = async (
     await saveUserData(userData); // Save the fetched user data
 
     // After successfully getting user data, fetch and cache all chats
-    await fetchAllChatsAndCache(role);
+    await fetchAllChatsAndCache(role, true);
 
     // Register for push notifications in the background
     notificationService.registerForPushNotificationsAsync().catch((error) => {
