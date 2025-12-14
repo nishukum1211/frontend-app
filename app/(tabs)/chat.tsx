@@ -175,25 +175,6 @@ export default function Chat() {
     };
     loadCachedMessages();
 
-    // Add the call request message if it exists
-    if (callRequest) {
-      try {
-        const callRequestData: CallRequestType = JSON.parse(callRequest as string);
-        const newMessage: IMessage = {
-          _id: callRequestData.id,
-          text: '📞', // Text is empty because the widget will be shown
-          createdAt: new Date(),
-          user: { _id: user.id, name: user.name },
-          type: 'call-request', // Set the custom type
-          data: callRequestData, // Attach custom data to the 'data' property
-        };
-        onSend([newMessage]); // Programmatically send the message
-        router.setParams({ callRequest: undefined }); // Clear the param
-      } catch (e) {
-        console.error("Failed to parse callRequest parameter:", e);
-      }
-    }
-
     // Connect WebSocket using the manager
     webSocketManager.connect(
       { userId: user.id, agentId: SUPPORT_AGENT_ID, role: "user" },
@@ -224,7 +205,28 @@ export default function Chat() {
       // when the user comes back if the connection is needed.
       // webSocketManager.disconnect(); // Optional: uncomment if you want to disconnect on tab change
     };
-  }, [user, callRequest, router]); // Reconnect if user changes. Removed onSend to avoid re-triggering.
+  }, [user, router]); // Reconnect if user changes.
+
+  // Separate effect to handle sending a call request
+  useEffect(() => {
+    if (callRequest && user) {
+      try {
+        const callRequestData: CallRequestType = JSON.parse(callRequest as string);
+        const newMessage: IMessage = {
+          _id: callRequestData.id,
+          text: '📞', // Text is empty because the widget will be shown
+          createdAt: new Date(),
+          user: { _id: user.id, name: user.name },
+          type: 'call-request', // Set the custom type
+          data: callRequestData, // Attach custom data to the 'data' property
+        };
+        onSend([newMessage]); // Programmatically send the message
+        router.setParams({ callRequest: undefined }); // Clear the param
+      } catch (e) {
+        console.error("Failed to parse callRequest parameter:", e);
+      }
+    }
+  }, [callRequest, user, onSend, router]);
 
   // Separate effect to handle sending an image from the camera tab
   useEffect(() => {
