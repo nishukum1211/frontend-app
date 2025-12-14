@@ -12,6 +12,20 @@ export interface SubscriptionCreate {
 }
 
 /**
+ * Defines the structure for a sellable subscription item.
+ */
+export interface SubscriptionSellableItem {
+    id: string;
+    name: string;
+    crops: string;
+    content: string;
+    desc: string;
+    desc_hn: string;
+    price: number;
+    active: boolean;
+}
+
+/**
  * Provides services related to subscriptions.
  */
 export class SubscriptionService {
@@ -79,6 +93,39 @@ export class SubscriptionService {
             return users;
         } catch (error) {
             console.log("Error in SubscriptionService.getUsersSubscribedToCourse:", error);
+            return null;
+        }
+    }
+
+    /**
+     * Fetches all sellable subscription items.
+     * @returns {Promise<SubscriptionSellableItem[] | null>} A list of sellable subscription items or null if an error occurs.
+     */
+    public static async getSubscriptionSellableItems(): Promise<SubscriptionSellableItem[] | null> {
+        try {
+            const token = await getLoginJwtToken();
+            if (!token) {
+                console.error("Authentication error. Please log in again.");
+                return null;
+            }
+
+            const response = await fetch(`${AppConfig.API_BASE_URL}/subscription/sell/item`, {
+                headers: {
+                    Authorization: `Bearer ${token}`,
+                },
+            });
+
+            if (!response.ok) {
+                console.log(`Failed to fetch subscription sellable items: ${response.status} ${response.statusText}`);
+                return null;
+            }
+
+            const items = await response.json() as SubscriptionSellableItem[];
+            // Sort items: active:false first, then active:true
+            items.sort((a, b) => Number(a.active) - Number(b.active));
+            return items;
+        } catch (error) {
+            console.error("Error in SubscriptionService.getSubscriptionSellableItems:", error);
             return null;
         }
     }

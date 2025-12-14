@@ -10,11 +10,13 @@ import {
 interface StickyJoinBarProps {
   price: number;
   onJoinPress: () => void;
+  isJoined?: boolean;
 }
 
 export default function StickyJoinBar({
   price,
   onJoinPress,
+  isJoined,
 }: StickyJoinBarProps) {
   const scaleAnim = useRef(new Animated.Value(1)).current;
   const glowAnim = useRef(new Animated.Value(0)).current;
@@ -22,6 +24,12 @@ export default function StickyJoinBar({
   useEffect(() => {
     Animated.loop(
       Animated.sequence([
+        // If joined, stop animations
+        Animated.timing(scaleAnim, {
+          toValue: isJoined ? 1 : 1.05,
+          duration: 0,
+          useNativeDriver: true,
+        }),
         Animated.timing(scaleAnim, {
           toValue: 1.05,
           duration: 600,
@@ -37,6 +45,12 @@ export default function StickyJoinBar({
 
     Animated.loop(
       Animated.sequence([
+        // If joined, stop animations
+        Animated.timing(glowAnim, {
+          toValue: isJoined ? 0 : 1,
+          duration: 0,
+          useNativeDriver: false,
+        }),
         Animated.timing(glowAnim, {
           toValue: 1,
           duration: 700,
@@ -48,7 +62,7 @@ export default function StickyJoinBar({
           useNativeDriver: false,
         }),
       ])
-    ).start();
+    ).start(); // This will still be called but the values will be set to not animate if joined
   }, []);
 
   const glowOpacity = glowAnim.interpolate({
@@ -66,12 +80,20 @@ export default function StickyJoinBar({
       </View>
 
       {/* glow layer */}
-      <Animated.View style={[styles.glowLayer, { opacity: glowOpacity }]} />
+      {!isJoined && (
+        <Animated.View style={[styles.glowLayer, { opacity: glowOpacity }]} />
+      )}
 
       {/* button */}
       <Animated.View style={{ transform: [{ scale: scaleAnim }] }}>
-        <TouchableOpacity style={styles.button} onPress={onJoinPress}>
-          <Text style={styles.buttonText}>JOIN NOW</Text>
+        <TouchableOpacity
+          style={[styles.button, isJoined && styles.joinedButton]}
+          onPress={onJoinPress}
+          disabled={isJoined}
+        >
+          <Text style={[styles.buttonText, isJoined && styles.joinedButtonText]}>
+            {isJoined ? "JOINED" : "JOIN NOW"}
+          </Text>
         </TouchableOpacity>
       </Animated.View>
     </View>
@@ -127,5 +149,13 @@ const styles = StyleSheet.create({
     color: "black",
     fontWeight: "bold",
     fontSize: 15,
+  },
+
+  joinedButton: {
+    backgroundColor: "#D1D5DB", // A gray color to indicate it's disabled
+  },
+
+  joinedButtonText: {
+    color: "#4B5563",
   },
 });

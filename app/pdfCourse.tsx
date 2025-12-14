@@ -34,6 +34,8 @@ export default function PdfCourse() {
   const price = params.price ? Number(params.price) : 0;
   const crops = params.crops || "Farming";
   const course_id = params.id;
+  const isJoined = params.active === "true";
+  const desc_hn = (params.desc_hn as string) || "";
 
   const handleJoinPress = async () => {
     const user = await getUserData();
@@ -124,7 +126,7 @@ export default function PdfCourse() {
               style={styles.carouselImage}
             />
 
-            <IntroductionPdf />
+            <IntroductionPdf desc_hn={desc_hn} />
 
             <FarmingGoalsSection />
 
@@ -137,7 +139,11 @@ export default function PdfCourse() {
       />
 
       {/* Sticky Footer */}
-      <StickyJoinBar price={price} onJoinPress={handleJoinPress} />
+      <StickyJoinBar
+        price={price}
+        onJoinPress={handleJoinPress}
+        isJoined={isJoined}
+      />
 
       {orderId && userPrefillData && (
         <RazorpayCheckout
