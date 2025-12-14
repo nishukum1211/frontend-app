@@ -85,7 +85,7 @@ const callRequestStyles = StyleSheet.create({
   },
 
   modalValue: {
-    fontSize: 16,
+    fontSize: 20,
     fontWeight: "600",
     color: "#111827",
     marginBottom: 10,
@@ -97,6 +97,7 @@ const callRequestStyles = StyleSheet.create({
     borderRadius: 10,
     alignItems: "center",
     marginTop: 22,
+    width: "100%",
   },
 
   sendButtonText: {

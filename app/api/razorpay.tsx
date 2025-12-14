@@ -1,7 +1,9 @@
+import { AppConfig } from "../config";
+
 export const createRazorpayOrder = async (amountInRupees: number) => {
   try {
     const response = await fetch(
-      "https://dev-backend-py-23809827867.us-east1.run.app/razorpay/create-order/",
+      `${AppConfig.API_BASE_URL}/razorpay/create-order/`,
       {
         method: "POST",
         headers: {
