@@ -1,0 +1,29 @@
+{
+  "project_info": {
+    "project_number": "23809827867",
+    "project_id": "dev-kishanbhai-app",
+    "storage_bucket": "dev-kishanbhai-app.firebasestorage.app"
+  },
+  "client": [
+    {
+      "client_info": {
+        "mobilesdk_app_id": "1:23809827867:android:cdda0ff7eb79106fa7c4be",
+        "android_client_info": {
+          "package_name": "com.food.farming"
+        }
+      },
+      "oauth_client": [],
+      "api_key": [
+        {
+          "current_key": "AIzaSyCG7mVfLPrmf63-_4YV3ZSPZfmR5WjeLTs"
+        }
+      ],
+      "services": {
+        "appinvite_service": {
+          "other_platform_oauth_client": []
+        }
+      }
+    }
+  ],
+  "configuration_version": "1"
+}

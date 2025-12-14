@@ -1,5 +1,4 @@
 import AsyncStorage from '@react-native-async-storage/async-storage';
-import Constants from 'expo-constants';
 import * as Notifications from 'expo-notifications';
 import { getUserData } from '../auth/action'; // Import DecodedToken type
 import { getLoginJwtToken } from '../auth/auth';
@@ -26,10 +25,10 @@ class NotificationService {
    * It checks for permissions and only works on physical devices.
    */
   public async registerForPushNotificationsAsync(): Promise<string | null> {
-    if (!Constants.isDevice) {
-      console.warn('Push notifications are only available on physical devices.');
-      return null;
-    }
+    // if (!Constants.isDevice) {
+    //   console.warn('Push notifications are only available on physical devices.');
+    //   return null;
+    // }
 
     const { status: existingStatus } = await Notifications.getPermissionsAsync();
     let finalStatus = existingStatus;
@@ -77,6 +76,7 @@ class NotificationService {
    * @param payload The token request payload.
    */
   private async sendTokenToBackend(payload: TokenRequest): Promise<void> {
+    console.log('Sending push token to backend:', payload);
     try {
       const token = await getLoginJwtToken();
       if (!token) {

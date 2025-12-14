@@ -4,10 +4,12 @@ import { useEffect, useState } from "react";
 import { SafeAreaProvider } from "react-native-safe-area-context";
 import { getUserData } from "./auth/action";
 import { addAuthChangeListener, DecodedToken, removeAuthChangeListener } from "./auth/auth";
+import { useNotificationHandler } from "./utils/useNotificationHandler";
 
 export default function RootLayout() {
   const [initializing, setInitializing] = useState(true);
   const [user, setUser] = useState<DecodedToken | null>(null);
+  useNotificationHandler(); // Set up notification listeners
 
   useEffect(() => {
     const checkUser = async () => {
