@@ -7,28 +7,24 @@ import {
   TouchableOpacity,
   View,
 } from "react-native";
+import { SubscriptionSellableItem, SubscriptionService } from "../api/subscription";
 import styles from "./vegetableCoursesStyles";
-
-interface CourseItem {
-  id: string;
-  crops: string;
-  price: number;
-}
 
 const VegetableCoursesSection: React.FC = () => {
   const router = useRouter();
-  const [courses, setCourses] = useState<CourseItem[]>([]);
+  const [courses, setCourses] = useState<SubscriptionSellableItem[]>([]);
   const [loading, setLoading] = useState(true);
 
   useEffect(() => {
-    fetch("https://dev-backend-py-23809827867.us-east1.run.app/agent/sell/item")
-      .then((res) => res.json())
-      .then((data) => {
-        setCourses(data);
-        setLoading(false);
-      })
-      .catch((err) => {
-        console.log(err);
+    const fetchCourses = async () => {
+      const items = await SubscriptionService.getSubscriptionSellableItems();
+      if (items) {
+        setCourses(items);
+      }
+      setLoading(false);
+    };
+    fetchCourses().catch((err) => {
+        console.error("Failed to fetch vegetable courses:", err);
         setLoading(false);
       });
   }, []);
@@ -46,14 +42,16 @@ const VegetableCoursesSection: React.FC = () => {
         keyExtractor={(item) => item.id}
         renderItem={({ item }) => (
           <TouchableOpacity
-            style={styles.card}
+            style={[
+              styles.card,
+              item.active && { backgroundColor: "#E5E7EB", elevation: 0 },
+            ]}
             onPress={() =>
               router.push({
-                pathname: "./pdfCourse",
+                pathname: "/pdfCourse",
                 params: {
-                  id: item.id,
-                  price: item.price,
-                  crops: item.crops,
+                  ...item,
+                  active: item.active.toString(), // Convert boolean to string
                 },
               })
             }

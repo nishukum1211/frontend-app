@@ -13,9 +13,9 @@ import {
 } from "react-native";
 import { ActivityIndicator } from "react-native-paper";
 import { SafeAreaView } from "react-native-safe-area-context";
+import { createRazorpayOrder } from "../api/razorpay";
 import { getUserData } from "../auth/action";
 import RazorpayCheckout from "../pay/RazorpayCheckout";
-import { createRazorpayOrder } from "../pay/razorpay_api";
 import CallInfoSection from "./callInfoSection";
 import callRequestStyles from "./callRequestStyles";
 
@@ -181,13 +181,35 @@ export default function CallRequestScreen() {
             animationType="fade"
             transparent={true}
             visible={confirmationModalVisible}
-            onRequestClose={() => setConfirmationModalVisible(false)}
+            onRequestClose={() => {}} // Disable back gesture on Android
           >
             <View style={callRequestStyles.modalOverlay}>
-              <View style={callRequestStyles.modalBox}>
-                <Text style={callRequestStyles.modalTitle}>
-                  Confirm Details
-                </Text>
+              <View
+                style={[callRequestStyles.modalBox, { alignItems: "center" }]}
+              >
+                <MaterialIcons
+                  name="check-circle"
+                  size={50}
+                  color="#4CAF50"
+                  style={{ marginBottom: 12 }}
+                />
+
+                {isPaidCallConfirmation && (
+                  <Text
+                    style={{
+                      fontSize: 22,
+                      fontWeight: "bold",
+                      color: "#333",
+                      marginBottom: 8,
+                    }}
+                  >
+                    Payment of ₹{paidCallPrice} Received
+                  </Text>
+                )}
+
+                {/* <Text style={callRequestStyles.modalTitle}>
+                  Request Confirmed!
+                </Text> */}
 
                 <Text style={callRequestStyles.modalLabel}>Selected Crop:</Text>
                 <Text style={callRequestStyles.modalValue}>{selectedLabel}</Text>
@@ -195,6 +217,10 @@ export default function CallRequestScreen() {
                 <TouchableOpacity
                   style={callRequestStyles.sendButton}
                   onPress={async () => {
+                    // The user is now on the confirmation screen.
+                    // Pressing the button will create the request and navigate away.
+                    // We should re-enable the ability to close the modal in case they return.
+
                     // This will now handle both free and paid call request sending
                     setConfirmationModalVisible(false);
 
@@ -238,12 +264,6 @@ export default function CallRequestScreen() {
                   <Text style={callRequestStyles.sendButtonText}>
                     अनुरोध भेजें
                   </Text>
-                </TouchableOpacity>
-
-                <TouchableOpacity
-                  onPress={() => setConfirmationModalVisible(false)}
-                >
-                  <Text style={callRequestStyles.closeText}>Close</Text>
                 </TouchableOpacity>
               </View>
             </View>

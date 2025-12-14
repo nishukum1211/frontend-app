@@ -1,14 +1,12 @@
 import { useLocalSearchParams, useRouter } from "expo-router";
 import { useState } from "react";
-import { ActivityIndicator, Alert, FlatList, Modal, View } from "react-native";
+import { ActivityIndicator, FlatList, Modal, View } from "react-native";
 import { SafeAreaView } from "react-native-safe-area-context";
-import { getUserData } from "./auth/action";
 import HeaderWithBackButton from "./components/HeaderWithBackButton";
 import ImageCarousel from "./components/ImageCarousel";
 import PaymentSuccessModal from "./components/PaymentSuccessModal";
 import ScrollingText from "./components/ScrollingText";
 import RazorpayCheckout from "./pay/RazorpayCheckout";
-import { createRazorpayOrder } from "./pay/razorpay_api";
 import FarmingGoalsSection from "./stickyJoinBar/farmingGoals";
 import StickyJoinBar from "./stickyJoinBar/stickyJoinBar";
 import StrugglesSection from "./stickyJoinBar/strugglesSection";
@@ -34,43 +32,45 @@ export default function PdfCourse() {
   const price = params.price ? Number(params.price) : 0;
   const crops = params.crops || "Farming";
   const course_id = params.id;
+  const isJoined = params.active === "true";
+  const desc_hn = (params.desc_hn as string) || "";
 
   const handleJoinPress = async () => {
-    const user = await getUserData();
-    if (!user) {
-      Alert.alert(
-        "Login Required",
-        "You need to be logged in to join a course.",
-        [{ text: "OK", onPress: () => router.push("/phoneLoginScreen") }]
-      );
-      return;
-    }
+    // const user = await getUserData();
+    // if (!user) {
+    //   Alert.alert(
+    //     "Login Required",
+    //     "You need to be logged in to join a course.",
+    //     [{ text: "OK", onPress: () => router.push("/phoneLoginScreen") }]
+    //   );
+    //   return;
+    // }
 
-    // Extract user details for prefill
-    setUserPrefillData({
-      name: user.name || undefined,
-      email: user.email_id || undefined,
-      contact: user.mobile_number || undefined,
-    });
+    // // Extract user details for prefill
+    // setUserPrefillData({
+    //   name: user.name || undefined,
+    //   email: user.email_id || undefined,
+    //   contact: user.mobile_number || undefined,
+    // });
 
-    setIsLoading(true);
-    try {
-      const newOrderId = await createRazorpayOrder(price);
-      if (newOrderId) {
-        setOrderId(newOrderId);
-        setPaymentVisible(true);
-      } else {
-        Alert.alert("Error", "Could not create a payment order.");
-      }
-    } catch (error) {
-      console.error("Error creating Razorpay order:", error);
-      Alert.alert(
-        "Error",
-        "An error occurred while trying to create a payment order."
-      );
-    } finally {
-      setIsLoading(false);
-    }
+    // setIsLoading(true);
+    // try {
+    //   const newOrderId = await createRazorpayOrder(price);
+    //   if (newOrderId) {
+    //     setOrderId(newOrderId);
+    //     setPaymentVisible(true);
+    //   } else {
+    //     Alert.alert("Error", "Could not create a payment order.");
+    //   }
+    // } catch (error) {
+    //   console.error("Error creating Razorpay order:", error);
+    //   Alert.alert(
+    //     "Error",
+    //     "An error occurred while trying to create a payment order."
+    //   );
+    // } finally {
+    //   setIsLoading(false);
+    // }
   };
 
   const handlePaymentSuccess = (
@@ -124,7 +124,7 @@ export default function PdfCourse() {
               style={styles.carouselImage}
             />
 
-            <IntroductionPdf />
+            <IntroductionPdf desc_hn={desc_hn} />
 
             <FarmingGoalsSection />
 
@@ -137,7 +137,11 @@ export default function PdfCourse() {
       />
 
       {/* Sticky Footer */}
-      <StickyJoinBar price={price} onJoinPress={handleJoinPress} />
+      <StickyJoinBar
+        price={price}
+        onJoinPress={handleJoinPress}
+        isJoined={isJoined}
+      />
 
       {orderId && userPrefillData && (
         <RazorpayCheckout

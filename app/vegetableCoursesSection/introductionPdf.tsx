@@ -1,57 +1,16 @@
-import { useLocalSearchParams } from "expo-router";
-import { useEffect, useState } from "react";
-import { ActivityIndicator, StyleSheet, Text, View } from "react-native";
-import { AgentService, SellableItem } from "../api/agent";
+import { StyleSheet, Text, View } from "react-native";
 
-const IntroductionPdf = () => {
-  const { id } = useLocalSearchParams(); // ← GET ID FROM ROUTER
+interface IntroductionPdfProps {
+  desc_hn: string;
+}
 
-  const [item, setItem] = useState<SellableItem | null>(null);
-  const [loading, setLoading] = useState(true);
-
-  useEffect(() => {
-    const loadItems = async () => {
-      const items = await AgentService.getSellableItems();
-
-      if (items && items.length > 0) {
-        // FIND ITEM BY ID
-        const selected = items.find((i) => i.id === id);
-
-        if (selected) {
-          let text = selected.desc_hn;
-
-          // CLEAN TEXT SPACING
-          text = text
-            .replace(/\s+/g, " ")
-            .replace(/\n\s*\n/g, "\n")
-            .replace(/[^\S\r\n]+/g, " ")
-            .trim();
-
-          setItem({ ...selected, desc_hn: text });
-        }
-      }
-
-      setLoading(false);
-    };
-
-    loadItems();
-  }, [id]);
-
-  if (loading) {
-    return (
-      <View style={styles.center}>
-        <ActivityIndicator size="large" color="green" />
-      </View>
-    );
-  }
-
-  if (!item) {
-    return (
-      <View style={styles.center}>
-        <Text>डेटा उपलब्ध नहीं है</Text>
-      </View>
-    );
-  }
+const IntroductionPdf = ({ desc_hn }: IntroductionPdfProps) => {
+  // CLEAN TEXT SPACING
+  const cleanedText = desc_hn
+    .replace(/\s+/g, " ")
+    .replace(/\n\s*\n/g, "\n")
+    .replace(/[^\S\r\n]+/g, " ")
+    .trim();
 
   return (
     <View style={styles.container}>
@@ -66,10 +25,10 @@ const IntroductionPdf = () => {
         <Text style={styles.bodyText}>
           ● किसान भाइयों मैं Duleshwar, Chhattisgarh से हूँ।{"\n"}
           पिछले कई सालों से खीरा 🥒, टमाटर 🍅, बैंगन 🍆, मिर्च 🌶️ और करेला 🍃 की
-          उत्तम खेती कर रहा हूँ। मैं कुल 16 एकड़ में खेती करता हूँ।{"\n\n"}●{" "}
-          {item.desc_hn}
+          उत्तम खेती कर रहा हूँ। मैं कुल 16 एकड़ में खेती करता हूँ।
+          {cleanedText ? `\n\n● ${cleanedText}` : ""}
           {"\n\n"}● अपने लंबे अनुभव, कई किसानों के खेत पर जाकर, उनकी समस्याओं को
-          समझकर वास्तविक समाधान एवं किसानों की जरूरतों को ध्यान में रखते हुए
+          समझकर वास्तविक समाधान एवं किसानों की जरूरतों को ध्यान में रखते हुए,
           मैंने यह PDF तैयार किया है।
         </Text>
       </View>

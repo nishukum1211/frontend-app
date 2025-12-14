@@ -1,5 +1,6 @@
 import React from "react";
 import { Modal } from "react-native";
+import { SafeAreaView } from "react-native-safe-area-context";
 import { WebView } from "react-native-webview";
 
 interface RazorpayCheckoutProps {
@@ -28,7 +29,7 @@ const RazorpayHTML = (
         <script>
           const prefill = ${JSON.stringify(prefill || {})};
           var options = {
-            key: "rzp_test_RjxJM60aK3x9Nn", // Replace with your actual key
+            key: "rzp_live_RrZHZ2aRq0gBk9", // Replace with your actual key
             order_id: "${orderId}",
             name: "FoodFarming.in",
             description: "Paid Call Service",
@@ -54,22 +55,24 @@ const RazorpayCheckout: React.FC<RazorpayCheckoutProps> = ({
 }) => {
   return (
     <Modal visible={visible} animationType="slide">
-      <WebView
-        originWhitelist={["*"]}
-        source={{ html: RazorpayHTML(orderId, prefill) }}
-        onMessage={(event) => {
-          const data = JSON.parse(event.nativeEvent.data);
+      <SafeAreaView style={{ flex: 1 }}>
+        <WebView
+          originWhitelist={["*"]}
+          source={{ html: RazorpayHTML(orderId, prefill) }}
+          onMessage={(event) => {
+            const data = JSON.parse(event.nativeEvent.data);
 
-          if (data.event === "success") {
-            const { razorpay_payment_id, razorpay_order_id, razorpay_signature } = data.payload;
-            onSuccess(razorpay_payment_id, razorpay_order_id, razorpay_signature);
-          }
+            if (data.event === "success") {
+              const { razorpay_payment_id, razorpay_order_id, razorpay_signature } = data.payload;
+              onSuccess(razorpay_payment_id, razorpay_order_id, razorpay_signature);
+            }
 
-          if (data.event === "cancel") {
-            onCancel();
-          }
-        }}
-      />
+            if (data.event === "cancel") {
+              onCancel();
+            }
+          }}
+        />
+      </SafeAreaView>
     </Modal>
   );
 };
