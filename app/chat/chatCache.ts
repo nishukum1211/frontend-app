@@ -1,8 +1,7 @@
 import AsyncStorage from "@react-native-async-storage/async-storage";
 import { IMessage } from "react-native-gifted-chat";
 import { getLoginJwtToken } from "../auth/auth";
-import { getFileName } from "../utils/fileSystem";
-import { downloadChatImageToLocal, processChatImageMessage } from "./imageCache";
+import { processChatImageMessage } from "./imageCache";
 
 const ALL_CHATS_STORAGE_KEY = "allChats";
 
@@ -84,30 +83,30 @@ export const fetchAllChatsAndCache = async (
         }
       });
 
-      // For any message that references a backend image, download it to local cache
-      for (const chatId of Object.keys(messagesToCache)) {
-        const chat = messagesToCache[chatId];
-        if (!chat || !Array.isArray(chat.all)) continue;
+      // // For any message that references a backend image, download it to local cache
+      // for (const chatId of Object.keys(messagesToCache)) {
+      //   const chat = messagesToCache[chatId];
+      //   if (!chat || !Array.isArray(chat.all)) continue;
 
-        for (const msg of chat.all) {
-            try {
-              // Check if msg.image is a backend reference (not a local file URI)
-              if (msg.image && typeof msg.image === "string") {
-                const imageName = getFileName(msg.image); // Extracts the filename
-                const localUri = await downloadChatImageToLocal(
-                  chatId,
-                  String(msg._id),
-                  imageName); // Download using the filename
-                if (localUri) {
-                  // console.log(`Downloaded image for chat ${chatId}, message ${msg._id} to ${localUri}`);
-                  msg.image = localUri;
-                }
-              }
-            } catch (e) {
-              console.warn(`Failed to download chat image for ${chatId}/${msg._id}:`, e);
-            }
-          }
-      }
+      //   for (const msg of chat.all) {
+      //       try {
+      //         // Check if msg.image is a backend reference (not a local file URI)
+      //         if (msg.image && typeof msg.image === "string") {
+      //           const imageName = getFileName(msg.image); // Extracts the filename
+      //           const localUri = await downloadChatImageToLocal(
+      //             chatId,
+      //             String(msg._id),
+      //             imageName); // Download using the filename
+      //           if (localUri) {
+      //             // console.log(`Downloaded image for chat ${chatId}, message ${msg._id} to ${localUri}`);
+      //             msg.image = localUri;
+      //           }
+      //         }
+      //       } catch (e) {
+      //         console.warn(`Failed to download chat image for ${chatId}/${msg._id}:`, e);
+      //       }
+      //     }
+      // }
 
       await AsyncStorage.setItem(ALL_CHATS_STORAGE_KEY, JSON.stringify(messagesToCache));
       return agentChatList; // Return the list for the UI
@@ -122,22 +121,22 @@ export const fetchAllChatsAndCache = async (
         messagesToCache[userChat.id] = userChat;
 
         // Download any referenced backend images for the single user chat
-        const chat = messagesToCache[userChat.id];
-        for (const msg of chat.all) {
-            try {
-              // Check if msg.image is a backend reference (not a local file URI)
-              if (msg.image && typeof msg.image === "string") {
-                const imageName = getFileName(msg.image); // Extracts the filename
-                const localUri = await downloadChatImageToLocal(
-                  chat.id,
-                  String(msg._id),
-                  imageName); // Download using the filename
-                if (localUri) msg.image = localUri;
-              }
-            } catch (e) {
-              console.warn(`Failed to download chat image for ${chat.id}/${msg._id}:`, e);
-            }
-          }
+        // const chat = messagesToCache[userChat.id];
+        // for (const msg of chat.all) {
+        //     try {
+        //       // Check if msg.image is a backend reference (not a local file URI)
+        //       if (msg.image && typeof msg.image === "string") {
+        //         const imageName = getFileName(msg.image); // Extracts the filename
+        //         const localUri = await downloadChatImageToLocal(
+        //           chat.id,
+        //           String(msg._id),
+        //           imageName); // Download using the filename
+        //         if (localUri) msg.image = localUri;
+        //       }
+        //     } catch (e) {
+        //       console.warn(`Failed to download chat image for ${chat.id}/${msg._id}:`, e);
+        //     }
+        //   }
       }
 
       await AsyncStorage.setItem(ALL_CHATS_STORAGE_KEY, JSON.stringify(messagesToCache));
@@ -222,4 +221,42 @@ export const updateChat = async (
   }
 
   return message; // Always return the original message object
+};
+
+/**
+ * Updates the image URI of a specific message in the cache.
+ * @param chatId The ID of the chat conversation.
+ * @param messageId The ID of the message to update.
+ * @param newImageUri The new local URI for the image.
+ */
+export const updateMessageImageUri = async (
+  chatId: string,
+  messageId: string,
+  newImageUri: string
+): Promise<void> => {
+  try {
+    const allChatsJSON = await AsyncStorage.getItem(ALL_CHATS_STORAGE_KEY);
+    if (!allChatsJSON) {
+      console.log("No chats found in cache to update.");
+      return;
+    }
+
+    const allChats: Record<string, AgentChatListItem> = JSON.parse(allChatsJSON);
+    const chat = allChats[chatId];
+
+    if (chat && chat.all) {
+      const messageIndex = chat.all.findIndex((msg) => String(msg._id) === messageId);
+      if (messageIndex !== -1) {
+        chat.all[messageIndex].image = newImageUri;
+        await AsyncStorage.setItem(ALL_CHATS_STORAGE_KEY, JSON.stringify(allChats));
+        console.log(`Successfully updated image URI for message ${messageId} in chat ${chatId}.`);
+      } else {
+        console.warn(`Message with ID ${messageId} not found in chat ${chatId}.`);
+      }
+    } else {
+      console.warn(`Chat with ID ${chatId} not found.`);
+    }
+  } catch (error) {
+    console.error(`Failed to update message image URI:`, error);
+  }
 };

@@ -326,6 +326,7 @@ export default function Chat() {
       <ChatView
         messages={messages}
         onSend={onSend}
+        chatId={user.id}
         user={{
           _id: user.id,
           name: user.name,

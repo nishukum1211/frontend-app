@@ -1,7 +1,6 @@
 import { Feather } from "@expo/vector-icons";
 import { useState } from "react";
 import {
-  Image,
   StyleSheet,
   Text,
   TouchableOpacity,
@@ -19,6 +18,7 @@ import {
 } from "react-native-gifted-chat";
 import ImageViewer from 'react-native-image-zoom-viewer';
 import Modal from 'react-native-modal';
+import CachedImage from "../chat/CachedImage";
 import { pickImageFromCamera } from "../components/imagePicker";
 import CallRequestWidget from "./CallRequestWidget";
 
@@ -26,9 +26,10 @@ interface ChatViewProps {
   messages: IMessage[];
   onSend: (messages: IMessage[]) => void;
   user: User;
+  chatId: string;
 }
 
-export default function ChatView({ messages, onSend, user }: ChatViewProps) {
+export default function ChatView({ messages, onSend, user, chatId }: ChatViewProps) {
   const [fullScreenImage, setFullScreenImage] = useState<string | null>(null);
 
   const handlePickImage = async () => {
@@ -94,18 +95,15 @@ export default function ChatView({ messages, onSend, user }: ChatViewProps) {
 
           // This will be rendered inside the bubble if the message contains an image
           return (
-            <View style={{ padding: 2, borderRadius: 8 }}>
-              <TouchableOpacity onPress={() => {
-                // console.log("ChatView: opening full screen image ->", imageUrl);
-                setFullScreenImage(imageUrl);
-              }}>
-                <Image
-                  source={{ uri: imageUrl }}
-                  style={{ width: 200, height: 150, borderRadius: 8, backgroundColor: '#eee' }}
-                  resizeMode="cover"
-                />
-              </TouchableOpacity>
-            </View>
+            <CachedImage
+              remoteUri={imageUrl}
+              messageId={currentMessage._id as string}
+              chatId={chatId}
+              onPress={(uri) => {
+                // console.log("ChatView: opening full screen image ->", uri);
+                setFullScreenImage(uri);
+              }}
+            />
           );
         }}
         renderInputToolbar={(props: InputToolbarProps<IMessage>) => (

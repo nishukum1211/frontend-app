@@ -151,6 +151,7 @@ export default function AgentChatDetail() {
       <ChatView
         messages={messages}
         onSend={onSend}
+        chatId={userId}
         user={{ // This user prop represents the current user of the chat (the agent in this case)
           _id: agentId || "agent", // Use the actual agentId if available,
           name: "Agent",
