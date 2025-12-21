@@ -1,5 +1,5 @@
 import React from 'react';
-import { StyleSheet, TextInput } from 'react-native';
+import { Dimensions, StyleSheet, TextInput } from 'react-native';
 
 interface EditParagraphProps {
     data: string;
@@ -14,7 +14,6 @@ const EditParagraph: React.FC<EditParagraphProps> = ({ data, onChange }) => {
             onChangeText={onChange}
             placeholder="Enter paragraph text..."
             multiline
-            numberOfLines={4}
         />
     );
 };
@@ -26,7 +25,7 @@ const styles = StyleSheet.create({
         padding: 10,
         borderRadius: 6,
         fontSize: 16,
-        minHeight: 100,
+        height: Dimensions.get('window').height * 0.6,
         textAlignVertical: 'top',
     },
 });

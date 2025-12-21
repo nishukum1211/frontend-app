@@ -35,6 +35,7 @@ const EditBullets: React.FC<EditBulletsProps> = ({ data, onChange }) => {
                         value={bullet}
                         onChangeText={(text) => handleBulletChange(text, index)}
                         placeholder={`Bullet ${index + 1}`}
+                        multiline
                     />
                     <TouchableOpacity onPress={() => removeBullet(index)} style={styles.removeButton}>
                         <Text>🗑️</Text>
@@ -50,7 +51,7 @@ const EditBullets: React.FC<EditBulletsProps> = ({ data, onChange }) => {
 
 const styles = StyleSheet.create({
     bulletItem: { flexDirection: 'row', alignItems: 'center', marginBottom: 10 },
-    input: { borderWidth: 1, borderColor: '#ddd', padding: 10, borderRadius: 6, fontSize: 16, flex: 1 },
+    input: { borderWidth: 1, borderColor: '#ddd', padding: 10, borderRadius: 6, fontSize: 16, flex: 1, textAlignVertical: 'top' },
     removeButton: { padding: 10, marginLeft: 10 },
     addButton: {
         backgroundColor: '#E6F4EA',
