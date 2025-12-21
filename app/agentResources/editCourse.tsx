@@ -214,17 +214,10 @@ export default function EditCoursePage() {
       // The 'name' and 'type' fields for addPhoto might need to be more dynamic, e.g., extracted from the file URI.
       const imageUrl = await CourseService.addPhoto(course.id, {
         uri: editedContent,
-        name: 'photo.jpg',
+        name: `image_${Date.now()}.jpg`,
         type: 'image/jpeg'
       });
       setUploading(false);
-
-      if (imageUrl) {
-        finalData = imageUrl;
-      } else {
-        Alert.alert("Error", "Failed to upload image.");
-        return;
-      }
     }
 
     const updatedItem = { ...editingItem, data: finalData } as ItemInfo;

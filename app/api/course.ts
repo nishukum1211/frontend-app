@@ -254,7 +254,7 @@ export class CourseService {
             }
 
             const res = await response.json();
-            return res.url;
+            return null;
         } catch (error) {
             console.error("Error in CourseService.addPhoto:", error);
             return null;
