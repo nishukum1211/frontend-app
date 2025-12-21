@@ -176,6 +176,21 @@ export default function EditCoursePage() {
     }
   }, [course, title, crop, price, content, router]);
 
+  const handleView = useCallback(() => {
+    if (!course) return;
+    router.push({
+      pathname: "/vegetableCoursesSection/pdfCourse",
+      params: {
+        ...course,
+        title,
+        crop,
+        price,
+        content: JSON.stringify(content),
+        active: false,
+      } as any,
+    });
+  }, [course, title, crop, price, content, router]);
+
   const onAddContent = (type: ContentType) => {
     // For more robust temporary IDs, especially in scenarios with rapid additions,
     // consider using a dedicated UUID generation library (e.g., 'uuid' package) instead of Date.now().
@@ -290,24 +305,48 @@ export default function EditCoursePage() {
   useEffect(() => {
     navigation.setOptions({
       headerRight: () => (
-        <TouchableOpacity
-          onPress={handleSave}
-          style={{ marginRight: 15 }}
-          disabled={saving}
-        >
-          {saving ? (
-            <ActivityIndicator color="#059669" />
-          ) : (
-            <Text style={{ color: "#059669", fontSize: 16, fontWeight: "600" }}>
-              Save
+        <View style={{ flexDirection: "row", alignItems: "center" }}>
+          <TouchableOpacity
+            onPress={handleView}
+            style={{
+              marginRight: 10,
+              paddingVertical: 6,
+              paddingHorizontal: 16,
+              borderWidth: 1,
+              borderColor: "#007AFF",
+              borderRadius: 8,
+              backgroundColor: "#F0F8FF",
+            }}
+          >
+            <Text style={{ color: "#007AFF", fontSize: 14, fontWeight: "600" }}>
+              View
             </Text>
-          )}
-        </TouchableOpacity>
+          </TouchableOpacity>
+          <TouchableOpacity
+            onPress={handleSave}
+            style={{
+              marginRight: 10,
+              paddingVertical: 6,
+              paddingHorizontal: 16,
+              borderWidth: 1,
+              borderColor: "#059669",
+              borderRadius: 8,
+              backgroundColor: "#E6F4EA",
+            }}
+            disabled={saving}
+          >
+            {saving ? (
+              <ActivityIndicator size="small" color="#059669" />
+            ) : (
+              <Text style={{ color: "#059669", fontSize: 14, fontWeight: "600" }}>
+                Save
+              </Text>
+            )}
+          </TouchableOpacity>
+        </View>
       ),
-      // Optionally, you can also set a title here if needed, or keep it from _layout.tsx
-      // title: "Edit Course",
     });
-  }, [navigation, handleSave, saving]);
+  }, [navigation, handleSave, handleView, saving]);
 
 
 
@@ -329,7 +368,7 @@ export default function EditCoursePage() {
                 <Text style={styles.pdfButtonText}>📄 Replace PDF</Text>
               </TouchableOpacity>
               <TouchableOpacity style={styles.pdfButton} onPress={handleViewPdf}>
-                <Text style={styles.pdfButtonText}>👁️ View</Text>
+                <Text style={styles.pdfButtonText}>👁️ PDF</Text>
               </TouchableOpacity>
             </View>
             <View style={styles.detailsHeader}>
