@@ -7,26 +7,26 @@ import {
   TouchableOpacity,
   View,
 } from "react-native";
-import { SubscriptionSellableItem, SubscriptionService } from "../api/subscription";
+import { CourseService, CourseUser } from "../api/course";
 import styles from "./vegetableCoursesStyles";
 
 const VegetableCoursesSection: React.FC = () => {
   const router = useRouter();
-  const [courses, setCourses] = useState<SubscriptionSellableItem[]>([]);
+  const [courses, setCourses] = useState<CourseUser[]>([]);
   const [loading, setLoading] = useState(true);
 
   useEffect(() => {
     const fetchCourses = async () => {
-      const items = await SubscriptionService.getSubscriptionSellableItems();
+      const items = await CourseService.listUserCourses();
       if (items) {
         setCourses(items);
       }
       setLoading(false);
     };
     fetchCourses().catch((err) => {
-        console.error("Failed to fetch vegetable courses:", err);
-        setLoading(false);
-      });
+      console.error("Failed to fetch vegetable courses:", err);
+      setLoading(false);
+    });
   }, []);
 
   if (loading) {
@@ -40,36 +40,39 @@ const VegetableCoursesSection: React.FC = () => {
         numColumns={2}
         columnWrapperStyle={{ justifyContent: "space-between" }}
         keyExtractor={(item) => item.id}
-        renderItem={({ item }) => (
-          <TouchableOpacity
-            style={[
-              styles.card,
-              item.active && { backgroundColor: "#E5E7EB", elevation: 0 },
-            ]}
-            onPress={() =>
-              router.push({
-                pathname: "/pdfCourse",
-                params: {
-                  ...item,
-                  active: item.active.toString(), // Convert boolean to string
-                },
-              })
-            }
-          >
-            <View style={styles.row}>
-              {/* Price */}
-              <Text style={styles.price}>{item.price}</Text>
-              <Text style={styles.unit}>₹</Text>
+        renderItem={({ item }) => {
+          return (
+            <TouchableOpacity
+              style={[
+                styles.card,
+                item.active && { backgroundColor: "#E5E7EB", elevation: 0 },
+              ]}
+              onPress={() =>
+                router.push({
+                  pathname: "/vegetableCoursesSection/pdfCourse",
+                  params: {
+                    ...item,
+                    content: JSON.stringify(item.content),
+                    active: item.active.toString(), // Convert boolean to string
+                  },
+                })
+              }
+            >
+              <View style={styles.row}>
+                {/* Price */}
+                <Text style={styles.price}>{item.price}</Text>
+                <Text style={styles.unit}>₹</Text>
 
-              {/* Crop name */}
-              <View style={styles.nameCard}>
-                <Text style={styles.itemName}>{item.crops}</Text>
+                {/* Crop name */}
+                <View style={styles.nameCard}>
+                  <Text style={styles.itemName}>{item.crop}</Text>
+                </View>
               </View>
-            </View>
 
-            <Text style={styles.subtitle}>PDF Course</Text>
-          </TouchableOpacity>
-        )}
+              <Text style={styles.subtitle}>PDF Course</Text>
+            </TouchableOpacity>
+          );
+        }}
       />
     </View>
   );

@@ -26,6 +26,18 @@ export interface Course {
 }
 
 /**
+ * Defines the structure for a course object returned for a user.
+ */
+export interface CourseUser {
+    id: string;
+    title: string;
+    crop: string;
+    content: ItemInfo[];
+    price: number;
+    active: boolean;
+}
+
+/**
  * Defines the structure for the course update payload.
  */
 export interface CourseUpdatePayload {
@@ -108,6 +120,36 @@ export class CourseService {
             return await response.json() as Course[];
         } catch (error) {
             console.error("Error in CourseService.listCourses:", error);
+            return null;
+        }
+    }
+
+    /**
+     * Fetches a list of courses for a user.
+     * @returns {Promise<CourseUser[] | null>} A list of courses or null if an error occurs.
+     */
+    public static async listUserCourses(): Promise<CourseUser[] | null> {
+        try {
+            const token = await getLoginJwtToken();
+            if (!token) {
+                console.error("Authentication error. Please log in again.");
+                return null;
+            }
+
+            const response = await fetch(`${AppConfig.API_BASE_URL}/course/list/user`, {
+                headers: {
+                    Authorization: `Bearer ${token}`,
+                },
+            });
+
+            if (!response.ok) {
+                console.error(`Failed to list user courses: ${response.status} ${response.statusText}`);
+                return null;
+            }
+
+            return await response.json() as CourseUser[];
+        } catch (error) {
+            console.error("Error in CourseService.listUserCourses:", error);
             return null;
         }
     }
