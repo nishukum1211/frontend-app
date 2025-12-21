@@ -4,49 +4,35 @@ import {
   ActivityIndicator,
   FlatList,
   Image,
-  Modal,
   RefreshControl,
   StyleSheet,
   Text,
   TouchableOpacity,
-  TouchableWithoutFeedback,
   View,
 } from "react-native";
-import { AgentService, SellableItem } from "../api/agent";
-import { CourseService } from "../course/courseCache";
-import AgentSellItemForm from "./uploadForm";
+import { Course, CourseService } from "../api/course";
 
-const ItemCard = ({
+const CourseCard = ({
   item,
   onUpdate,
-  onRemove,
   onView,
 }: {
-  item: SellableItem;
+  item: Course;
   onUpdate: () => void;
-  onRemove: () => void;
   onView: () => void;
 }) => {
   const [thumbnail, setThumbnail] = useState<string | null>(null);
 
   useEffect(() => {
-    // We can reuse the thumbnail logic from CourseService as it points to the correct endpoint
-    CourseService.getThumbnailFromStorage(item.id).then(setThumbnail);
+    CourseService.getCourseThumbnailUrl(item.id).then(setThumbnail);
   }, [item.id]);
 
   return (
     <TouchableOpacity
       style={styles.itemContainer}
       onPress={onView}
-      activeOpacity={0.8} // Add activeOpacity for better UX
+      activeOpacity={0.8}
     >
-      {/* Remove icon */}
-      <TouchableOpacity
-        style={styles.removeIconContainer}
-        onPress={onRemove}
-      >
-        <Text style={styles.removeIcon}>✕</Text>
-      </TouchableOpacity>
       <Image
         source={
           thumbnail
@@ -56,14 +42,13 @@ const ItemCard = ({
         style={styles.thumbnail}
       />
       <View style={styles.itemDetails}>
-        <Text style={styles.itemName}>{item.name}</Text>
+        <Text style={styles.itemName}>{item.title}</Text>
         <Text style={styles.itemPrice}>₹{item.price}</Text>
-        {/* Edit button */}
         <View style={styles.buttonContainer}>
           <TouchableOpacity
             style={styles.editButton}
             onPress={(e) => {
-              e.stopPropagation(); // Prevent triggering onView when edit is pressed
+              e.stopPropagation();
               onUpdate();
             }}
           >
@@ -75,20 +60,19 @@ const ItemCard = ({
   );
 };
 
-export default function AgentResources() {
-  const [items, setItems] = useState<SellableItem[]>([]);
+export default function AgentCourses() {
+  const [items, setItems] = useState<Course[]>([]);
   const [loading, setLoading] = useState(true);
   const [refreshing, setRefreshing] = useState(false);
-  const [isModalVisible, setModalVisible] = useState(false);
   const router = useRouter();
 
-  const loadSellableItems = useCallback(async (forceRefresh = false) => {
+  const loadCourses = useCallback(async (forceRefresh = false) => {
     if (!forceRefresh) {
       setLoading(true);
     }
-    const sellableItems = await AgentService.getSellableItems(forceRefresh);
-    if (sellableItems) {
-      setItems(sellableItems);
+    const courses = await CourseService.listCourses();
+    if (courses) {
+      setItems(courses);
     }
     setLoading(false);
     setRefreshing(false);
@@ -96,25 +80,20 @@ export default function AgentResources() {
 
   useFocusEffect(
     useCallback(() => {
-      loadSellableItems();
-    }, [loadSellableItems])
+      loadCourses();
+    }, [loadCourses])
   );
 
   const onRefresh = useCallback(() => {
     setRefreshing(true);
-    loadSellableItems(true);
-  }, [loadSellableItems]);
-
-  const handleUploadSuccess = () => {
-    setModalVisible(false);
-    onRefresh();
-  };
+    loadCourses(true);
+  }, [loadCourses]);
 
   if (loading) {
     return (
       <View style={styles.container}>
         <ActivityIndicator size="large" color="#007AFF" />
-        <Text style={styles.placeholderText}>Loading resources...</Text>
+        <Text style={styles.placeholderText}>Loading courses...</Text>
       </View>
     );
   }
@@ -122,54 +101,41 @@ export default function AgentResources() {
   if (items.length === 0) {
     return (
       <View style={styles.container}>
-        <Text style={styles.placeholderText}>No items available to sell.</Text>
+        <Text style={styles.placeholderText}>No courses available.</Text>
+        <TouchableOpacity
+          style={styles.fab}
+          onPress={() => router.navigate("/agentResources/addCourse")}
+        >
+          <Text style={styles.fabIcon}>+</Text>
+        </TouchableOpacity>
       </View>
     );
   }
 
   return (
     <View style={{ flex: 1, backgroundColor: "#F9FAFB" }}>
-      <Modal
-        animationType="slide"
-        transparent={true}
-        visible={isModalVisible}
-        onRequestClose={() => {
-          setModalVisible(!isModalVisible);
-        }}
-      >
-        <TouchableWithoutFeedback onPress={() => setModalVisible(false)}>
-          <View style={styles.modalOverlay}>
-            <TouchableWithoutFeedback>
-              <View style={styles.modalView}>
-                <AgentSellItemForm onUploadSuccess={handleUploadSuccess} />
-              </View>
-            </TouchableWithoutFeedback>
-          </View>
-        </TouchableWithoutFeedback>
-      </Modal>
       <FlatList
         data={items}
         keyExtractor={(item) => item.id}
         renderItem={({ item }) => (
-          <ItemCard
+          <CourseCard
             item={item}
             onUpdate={() =>
-              router.push({
-                pathname: "/agentResources/updateItem", // Ensure this path is correct
+              router.navigate({
+                pathname: "/agentResources/editCourse",
                 params: {
-                  item: JSON.stringify(item),
+                  courseId: item.id,
                 },
               })
             }
-             onView={() =>
-              router.push({
-                pathname: "/agentResources/viewItem", // Ensure this path is correct
+            onView={() =>
+              router.navigate({
+                pathname: "/agentResources/editCourse",
                 params: {
-                  item: JSON.stringify(item),
+                  courseId: item.id,
                 },
               })
             }
-            onRemove={() => console.log("Remove item:", item.id)}
           />
         )}
         contentContainerStyle={styles.listContainer}
@@ -184,7 +150,7 @@ export default function AgentResources() {
       />
       <TouchableOpacity
         style={styles.fab}
-        onPress={() => setModalVisible(true)}
+        onPress={() => router.navigate("/agentResources/addCourse")}
       >
         <Text style={styles.fabIcon}>+</Text>
       </TouchableOpacity>
@@ -219,28 +185,6 @@ const styles = StyleSheet.create({
     shadowOpacity: 0.2,
     shadowRadius: 5,
   },
-  removeIconContainer: {
-    position: 'absolute',
-    top: 5,
-    right: 5,
-    zIndex: 1,
-    backgroundColor: 'rgba(255, 255, 255, 0.8)',
-    borderRadius: 12,
-    width: 24,
-    height: 24,
-    justifyContent: 'center',
-    alignItems: 'center',
-    shadowColor: '#000',
-    shadowOffset: { width: 0, height: 1 },
-    shadowOpacity: 0.22,
-    shadowRadius: 2.22,
-    elevation: 3,
-  },
-  removeIcon: {
-    color: '#dc2626',
-    fontWeight: '900',
-    fontSize: 14,
-  },
   thumbnail: {
     width: 100,
     height: 100,
@@ -272,9 +216,9 @@ const styles = StyleSheet.create({
     gap: 8,
   },
   editButton: {
-    backgroundColor: "#6c757d", // A modern, neutral grey
+    backgroundColor: "#6c757d",
     paddingVertical: 10,
-    paddingHorizontal: 15, // Added horizontal padding for better text fit
+    paddingHorizontal: 15,
     borderRadius: 8,
     alignItems: "center",
     shadowColor: "#000",
@@ -306,35 +250,5 @@ const styles = StyleSheet.create({
   fabIcon: {
     fontSize: 24,
     color: "white",
-  },
-  modalOverlay: {
-    flex: 1,
-    justifyContent: "center",
-    alignItems: "center",
-    backgroundColor: "rgba(0, 0, 0, 0.5)",
-  },
-  modalView: {
-    margin: 20,
-    backgroundColor: "white",
-    borderRadius: 20,
-    padding: 35,
-    alignItems: "center",
-    shadowColor: "#000",
-    shadowOffset: {
-      width: 0,
-      height: 2,
-    },
-    shadowOpacity: 0.25,
-    shadowRadius: 4,
-    elevation: 5,
-    width: "90%",
-    maxHeight: "80%",
-  },
-  modalText: {
-    marginBottom: 15,
-    textAlign: "center",
-    fontSize: 18,
-    fontWeight: "bold",
-    color: "#1F2937",
   },
 });
