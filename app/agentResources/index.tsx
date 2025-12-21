@@ -2,6 +2,7 @@ import { useFocusEffect, useRouter } from "expo-router";
 import { useCallback, useEffect, useState } from "react";
 import {
   ActivityIndicator,
+  Alert,
   FlatList,
   Image,
   RefreshControl,
@@ -16,10 +17,12 @@ const CourseCard = ({
   item,
   onUpdate,
   onView,
+  onToggleStatus,
 }: {
   item: Course;
   onUpdate: () => void;
   onView: () => void;
+  onToggleStatus: () => void;
 }) => {
   const [thumbnail, setThumbnail] = useState<string | null>(null);
 
@@ -30,7 +33,7 @@ const CourseCard = ({
   return (
     <TouchableOpacity
       style={styles.itemContainer}
-      onPress={onView}
+      onPress={onUpdate}
       activeOpacity={0.8}
     >
       <Image
@@ -46,13 +49,33 @@ const CourseCard = ({
         <Text style={styles.itemPrice}>₹{item.price}</Text>
         <View style={styles.buttonContainer}>
           <TouchableOpacity
-            style={styles.editButton}
+            style={[
+              styles.statusButton,
+              item.live ? styles.statusLive : styles.statusOffline,
+            ]}
             onPress={(e) => {
               e.stopPropagation();
-              onUpdate();
+              onToggleStatus();
             }}
           >
-            <Text style={styles.buttonText}>✏️ Edit</Text>
+            <Text
+              style={[
+                styles.statusText,
+                item.live ? styles.textLive : styles.textOffline,
+              ]}
+            >
+              {item.live ? "Live" : "Offline"}
+            </Text>
+          </TouchableOpacity>
+
+          <TouchableOpacity
+            style={styles.usersButton}
+            onPress={(e) => {
+              e.stopPropagation();
+              onView();
+            }}
+          >
+            <Text style={styles.buttonText}>👥 Users</Text>
           </TouchableOpacity>
         </View>
       </View>
@@ -88,6 +111,31 @@ export default function AgentCourses() {
     setRefreshing(true);
     loadCourses(true);
   }, [loadCourses]);
+
+  const handleToggleStatus = (item: Course) => {
+    Alert.alert(
+      "Confirm Status Change",
+      `Are you sure you want to make this course ${item.live ? "offline" : "live"}?`,
+      [
+        { text: "Cancel", style: "cancel" },
+        {
+          text: "Confirm",
+          onPress: async () => {
+            try {
+              if (item.live) {
+                await CourseService.goDown(item.id);
+              } else {
+                await CourseService.goLive(item.id);
+              }
+              loadCourses(true);
+            } catch (error) {
+              console.error("Failed to toggle status", error);
+            }
+          },
+        },
+      ]
+    );
+  };
 
   if (loading) {
     return (
@@ -140,6 +188,7 @@ export default function AgentCourses() {
                 },
               })
             }
+            onToggleStatus={() => handleToggleStatus(item)}
           />
         )}
         contentContainerStyle={styles.listContainer}
@@ -216,24 +265,51 @@ const styles = StyleSheet.create({
   buttonContainer: {
     flexDirection: "row",
     marginTop: 12,
-    justifyContent: "flex-end",
-    gap: 8,
+    justifyContent: "space-between",
+    gap: 10,
+    alignItems: "center",
   },
-  editButton: {
-    backgroundColor: "#6c757d",
+  usersButton: {
+    backgroundColor: "#E3F2FD",
     paddingVertical: 10,
     paddingHorizontal: 15,
     borderRadius: 8,
     alignItems: "center",
     shadowColor: "#000",
-    shadowOffset: { width: 0, height: 2 },
-    shadowOpacity: 0.25,
-    shadowRadius: 3.84,
-    elevation: 5,
+    shadowOffset: { width: 0, height: 1 },
+    shadowOpacity: 0.1,
+    shadowRadius: 2,
+    elevation: 2,
   },
   buttonText: {
-    color: "white",
+    color: "#007AFF",
     fontWeight: "600",
+  },
+  statusButton: {
+    paddingVertical: 10,
+    paddingHorizontal: 15,
+    borderRadius: 8,
+    borderWidth: 1,
+    alignItems: "center",
+    justifyContent: "center",
+  },
+  statusLive: {
+    backgroundColor: "#DCFCE7",
+    borderColor: "#22C55E",
+  },
+  statusOffline: {
+    backgroundColor: "#F3F4F6",
+    borderColor: "#9CA3AF",
+  },
+  statusText: {
+    fontSize: 12,
+    fontWeight: "bold",
+  },
+  textLive: {
+    color: "#15803D",
+  },
+  textOffline: {
+    color: "#4B5563",
   },
   fab: {
     position: "absolute",

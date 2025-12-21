@@ -253,8 +253,7 @@ export class CourseService {
                 return null;
             }
 
-            const res = await response.json();
-            return null;
+            return await CourseService.getCourseThumbnailUrl(courseId, true);
         } catch (error) {
             console.error("Error in CourseService.addPhoto:", error);
             return null;
@@ -287,8 +286,11 @@ export class CourseService {
                 },
                 body: formData,
             });
-
-            return response.ok;
+            if (response.ok) {
+                await CourseService.getCoursePdfUrl(courseId, true);
+                return true;
+            }
+            return false;
         } catch (error) {
             console.error("Error in CourseService.updatePdf:", error);
             return false;
@@ -299,20 +301,22 @@ export class CourseService {
      * Constructs the URL for a course's thumbnail image.
      * This method will download the file if it's not already cached locally.
      * @param {string} courseId - The ID of the course.
+     * @param {boolean} [forceUpdate=false] - If true, re-downloads the file even if it exists locally.
      * @returns {Promise<string | null>} The local URI of the thumbnail image, or null if an error occurs.
      */
-    public static async getCourseThumbnailUrl(courseId: string): Promise<string | null> {
-        return CourseService.getCourseFileUrl(courseId, "thumbnail.jpeg");
+    public static async getCourseThumbnailUrl(courseId: string, forceUpdate: boolean = false): Promise<string | null> {
+        return CourseService.getCourseFileUrl(courseId, "thumbnail.jpeg", forceUpdate);
     }
 
     /**
      * Constructs the URL for a course's PDF file.
      * This method will download the file if it's not already cached locally.
      * @param {string} courseId - The ID of the course.
+     * @param {boolean} [forceUpdate=false] - If true, re-downloads the file even if it exists locally.
      * @returns {Promise<string | null>} The local URI of the PDF file, or null if an error occurs.
      */
-    public static async getCoursePdfUrl(courseId: string): Promise<string | null> {
-        return CourseService.getCourseFileUrl(courseId, "data.pdf");
+    public static async getCoursePdfUrl(courseId: string, forceUpdate: boolean = false): Promise<string | null> {
+        return CourseService.getCourseFileUrl(courseId, "data.pdf", forceUpdate);
     }
 
     /**
@@ -320,9 +324,10 @@ export class CourseService {
      * and returns the local URI.
      * @param {string} courseId - The ID of the course.
      * @param {string} fileName - The name of the file to retrieve.
+     * @param {boolean} [forceUpdate=false] - If true, re-downloads the file even if it exists locally.
      * @returns {Promise<string | null>} The local URI of the file, or null if an error occurs.
      */
-    public static async getCourseFileUrl(courseId: string, fileName: string): Promise<string | null> {
+    public static async getCourseFileUrl(courseId: string, fileName: string, forceUpdate: boolean = false): Promise<string | null> {
         if (!Paths.document) {
             console.error("File system document directory is not available.");
             return null;
@@ -335,10 +340,14 @@ export class CourseService {
             if (!courseDir.exists) {
                 courseDir.create();
             }
+
             const fileInfo = await localFile.info();
             if (fileInfo.exists) {
-                console.log(`File ${fileName} already exists locally.`);
-                return localFile.uri;
+                if (!forceUpdate) {
+                    console.log(`File ${fileName} already exists locally.`);
+                    return localFile.uri;
+                }
+                await localFile.delete();
             }
 
             const token = await getLoginJwtToken();
