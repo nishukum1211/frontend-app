@@ -1,15 +1,16 @@
 import { useFocusEffect, useRouter } from "expo-router";
 import { useCallback, useEffect, useState } from "react";
 import { ActivityIndicator, FlatList, Image, RefreshControl, StyleSheet, Text, TouchableOpacity, View } from "react-native";
+import { CourseService } from "../api/course";
 import { getUserData } from "../auth/action";
 import { DecodedToken, removeUserData } from "../auth/auth";
-import { CourseService, Subscription } from "../course/courseCache";
+import { Subscription, SubscriptionService } from "../course/courseCache";
 
 const SubscriptionItem = ({ item, onPress }: { item: Subscription, onPress: () => void }) => {
   const [thumbnail, setThumbnail] = useState<string | null>(null);
 
   useEffect(() => {
-    CourseService.getThumbnailFromStorage(item.id).then(setThumbnail);
+    CourseService.getCourseThumbnailUrl(item.id).then(setThumbnail);
   }, [item.id]);
 
   const today = new Date();
@@ -37,7 +38,7 @@ const SubscriptionItem = ({ item, onPress }: { item: Subscription, onPress: () =
         source={thumbnail ? { uri: thumbnail } : require("../../assets/images/logo.png")}
         style={styles.thumbnail}
       />
-      <Text style={styles.itemName}>{item.name}</Text>
+      <Text style={styles.itemName}>{item.title}</Text>
 
       {/* <View style={styles.heartIcon}>
         <Ionicons name="heart-outline" size={22} color="black" />
@@ -63,7 +64,7 @@ export default function PdfList() {
       setLoading(true);
     }
 
-    const userData = await getUserData();    
+    const userData = await getUserData();
 
     if (userData) {
       // Check if the token is expired
@@ -75,7 +76,7 @@ export default function PdfList() {
         setUser(userData);
         // Fetch subscriptions only for valid 'user' role
         if (userData.role === 'user') {
-          const subs = await CourseService.getStoredSubscriptions(isForcedRefresh);
+          const subs = await SubscriptionService.getStoredSubscriptions(isForcedRefresh);
           if (subs) {
             setSubscriptions(subs);
           }
@@ -97,7 +98,7 @@ export default function PdfList() {
   const onRefresh = useCallback(() => {
     setRefreshing(true);
     // As requested, call syncCourseAssets with forceRefresh = true
-    CourseService.syncCourseAssets(true).then(() => {
+    SubscriptionService.syncCourseAssets(true).then(() => {
       loadData(true); // Then reload the list data from the API
     });
   }, [loadData]);
@@ -131,7 +132,7 @@ export default function PdfList() {
             onPress={() =>
               router.push({
                 pathname: "/course/PdfView",
-                params: { pdfId: item.id, courseName: item.name },
+                params: { pdfId: item.id, courseName: item.title },
               })
             }
           />
