@@ -130,9 +130,13 @@ export default function AgentCourses() {
             }
             onView={() =>
               router.navigate({
-                pathname: "/agentResources/editCourse",
+                pathname: "/agentResources/course_subs",
                 params: {
-                  courseId: item.id,
+                  item: JSON.stringify({
+                    id: item.id,
+                    name: item.title,
+                    price: item.price,
+                  }),
                 },
               })
             }
