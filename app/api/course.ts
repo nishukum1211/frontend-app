@@ -1,4 +1,4 @@
-import { File, Paths } from 'expo-file-system';
+import { Directory, File, Paths } from 'expo-file-system';
 import { getLoginJwtToken } from "../auth/auth";
 import { AppConfig } from "../config";
 
@@ -328,9 +328,13 @@ export class CourseService {
             return null;
         }
         const remoteUrl = `${AppConfig.API_BASE_URL}/course/file/${courseId}/${fileName}`;
-        const localFile = new File(Paths.document, fileName);
+        const courseDir = new Directory(Paths.document, courseId);
+        const localFile = new File(courseDir, fileName);
 
         try {
+            if (!courseDir.exists) {
+                courseDir.create();
+            }
             const fileInfo = await localFile.info();
             if (fileInfo.exists) {
                 console.log(`File ${fileName} already exists locally.`);

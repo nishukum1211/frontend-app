@@ -16,6 +16,8 @@ import DraggableFlatList, {
 } from "react-native-draggable-flatlist";
 import { Course, CourseService, ItemInfo } from "../api/course";
 import ContentEditModal from "./model/ContentEditModal";
+import PdfUploadModal from "./model/PdfUploadModal";
+import PdfViewerModal from "./model/PdfViewerModal";
 
 type ContentType = "paragraph" | "image" | "bullet1" | "bullet2"
 
@@ -111,6 +113,10 @@ export default function EditCoursePage() {
   const [content, setContent] = useState<ItemInfo[]>([]);
 
   const [isModalVisible, setModalVisible] = useState(false);
+  const [isPdfModalVisible, setPdfModalVisible] = useState(false);
+  const [pdfViewerVisible, setPdfViewerVisible] = useState(false);
+  const [pdfViewerUri, setPdfViewerUri] = useState<string | null>(null);
+  const [preparingPdf, setPreparingPdf] = useState(false);
   const [editingItem, setEditingItem] = useState<ItemInfo | null>(null);
   const [editedContent, setEditedContent] = useState<string | string[]>("");
 
@@ -257,6 +263,37 @@ export default function EditCoursePage() {
     );
   };
 
+  const handlePdfUpdate = async (file: { uri: string; name: string; mimeType?: string }) => {
+    if (!course) return;
+    const success = await CourseService.updatePdf(course.id, {
+      uri: file.uri,
+      name: file.name,
+      type: file.mimeType || 'application/pdf',
+    });
+    if (success) {
+      Alert.alert("Success", "PDF updated successfully.");
+    } else {
+      Alert.alert("Error", "Failed to update PDF.");
+    }
+  };
+
+  const handleViewPdf = async () => {
+    if (!course) return;
+    setPreparingPdf(true);
+    try {
+      const url = await CourseService.getCoursePdfUrl(course.id);
+      if (!url) {
+        throw new Error("Failed to get PDF URL");
+      }
+      setPdfViewerUri(url);
+      setPdfViewerVisible(true);
+    } catch (error) {
+      Alert.alert("Error", "Failed to open PDF.");
+    } finally {
+      setPreparingPdf(false);
+    }
+  };
+
   useEffect(() => {
     navigation.setOptions({
       headerRight: () => (
@@ -294,6 +331,14 @@ export default function EditCoursePage() {
         keyExtractor={(item) => item.id}
         ListHeaderComponent={
           <>
+            <View style={styles.pdfButtonRow}>
+              <TouchableOpacity style={[styles.pdfButton, { marginRight: 10 }]} onPress={() => setPdfModalVisible(true)}>
+                <Text style={styles.pdfButtonText}>📄 Replace PDF</Text>
+              </TouchableOpacity>
+              <TouchableOpacity style={styles.pdfButton} onPress={handleViewPdf}>
+                <Text style={styles.pdfButtonText}>👁️ View</Text>
+              </TouchableOpacity>
+            </View>
             <View style={styles.detailsHeader}>
               <Text style={styles.contentTitle}>Course Details</Text>
               <TouchableOpacity onPress={() => setIsEditingDetails(prev => !prev)}>
@@ -386,6 +431,22 @@ export default function EditCoursePage() {
           }
         }}
       />
+      <PdfUploadModal
+        visible={isPdfModalVisible}
+        onClose={() => setPdfModalVisible(false)}
+        onSave={handlePdfUpdate}
+      />
+      <PdfViewerModal
+        visible={pdfViewerVisible}
+        uri={pdfViewerUri}
+        onClose={() => setPdfViewerVisible(false)}
+      />
+      {preparingPdf && (
+        <View style={styles.fullScreenLoader}>
+          <ActivityIndicator size="large" color="#ffffff" />
+          <Text style={styles.loaderText}>Opening PDF...</Text>
+        </View>
+      )}
     </View>
   );
 }
@@ -554,5 +615,45 @@ const styles = StyleSheet.create({
     color: '#D32F2F', // Darker red for delete text
     fontWeight: '500',
   },
-
+  pdfButtonRow: {
+    flexDirection: 'row',
+    marginBottom: 20,
+  },
+  pdfButton: {
+    flex: 1,
+    backgroundColor: 'white',
+    padding: 15,
+    borderRadius: 12,
+    alignItems: 'center',
+    justifyContent: 'center',
+    borderWidth: 1,
+    borderColor: '#E0E0E0',
+    shadowColor: "#000",
+    shadowOffset: { width: 0, height: 1 },
+    shadowOpacity: 0.05,
+    shadowRadius: 2,
+    elevation: 2,
+  },
+  pdfButtonText: {
+    color: '#007AFF',
+    fontSize: 16,
+    fontWeight: '600',
+  },
+  fullScreenLoader: {
+    position: 'absolute',
+    top: 0,
+    left: 0,
+    right: 0,
+    bottom: 0,
+    backgroundColor: 'rgba(0,0,0,0.5)',
+    justifyContent: 'center',
+    alignItems: 'center',
+    zIndex: 9999,
+  },
+  loaderText: {
+    color: 'white',
+    marginTop: 10,
+    fontSize: 16,
+    fontWeight: '600',
+  },
 });
