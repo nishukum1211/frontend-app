@@ -185,6 +185,7 @@ const styles = StyleSheet.create({
     borderRadius: 8,
     paddingHorizontal: 10,
     marginBottom: 20,
+    color: "#374151",
   },
   countryPickerButton: {
     paddingVertical: 10,
@@ -211,6 +212,7 @@ const styles = StyleSheet.create({
     flex: 1,
     paddingVertical: 12,
     fontSize: 18,
+    color: "#111827", // 👈 ADD
   },
   passwordVisibilityToggle: {
     padding: 8,
@@ -221,6 +223,7 @@ const styles = StyleSheet.create({
     padding: 12,
     borderRadius: 8,
     marginBottom: 20,
+    color: "#111827",
   },
   button: {
     backgroundColor: "#007AFF",

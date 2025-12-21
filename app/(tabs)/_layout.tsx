@@ -129,14 +129,14 @@ export default function TabsLayout() {
         }}
       />
 
-      {/* Resources */}
+      {/* Courses */}
       <Tabs.Screen
-        name="resources"
+        name="courses"
         options={{
-          title: "Resources",
-          tabBarLabel: "Resources",
+          title: "Courses",
+          tabBarLabel: "Courses",
           tabBarIcon: ({ color, size }) => (
-            <FontAwesome name="book" size={size} color={color} />
+            <MaterialCommunityIcons name="book-outline" size={size} color={color} />
           ),
         }}
       />

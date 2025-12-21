@@ -1,23 +1,14 @@
 import { Stack } from "expo-router";
+import { GestureHandlerRootView } from "react-native-gesture-handler";
 
-export default function AgentLayout() {
+export default function CourseLayout() {
   return (
-    <Stack>
-      <Stack.Screen name="resources" options={{ title: "Resources" }} />
-      <Stack.Screen
-        name="viewItem"
-        options={{
-          title: "View Item",
-          headerTitleStyle: { fontSize: 18, fontWeight: "600" },
-        }}
-      />
-      <Stack.Screen
-        name="updateItem"
-        options={{
-          title: "Edit Item",
-          headerTitleStyle: { fontSize: 18, fontWeight: "600" },
-        }}
-      />
-    </Stack>
+    <GestureHandlerRootView style={{ flex: 1 }}>
+      <Stack>
+        <Stack.Screen name="index" options={{ title: "Courses" }} />
+        <Stack.Screen name="addCourse" options={{ title: "Add Course", presentation: "modal" }} />
+        <Stack.Screen name="editCourse" options={{ title: "Edit Course", presentation: "modal" }} />
+      </Stack>
+    </GestureHandlerRootView>
   );
 }

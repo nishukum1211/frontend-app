@@ -2,25 +2,34 @@ import { useLocalSearchParams, useRouter } from "expo-router";
 import { useState } from "react";
 import { ActivityIndicator, FlatList, Modal, View } from "react-native";
 import { SafeAreaView } from "react-native-safe-area-context";
-import HeaderWithBackButton from "./components/HeaderWithBackButton";
-import ImageCarousel from "./components/ImageCarousel";
-import PaymentSuccessModal from "./components/PaymentSuccessModal";
-import ScrollingText from "./components/ScrollingText";
-import RazorpayCheckout from "./pay/RazorpayCheckout";
-import FarmingGoalsSection from "./stickyJoinBar/farmingGoals";
-import StickyJoinBar from "./stickyJoinBar/stickyJoinBar";
-import StrugglesSection from "./stickyJoinBar/strugglesSection";
-import FeaturesSection from "./vegetableCoursesSection/featuresSection";
-import IntroductionPdf from "./vegetableCoursesSection/introductionPdf";
-import styles from "./vegetableCoursesSection/pdfCourseStyles";
+import HeaderWithBackButton from "../components/HeaderWithBackButton";
+import ImageCarousel from "../components/ImageCarousel";
+import PaymentSuccessModal from "../components/PaymentSuccessModal";
+import ScrollingText from "../components/ScrollingText";
+import RazorpayCheckout from "../pay/RazorpayCheckout";
+import FarmingGoalsSection from "./model/farmingGoals";
+import FeaturesSection from "./model/featuresSection";
+import ImageDisplay from "./model/ImageDisplay";
+import IntroductionPdf from "./model/introductionPdf";
+import ParagraphDisplay from "./model/ParagraphDisplay";
+import StickyJoinBar from "./model/stickyJoinBar";
+import StrugglesSection from "./model/strugglesSection";
+import styles from "./pdfCourseStyles";
+
+export interface ItemInfo {
+  id: string;
+  content_type: string;
+  data: string | string[];
+}
+
 
 export default function PdfCourse() {
   const router = useRouter();
   const params = useLocalSearchParams();
   const images = [
-    require("../assets/images/img-3.jpg"),
-    require("../assets/images/img-2.jpg"),
-    require("../assets/images/img-3.jpg"),
+    require("../../assets/images/img-3.jpg"),
+    require("../../assets/images/img-2.jpg"),
+    require("../../assets/images/img-3.jpg"),
   ];
   const [orderId, setOrderId] = useState<string | null>(null);
   const [isLoading, setIsLoading] = useState(false);
@@ -33,7 +42,8 @@ export default function PdfCourse() {
   const crops = params.crops || "Farming";
   const course_id = params.id;
   const isJoined = params.active === "true";
-  const desc_hn = (params.desc_hn as string) || "";
+  const content: ItemInfo[] = params.content ? JSON.parse(params.content as string) : [];
+
 
   const handleJoinPress = async () => {
     // const user = await getUserData();
@@ -94,7 +104,7 @@ export default function PdfCourse() {
         transparent={true}
         animationType="none"
         visible={isLoading}
-        onRequestClose={() => {}}
+        onRequestClose={() => { }}
       >
         <View
           style={{
@@ -124,11 +134,48 @@ export default function PdfCourse() {
               style={styles.carouselImage}
             />
 
-            <IntroductionPdf desc_hn={desc_hn} />
+            <IntroductionPdf />
 
-            <FarmingGoalsSection />
 
-            <StrugglesSection />
+
+            {content.map((item) => {
+              switch (item.content_type) {
+                case "paragraph":
+                  return <ParagraphDisplay key={item.id} text={item.data as string} />;
+                case "image":
+                  return (
+                    <ImageDisplay
+                      key={item.id}
+                      courseId={course_id as string}
+                      imageName={item.data as string}
+                    />
+                  );
+                case "bullet1":
+                  return (
+                    <FarmingGoalsSection
+                      key={item.id}
+                      points={item.data as string[]}
+                    />
+                  );
+                case "bullet2":
+                  return (
+                    <StrugglesSection
+                      key={item.id}
+                      items={item.data as string[]}
+                    />
+                  );
+                default:
+                  return null;
+              }
+            })}
+
+            {!content.some((item) => item.content_type === "bullet1") && (
+              <FarmingGoalsSection />
+            )}
+
+            {!content.some((item) => item.content_type === "bullet2") && (
+              <StrugglesSection />
+            )}
 
             <FeaturesSection />
           </View>

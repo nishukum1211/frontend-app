@@ -2,7 +2,7 @@ import { useLocalSearchParams } from 'expo-router';
 import React from 'react';
 import { ActivityIndicator, StyleSheet, View } from 'react-native';
 import Pdf from 'react-native-pdf';
-import { CourseService } from './courseCache';
+import { CourseService } from '../api/course';
 
 export default function PdfView() {
   const { pdfId } = useLocalSearchParams<{ pdfId: string }>();
@@ -11,7 +11,7 @@ export default function PdfView() {
   React.useEffect(() => {
     (async () => {
       if (!pdfId) return;
-      const localUri = await CourseService.getPdfFromStorage(pdfId);
+      const localUri = await CourseService.getCoursePdfUrl(pdfId);
       setUri(localUri);
     })();
   }, [pdfId]);
