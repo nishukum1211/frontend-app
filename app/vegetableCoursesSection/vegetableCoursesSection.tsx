@@ -7,14 +7,7 @@ import {
   TouchableOpacity,
   View,
 } from "react-native";
-<<<<<<< HEAD
 import { CourseService, CourseUser } from "../api/course";
-=======
-import {
-  SubscriptionSellableItem,
-  SubscriptionService,
-} from "../api/subscription";
->>>>>>> feature/editContent
 import styles from "./vegetableCoursesStyles";
 
 const VegetableCoursesSection: React.FC = () => {
@@ -47,7 +40,6 @@ const VegetableCoursesSection: React.FC = () => {
         numColumns={2}
         columnWrapperStyle={{ justifyContent: "space-between" }}
         keyExtractor={(item) => item.id}
-<<<<<<< HEAD
         renderItem={({ item }) => {
           return (
             <TouchableOpacity
@@ -70,25 +62,6 @@ const VegetableCoursesSection: React.FC = () => {
                 {/* Price */}
                 <Text style={styles.price}>{item.price}</Text>
                 <Text style={styles.unit}>₹</Text>
-=======
-        renderItem={({ item }) => (
-          <TouchableOpacity
-            style={[styles.card]}
-            onPress={() =>
-              router.push({
-                pathname: "/pdfCourse",
-                params: {
-                  ...item,
-                  active: item.active.toString(), // Convert boolean to string
-                },
-              })
-            }
-          >
-            <View style={styles.row}>
-              {/* Price */}
-              <Text style={styles.price}>{item.price}</Text>
-              <Text style={styles.unit}>₹</Text>
->>>>>>> feature/editContent
 
                 {/* Crop name */}
                 <View style={styles.nameCard}>
