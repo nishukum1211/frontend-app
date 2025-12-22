@@ -73,10 +73,13 @@ export default function StickyJoinBar({
   return (
     <View style={styles.container}>
       <View style={styles.textBox}>
-        <Text style={styles.title}>Lifetime Access For ₹{price}/-</Text>
-        <Text style={styles.subtitle}>
-          Avoid costly mistakes in your farming journey
+        <Text style={styles.title}>
+          Lifetime Access For <Text style={styles.priceText}>₹{price}/-</Text>
         </Text>
+
+        {/* <Text style={styles.subtitle}>
+          Avoid costly mistakes in your farming journey
+        </Text> */}
       </View>
 
       {/* glow layer */}
@@ -91,7 +94,9 @@ export default function StickyJoinBar({
           onPress={onJoinPress}
           disabled={isJoined}
         >
-          <Text style={[styles.buttonText, isJoined && styles.joinedButtonText]}>
+          <Text
+            style={[styles.buttonText, isJoined && styles.joinedButtonText]}
+          >
             {isJoined ? "JOINED" : "JOIN NOW"}
           </Text>
         </TouchableOpacity>
@@ -105,7 +110,7 @@ const styles = StyleSheet.create({
     position: "absolute",
     bottom: 0,
     width: "100%",
-    padding: 12,
+    padding: 15,
     backgroundColor: "#8B0000",
     flexDirection: "row",
     alignItems: "center",
@@ -157,5 +162,10 @@ const styles = StyleSheet.create({
 
   joinedButtonText: {
     color: "#4B5563",
+  },
+  priceText: {
+    fontSize: 19,
+    fontWeight: "bold",
+    color: "white",
   },
 });
