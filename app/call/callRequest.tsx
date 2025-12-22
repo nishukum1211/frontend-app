@@ -49,10 +49,7 @@ export default function CallRequestScreen() {
 
   const handleFreeCallPress = () => {
     if (!selected) {
-      Alert.alert(
-        "आवश्यक",
-        "आगे बढ़ने से पहले कृपया फसल का चयन करें।"
-      );
+      Alert.alert("आवश्यक", "आगे बढ़ने से पहले कृपया फसल का चयन करें।");
       return;
     }
     setIsPaidCallConfirmation(false);
@@ -212,7 +209,9 @@ export default function CallRequestScreen() {
                 </Text> */}
 
                 <Text style={callRequestStyles.modalLabel}>Selected Crop:</Text>
-                <Text style={callRequestStyles.modalValue}>{selectedLabel}</Text>
+                <Text style={callRequestStyles.modalValue}>
+                  {selectedLabel}
+                </Text>
 
                 <TouchableOpacity
                   style={callRequestStyles.sendButton}
@@ -262,7 +261,7 @@ export default function CallRequestScreen() {
                   }}
                 >
                   <Text style={callRequestStyles.sendButtonText}>
-                    अनुरोध भेजें
+                    Book Call
                   </Text>
                 </TouchableOpacity>
               </View>
@@ -316,7 +315,13 @@ const DropdownModalContent = ({ data, onSelect, onClose }: DropdownProps) => (
             style={{ paddingVertical: 12 }}
             onPress={() => onSelect(item)}
           >
-            <Text style={{ fontSize: 16, textAlign: "center" }}>
+            <Text
+              style={{
+                fontSize: 16,
+                textAlign: "center",
+                borderBottomWidth: 0.4,
+              }}
+            >
               {item.value}
             </Text>
           </TouchableOpacity>
@@ -329,13 +334,9 @@ const DropdownModalContent = ({ data, onSelect, onClose }: DropdownProps) => (
 /* ----------------------- DROPDOWN DATA ---------------------- */
 
 const data = [
-  { key: "1", value: "धान (चावल)" },
-  { key: "2", value: "मक्का" },
-  { key: "3", value: "ज्वार" },
-  { key: "4", value: "बाजरा" },
-  { key: "5", value: "सोयाबीन" },
-  { key: "6", value: "मूंगफली" },
-  { key: "7", value: "कपास" },
-  { key: "8", value: "अरहर (तूर)" },
-  { key: "9", value: "मूंग" },
+  { key: "1", value: "टमाटर" },
+  { key: "2", value: "खीरा" },
+  { key: "3", value: "बैंगन" },
+  { key: "4", value: "मिर्च" },
+  { key: "5", value: "करेला" },
 ];

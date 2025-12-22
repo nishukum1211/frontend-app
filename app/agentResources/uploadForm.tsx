@@ -3,13 +3,13 @@ import * as DocumentPicker from "expo-document-picker";
 import * as ImagePicker from "expo-image-picker";
 import { useState } from "react";
 import {
-    Image,
-    ScrollView,
-    StyleSheet,
-    Text,
-    TextInput,
-    TouchableOpacity,
-    View,
+  Image,
+  ScrollView,
+  StyleSheet,
+  Text,
+  TextInput,
+  TouchableOpacity,
+  View,
 } from "react-native";
 import { AgentService } from "../api/agent";
 import { crops } from "./crops";
@@ -30,8 +30,6 @@ export default function AgentSellItemForm({
   const [imageFile, setImageFile] = useState<string | null>(null);
 
   const [loading, setLoading] = useState(false);
-
-  
 
   // Pick PDF
   const pickPDF = async () => {
@@ -134,9 +132,13 @@ export default function AgentSellItemForm({
             onValueChange={(itemValue) => setCrop(itemValue)}
             style={styles.picker}
           >
-            <Picker.Item label="Select" value="" />
+            <Picker.Item label="फसल चुनें" value="" />
             {crops.map((c) => (
-              <Picker.Item key={c.name} label={`${c.name} (${c.hindi})`} value={c.name} />
+              <Picker.Item
+                key={c.name}
+                label={c.hindi} // ✅ show only Hindi
+                value={c.hindi} // ✅ store Hindi value
+              />
             ))}
           </Picker>
         </View>

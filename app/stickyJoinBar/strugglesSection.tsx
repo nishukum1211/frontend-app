@@ -22,6 +22,10 @@ const struggles = [
     id: "5",
     text: "मोबाइल पर कहीं भी , कभी भी उपलब्ध",
   },
+  {
+    id: "6",
+    text: "एक क्लिक में मिलेगा सही और सटीक समाधान",
+  },
 ];
 
 export default function StrugglesSection() {

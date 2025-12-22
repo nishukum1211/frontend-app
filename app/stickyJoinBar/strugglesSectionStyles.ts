@@ -63,6 +63,6 @@ export default StyleSheet.create({
     color: "#333",
     lineHeight: 18,
     fontFamily: "Mukta-Regular",
-    fontWeight: "semibold",
+    fontWeight: "bold",
   },
 });

@@ -88,7 +88,7 @@ const callRequestStyles = StyleSheet.create({
     fontSize: 20,
     fontWeight: "600",
     color: "#111827",
-    marginBottom: 10,
+    marginBottom: 6,
   },
 
   sendButton: {

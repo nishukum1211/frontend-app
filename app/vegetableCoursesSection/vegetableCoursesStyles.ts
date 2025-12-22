@@ -17,10 +17,10 @@ export default StyleSheet.create({
     shadowColor: "#000",
     shadowOpacity: 0.15,
     shadowRadius: 6,
-    shadowOffset: { width: 0, height: 4 },
+    shadowOffset: { width: 0, height: 7 },
 
     // Shadow for Android
-    elevation: 4,
+    elevation: 7,
 
     borderWidth: 1,
     borderColor: "#E6E6E6",

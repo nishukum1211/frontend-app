@@ -7,7 +7,10 @@ import {
   TouchableOpacity,
   View,
 } from "react-native";
-import { SubscriptionSellableItem, SubscriptionService } from "../api/subscription";
+import {
+  SubscriptionSellableItem,
+  SubscriptionService,
+} from "../api/subscription";
 import styles from "./vegetableCoursesStyles";
 
 const VegetableCoursesSection: React.FC = () => {
@@ -24,9 +27,9 @@ const VegetableCoursesSection: React.FC = () => {
       setLoading(false);
     };
     fetchCourses().catch((err) => {
-        console.error("Failed to fetch vegetable courses:", err);
-        setLoading(false);
-      });
+      console.error("Failed to fetch vegetable courses:", err);
+      setLoading(false);
+    });
   }, []);
 
   if (loading) {
@@ -42,10 +45,7 @@ const VegetableCoursesSection: React.FC = () => {
         keyExtractor={(item) => item.id}
         renderItem={({ item }) => (
           <TouchableOpacity
-            style={[
-              styles.card,
-              item.active && { backgroundColor: "#E5E7EB", elevation: 0 },
-            ]}
+            style={[styles.card]}
             onPress={() =>
               router.push({
                 pathname: "/pdfCourse",
