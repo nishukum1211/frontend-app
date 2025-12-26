@@ -74,7 +74,7 @@ export default function StickyJoinBar({
     <View style={styles.container}>
       <View style={styles.textBox}>
         <Text style={styles.title}>
-          Lifetime Access For <Text style={styles.priceText}>₹{price}/-</Text>
+          Lifetime Access <Text style={styles.priceText}>₹{price}/-</Text>
         </Text>
 
         {/* <Text style={styles.subtitle}>
