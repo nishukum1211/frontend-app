@@ -25,7 +25,11 @@ export default function AddCoursePage() {
   const [price, setPrice] = useState("");
   const [image, setImage] = useState<string | null>(null);
   const [images, setImages] = useState<string[]>([]);
-  const [pdf, setPdf] = useState<{ uri: string; name: string; mimeType?: string } | null>(null);
+  const [pdf, setPdf] = useState<{
+    uri: string;
+    name: string;
+    mimeType?: string;
+  } | null>(null);
   const [loading, setLoading] = useState(false);
   const router = useRouter();
 
@@ -42,26 +46,26 @@ export default function AddCoursePage() {
     formData.append("crop", crop);
     formData.append("price", price);
     if (image) {
-      formData.append('thumbnail', {
+      formData.append("thumbnail", {
         uri: image,
-        name: 'thumbnail.jpg',
-        type: 'image/jpeg',
+        name: "thumbnail.jpg",
+        type: "image/jpeg",
       } as any);
     }
     if (images.length > 0) {
       images.forEach((imgUri, index) => {
-        formData.append('images', {
+        formData.append("images", {
           uri: imgUri,
           name: `image_${Date.now()}_${index}.jpg`,
-          type: 'image/jpeg',
+          type: "image/jpeg",
         } as any);
       });
     }
     if (pdf) {
-      formData.append('pdf', {
+      formData.append("pdf", {
         uri: pdf.uri,
         name: pdf.name,
-        type: pdf.mimeType || 'application/pdf',
+        type: pdf.mimeType || "application/pdf",
       } as any);
     }
 
@@ -119,19 +123,29 @@ export default function AddCoursePage() {
         behavior={Platform.OS === "ios" ? "padding" : "height"}
         style={{ flex: 1 }}
       >
-        <ScrollView contentContainerStyle={styles.container} showsVerticalScrollIndicator={false}>
-
+        <ScrollView
+          contentContainerStyle={styles.container}
+          showsVerticalScrollIndicator={false}
+        >
           <TouchableOpacity style={styles.imagePicker} onPress={pickImage}>
             {image ? (
               <View style={styles.imagePreviewContainer}>
                 <Image source={{ uri: image }} style={styles.imagePreview} />
                 <View style={styles.editIconContainer}>
-                  <MaterialCommunityIcons name="pencil" size={20} color="white" />
+                  <MaterialCommunityIcons
+                    name="pencil"
+                    size={20}
+                    color="white"
+                  />
                 </View>
               </View>
             ) : (
               <View style={styles.placeholderContainer}>
-                <MaterialCommunityIcons name="image-plus" size={48} color="#9CA3AF" />
+                <MaterialCommunityIcons
+                  name="image-plus"
+                  size={48}
+                  color="#9CA3AF"
+                />
                 <Text style={styles.placeholderText}>Select a Thumbnail</Text>
               </View>
             )}
@@ -174,19 +188,39 @@ export default function AddCoursePage() {
 
             <View style={styles.inputContainer}>
               <Text style={styles.label}>Course Images</Text>
-              <ScrollView horizontal showsHorizontalScrollIndicator={false} contentContainerStyle={styles.imagesScrollContent}>
-                <TouchableOpacity style={styles.addImageButton} onPress={pickImages}>
-                  <MaterialCommunityIcons name="camera-plus" size={24} color="#6B7280" />
+              <ScrollView
+                horizontal
+                showsHorizontalScrollIndicator={false}
+                contentContainerStyle={styles.imagesScrollContent}
+              >
+                <TouchableOpacity
+                  style={styles.addImageButton}
+                  onPress={pickImages}
+                >
+                  <MaterialCommunityIcons
+                    name="camera-plus"
+                    size={24}
+                    color="#6B7280"
+                  />
                   <Text style={styles.addImageText}>Add</Text>
                 </TouchableOpacity>
                 {images.map((img, index) => (
                   <View key={index} style={styles.smallImageContainer}>
-                    <Image source={{ uri: img }} style={styles.smallImagePreview} />
+                    <Image
+                      source={{ uri: img }}
+                      style={styles.smallImagePreview}
+                    />
                     <TouchableOpacity
                       style={styles.removeImageButton}
-                      onPress={() => setImages(images.filter((_, i) => i !== index))}
+                      onPress={() =>
+                        setImages(images.filter((_, i) => i !== index))
+                      }
                     >
-                      <MaterialCommunityIcons name="close-circle" size={20} color="white" />
+                      <MaterialCommunityIcons
+                        name="close-circle"
+                        size={20}
+                        color="white"
+                      />
                     </TouchableOpacity>
                   </View>
                 ))}
@@ -198,19 +232,40 @@ export default function AddCoursePage() {
               <TouchableOpacity style={styles.pdfPicker} onPress={pickPdf}>
                 {pdf ? (
                   <View style={styles.pdfPreview}>
-                    <MaterialCommunityIcons name="file-pdf-box" size={32} color="#EF4444" />
+                    <MaterialCommunityIcons
+                      name="file-pdf-box"
+                      size={32}
+                      color="#EF4444"
+                    />
                     <View style={styles.pdfInfo}>
-                      <Text style={styles.pdfName} numberOfLines={1}>{pdf.name}</Text>
+                      <Text style={styles.pdfName} numberOfLines={1}>
+                        {pdf.name}
+                      </Text>
                       <Text style={styles.pdfChangeText}>Tap to change</Text>
                     </View>
-                    <TouchableOpacity onPress={(e) => { e.stopPropagation(); setPdf(null); }}>
-                      <MaterialCommunityIcons name="close" size={24} color="#6B7280" />
+                    <TouchableOpacity
+                      onPress={(e) => {
+                        e.stopPropagation();
+                        setPdf(null);
+                      }}
+                    >
+                      <MaterialCommunityIcons
+                        name="close"
+                        size={24}
+                        color="#6B7280"
+                      />
                     </TouchableOpacity>
                   </View>
                 ) : (
                   <View style={styles.pdfPlaceholder}>
-                    <MaterialCommunityIcons name="cloud-upload" size={32} color="#9CA3AF" />
-                    <Text style={styles.pdfPlaceholderText}>Upload PDF Document</Text>
+                    <MaterialCommunityIcons
+                      name="cloud-upload"
+                      size={32}
+                      color="#9CA3AF"
+                    />
+                    <Text style={styles.pdfPlaceholderText}>
+                      Upload PDF Document
+                    </Text>
                   </View>
                 )}
               </TouchableOpacity>
@@ -330,6 +385,7 @@ const styles = StyleSheet.create({
     shadowOpacity: 0.2,
     shadowRadius: 8,
     elevation: 4,
+    marginBottom: 30,
   },
   submitButtonText: {
     color: "white",
@@ -337,7 +393,7 @@ const styles = StyleSheet.create({
     fontWeight: "bold",
   },
   imagesScrollContent: {
-    alignItems: 'center',
+    alignItems: "center",
     paddingVertical: 4,
   },
   addImageButton: {
@@ -345,20 +401,20 @@ const styles = StyleSheet.create({
     height: 80,
     borderRadius: 12,
     borderWidth: 1,
-    borderColor: '#E5E7EB',
-    borderStyle: 'dashed',
-    justifyContent: 'center',
-    alignItems: 'center',
+    borderColor: "#E5E7EB",
+    borderStyle: "dashed",
+    justifyContent: "center",
+    alignItems: "center",
     marginRight: 12,
-    backgroundColor: '#F9FAFB',
+    backgroundColor: "#F9FAFB",
   },
   addImageText: {
     fontSize: 12,
-    color: '#6B7280',
+    color: "#6B7280",
     marginTop: 4,
   },
   smallImageContainer: {
-    position: 'relative',
+    position: "relative",
     marginRight: 12,
   },
   smallImagePreview: {
@@ -367,33 +423,33 @@ const styles = StyleSheet.create({
     borderRadius: 12,
   },
   removeImageButton: {
-    position: 'absolute',
+    position: "absolute",
     top: -6,
     right: -6,
-    backgroundColor: 'rgba(0,0,0,0.5)',
+    backgroundColor: "rgba(0,0,0,0.5)",
     borderRadius: 10,
   },
   pdfPicker: {
-    backgroundColor: 'white',
+    backgroundColor: "white",
     borderRadius: 12,
     borderWidth: 1,
-    borderColor: '#E5E7EB',
-    borderStyle: 'dashed',
+    borderColor: "#E5E7EB",
+    borderStyle: "dashed",
     padding: 16,
   },
   pdfPlaceholder: {
-    alignItems: 'center',
-    justifyContent: 'center',
+    alignItems: "center",
+    justifyContent: "center",
     paddingVertical: 12,
   },
   pdfPlaceholderText: {
     marginTop: 8,
-    color: '#6B7280',
+    color: "#6B7280",
     fontSize: 14,
   },
   pdfPreview: {
-    flexDirection: 'row',
-    alignItems: 'center',
+    flexDirection: "row",
+    alignItems: "center",
   },
   pdfInfo: {
     flex: 1,
@@ -401,11 +457,11 @@ const styles = StyleSheet.create({
   },
   pdfName: {
     fontSize: 14,
-    color: '#111827',
-    fontWeight: '500',
+    color: "#111827",
+    fontWeight: "500",
   },
   pdfChangeText: {
     fontSize: 12,
-    color: '#6B7280',
+    color: "#6B7280",
   },
 });
