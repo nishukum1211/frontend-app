@@ -5,9 +5,12 @@ import {
   Ionicons,
   MaterialCommunityIcons,
 } from "@expo/vector-icons";
-import { Tabs } from "expo-router";
-import { useEffect, useState } from "react";
+import { Tabs, useFocusEffect } from "expo-router";
+import { useCallback, useEffect, useState } from "react";
 import { Platform, Text, TouchableOpacity, View } from "react-native";
+import { useSafeAreaInsets } from "react-native-safe-area-context";
+import { getUserData } from "../auth/action";
+import { DecodedToken } from "../auth/auth";
 
 /**
  * Tabs layout:
@@ -17,7 +20,9 @@ import { Platform, Text, TouchableOpacity, View } from "react-native";
  */
 
 export default function TabsLayout() {
+  const insets = useSafeAreaInsets();
   const [fontsLoaded, setFontsLoaded] = useState(false);
+  const [user, setUser] = useState<DecodedToken | null>(null);
 
   useEffect(() => {
     // Load all icon fonts used in the app.
@@ -46,6 +51,13 @@ export default function TabsLayout() {
 
     loadIconFonts();
   }, []);
+
+  // Load user data to determine role
+  useFocusEffect(
+    useCallback(() => {
+      getUserData().then(setUser);
+    }, [])
+  );
 
   // Don't render tabs until fonts are loaded (prevents glyphs missing)
   if (!fontsLoaded) return null;
@@ -98,8 +110,8 @@ export default function TabsLayout() {
           backgroundColor: "#FFFFFF",
           borderTopWidth: 1,
           borderTopColor: "#E5E5EA",
-          height: Platform.OS === "ios" ? 86 : 64,
-          paddingBottom: Platform.OS === "ios" ? 20 : 8,
+          height: Platform.OS === "ios" ? 86 : 60 + insets.bottom,
+          paddingBottom: Platform.OS === "ios" ? 10 : insets.bottom + 8,
         },
       }}
     >
@@ -115,19 +127,32 @@ export default function TabsLayout() {
         }}
       />
 
-      {/* Center Camera Button (no label, custom button opens camera) */}
-      <Tabs.Screen
-        name="camera"
-        options={{
-          title: "Camera",
-          tabBarLabel: "Camera",
-          tabBarButton: (props) => (
-            <CameraTabButton {...props}>
-              <MaterialCommunityIcons name="camera" size={30} color="gray" />
-            </CameraTabButton>
-          ),
-        }}
-      />
+      {/* Center Camera Button or Subscription Tab based on role */}
+      {user?.role === "agent" ? (
+        <Tabs.Screen
+          name="subscription"
+          options={{
+            title: "Subscription",
+            tabBarLabel: "Subscription",
+            tabBarIcon: ({ color, size }) => (
+              <MaterialCommunityIcons name="clipboard-list" size={size} color={color} />
+            ),
+          }}
+        />
+      ) : (
+        <Tabs.Screen
+          name="camera"
+          options={{
+            title: "Camera",
+            tabBarLabel: "Camera",
+            tabBarButton: (props) => (
+              <CameraTabButton {...props}>
+                <MaterialCommunityIcons name="camera" size={30} color="gray" />
+              </CameraTabButton>
+            ),
+          }}
+        />
+      )}
 
       {/* Courses */}
       <Tabs.Screen
@@ -163,7 +188,6 @@ export default function TabsLayout() {
 
       {/* Hidden navigable screens */}
       <Tabs.Screen name="pdfList" options={{ href: null }} />
-      <Tabs.Screen name="pdfCourse" options={{ href: null }} />
     </Tabs>
   );
 }
