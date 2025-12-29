@@ -16,6 +16,8 @@ import {
   View
 } from 'react-native';
 import { CallRequest, CallService, CallStatus } from '../api/call';
+import { FarmingSubscriptionService, SubscribedUser } from '../api/farmingsubs';
+import SubscribedUserWidget from '../components/SubscribedUserWidget';
 import { AppEvents } from '../utils/eventEmitter';
 
 type RootStackParamList = {
@@ -37,6 +39,8 @@ const AgentCallRequestsScreen = () => {
   const [filteredRequests, setFilteredRequests] = useState<CallRequest[]>([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
+  const [subscribedUsers, setSubscribedUsers] = useState<SubscribedUser[]>([]);
+  const [showSubscribedUsers, setShowSubscribedUsers] = useState(false);
 
   const [sortConfig, setSortConfig] =
     useState<{ key: SortKey; direction: SortDirection } | null>(null);
@@ -82,6 +86,10 @@ const AgentCallRequestsScreen = () => {
         setAllRequests(requests);
       } else {
         setError('Failed to fetch call requests or no requests found.');
+      }
+      const users = await FarmingSubscriptionService.getFarmingSubscriptionUsers();
+      if (users) {
+        setSubscribedUsers(users);
       }
     } catch (e) {
       console.error(e);

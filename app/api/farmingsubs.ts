@@ -1,5 +1,6 @@
 import { getLoginJwtToken } from "../auth/auth";
 import { AppConfig } from "../config";
+import { User } from "./user";
 
 /**
  * Defines the structure for creating a farming subscription.
@@ -26,7 +27,7 @@ export class FarmingSubscriptionService {
      * @param {FarmingSubscriptionCreate} data - The subscription creation data.
      * @returns {Promise<boolean>} True if the subscription was created successfully, false otherwise.
      */
-    public static async createFarmingSubscription(data: FarmingSubscriptionCreate): Promise<boolean> {
+    public static async createFarmingCourse(data: FarmingSubscriptionCreate): Promise<boolean> {
         try {
             const token = await getLoginJwtToken();
             if (!token) {
@@ -50,7 +51,7 @@ export class FarmingSubscriptionService {
 
             return true;
         } catch (error) {
-            console.error("Error in FarmingSubscriptionService.createFarmingSubscription:", error);
+            console.error("Error in FarmingSubscriptionService.createFarmingCourse:", error);
             return false;
         }
     }
@@ -166,6 +167,36 @@ export class FarmingSubscriptionService {
         } catch (error) {
             console.error("Error in FarmingSubscriptionService.updateFarmingCourse:", error);
             return false;
+        }
+    }
+
+    /**
+     * Fetches a list of users with farming subscriptions.
+     * @returns {Promise<UserFarmingSubscription[] | null>} A list of users or null if an error occurs.
+     */
+    public static async getFarmingSubscriptionUsers(): Promise<User[] | null> {
+        try {
+            const token = await getLoginJwtToken();
+            if (!token) {
+                console.error("Authentication error. Please log in again.");
+                return null;
+            }
+
+            const response = await fetch(`${AppConfig.API_BASE_URL}/subscription/farming/users`, {
+                headers: {
+                    Authorization: `Bearer ${token}`,
+                },
+            });
+
+            if (!response.ok) {
+                console.error(`Failed to list farming subscription users: ${response.status} ${response.statusText}`);
+                return null;
+            }
+
+            return await response.json() as User[];
+        } catch (error) {
+            console.error("Error in FarmingSubscriptionService.getFarmingSubscriptionUsers:", error);
+            return null;
         }
     }
 }
