@@ -1,3 +1,4 @@
+import { Alert } from "react-native";
 import { getLoginJwtToken } from "../auth/auth";
 import { AppConfig } from "../config";
 import { SubscriptionCreate } from "./subscription";
@@ -32,6 +33,7 @@ export class FarmingSubscriptionService {
         try {
             const token = await getLoginJwtToken();
             if (!token) {
+                Alert.alert("Authentication Error", "Please log in again.");
                 console.error("Authentication error. Please log in again.");
                 return false;
             }
@@ -46,12 +48,16 @@ export class FarmingSubscriptionService {
             });
 
             if (!response.ok) {
+                const errorData = await response.json().catch(() => ({}));
+                const errorMessage = errorData.detail || `Failed to create farming subscription: ${response.status} ${response.statusText}`;
+                Alert.alert('Error', errorMessage);
                 console.error(`Failed to create farming subscription: ${response.status} ${response.statusText}`);
                 return false;
             }
 
             return true;
         } catch (error) {
+            Alert.alert('Error', 'An unexpected error occurred while creating the farming course.');
             console.error("Error in FarmingSubscriptionService.createFarmingCourse:", error);
             return false;
         }
@@ -65,6 +71,7 @@ export class FarmingSubscriptionService {
         try {
             const token = await getLoginJwtToken();
             if (!token) {
+                Alert.alert("Authentication Error", "Please log in again.");
                 console.error("Authentication error. Please log in again.");
                 return null;
             }
@@ -76,12 +83,16 @@ export class FarmingSubscriptionService {
             });
 
             if (!response.ok) {
+                const errorData = await response.json().catch(() => ({}));
+                const errorMessage = errorData.detail || `Failed to list farming subscriptions: ${response.status} ${response.statusText}`;
+                Alert.alert('Error', errorMessage);
                 console.error(`Failed to list farming subscriptions: ${response.status} ${response.statusText}`);
                 return null;
             }
 
             return await response.json() as FarmingSubscriptionItem[];
         } catch (error) {
+            Alert.alert('Error', 'An unexpected error occurred while listing farming courses.');
             console.error("Error in FarmingSubscriptionService.listFarmingCourses:", error);
             return null;
         }
@@ -115,6 +126,7 @@ export class FarmingSubscriptionService {
         try {
             const token = await getLoginJwtToken();
             if (!token) {
+                Alert.alert("Authentication Error", "Please log in again.");
                 console.error("Authentication error. Please log in again.");
                 return false;
             }
@@ -127,11 +139,15 @@ export class FarmingSubscriptionService {
             });
 
             if (!response.ok) {
+                const errorData = await response.json().catch(() => ({}));
+                const errorMessage = errorData.detail || `Failed to update live status to ${status}: ${response.status} ${response.statusText}`;
+                Alert.alert('Error', errorMessage);
                 console.error(`Failed to update live status to ${status}: ${response.status} ${response.statusText}`);
                 return false;
             }
             return true;
         } catch (error) {
+            Alert.alert('Error', `An unexpected error occurred while updating live status.`);
             console.error(`Error in FarmingSubscriptionService.updateLiveStatus (${status}):`, error);
             return false;
         }
@@ -149,6 +165,7 @@ export class FarmingSubscriptionService {
         try {
             const token = await getLoginJwtToken();
             if (!token) {
+                Alert.alert("Authentication Error", "Please log in again.");
                 console.error("Authentication error. Please log in again.");
                 return false;
             }
@@ -164,13 +181,17 @@ export class FarmingSubscriptionService {
             });
 
             if (!response.ok) {
-                console.error(`Failed to create offline farming subscription: ${response.status} ${response.statusText}`);
+                const errorData = await response.json().catch(() => ({}));
+                const errorMessage = errorData.detail || `Failed to create offline farming subscription: ${response.status} ${response.statusText}`;
+                Alert.alert('Error', errorMessage);
+                console.log(`Failed to create offline farming subscription: ${response.status} ${response.statusText}`);
                 return false;
             }
 
             return true;
         } catch (error) {
-            console.error("Error in FarmingSubscriptionService.createOfflineFarmingSubscription:", error);
+            Alert.alert('Error', 'An unexpected error occurred during the offline subscription creation.');
+            console.log("Error in FarmingSubscriptionService.createOfflineFarmingSubscription:", error);
             return false;
         }
     }
@@ -185,6 +206,7 @@ export class FarmingSubscriptionService {
         try {
             const token = await getLoginJwtToken();
             if (!token) {
+                Alert.alert("Authentication Error", "Please log in again.");
                 console.error("Authentication error. Please log in again.");
                 return false;
             }
@@ -199,11 +221,15 @@ export class FarmingSubscriptionService {
             });
 
             if (!response.ok) {
+                const errorData = await response.json().catch(() => ({}));
+                const errorMessage = errorData.detail || `Failed to update farming subscription: ${response.status} ${response.statusText}`;
+                Alert.alert('Error', errorMessage);
                 console.error(`Failed to update farming subscription: ${response.status} ${response.statusText}`);
                 return false;
             }
             return true;
         } catch (error) {
+            Alert.alert('Error', 'An unexpected error occurred while updating the farming course.');
             console.error("Error in FarmingSubscriptionService.updateFarmingCourse:", error);
             return false;
         }
@@ -217,6 +243,7 @@ export class FarmingSubscriptionService {
         try {
             const token = await getLoginJwtToken();
             if (!token) {
+                Alert.alert("Authentication Error", "Please log in again.");
                 console.error("Authentication error. Please log in again.");
                 return null;
             }
@@ -228,12 +255,16 @@ export class FarmingSubscriptionService {
             });
 
             if (!response.ok) {
+                const errorData = await response.json().catch(() => ({}));
+                const errorMessage = errorData.detail || `Failed to list farming subscription users: ${response.status} ${response.statusText}`;
+                Alert.alert('Error', errorMessage);
                 console.error(`Failed to list farming subscription users: ${response.status} ${response.statusText}`);
                 return null;
             }
 
             return await response.json() as User[];
         } catch (error) {
+            Alert.alert('Error', 'An unexpected error occurred while fetching subscription users.');
             console.error("Error in FarmingSubscriptionService.getFarmingSubscriptionUsers:", error);
             return null;
         }

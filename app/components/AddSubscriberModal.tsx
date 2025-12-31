@@ -85,7 +85,7 @@ export default function AddSubscriberModal({
             onSuccess();
             onClose();
         } else {
-            Alert.alert("Failed", "Could not subscribe the user.");
+            // Alert.alert("Failed", "Could not subscribe the user.");
         }
         setSubscribing(false);
     };
