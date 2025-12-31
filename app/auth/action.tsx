@@ -1,7 +1,7 @@
 import * as SecureStore from "expo-secure-store";
 import notificationService from "../api/NotificationService";
 import { fetchAllChatsAndCache } from "../chat/chatCache";
-import { CourseService } from "../course/courseCache";
+import { SubscriptionService } from "../course/courseCache";
 import { DecodedToken, getLoginJwtToken, saveUserData } from "./auth";
 
 
@@ -38,7 +38,7 @@ export const fetchAndSaveUser = async (
       console.log("No auth token found for fetching user.");
       return null;
     }
-        console.log(tokenSource, role)
+    console.log(tokenSource, role)
     const response = await fetch(
       "https://dev-backend-py-23809827867.us-east1.run.app/user/fetch",
       {
@@ -76,7 +76,7 @@ export const fetchAndSaveUser = async (
 
     if (role === "user") {
       // Sync course assets in the background only for users
-      CourseService.syncCourseAssets().catch((error) => {
+      SubscriptionService.syncCourseAssets().catch((error) => {
         console.error("Failed to sync course assets on login:", error);
       });
     }
