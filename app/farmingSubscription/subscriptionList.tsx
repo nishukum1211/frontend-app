@@ -9,6 +9,7 @@ import {
     TouchableOpacity,
     View,
 } from "react-native";
+import { Feather } from "@expo/vector-icons"; // Import Feather icons
 import {
     FarmingSubscriptionItem,
     FarmingSubscriptionService,
@@ -48,30 +49,37 @@ const SubscriptionCard = ({
             </View>
             <View style={styles.itemDetails}>
                 <Text style={styles.itemPrice}>₹{item.price}</Text>
-                <TouchableOpacity onPress={handleToggle}>
-                    <View
-                        style={[
-                            styles.statusButton,
-                            item.live ? styles.statusLive : styles.statusOffline,
-                        ]}
-                    >
-                        <Text
+                <View style={styles.actionsContainer}>
+                    <TouchableOpacity onPress={handleToggle}>
+                        <View
                             style={[
-                                styles.statusText,
-                                item.live ? styles.textLive : styles.textOffline,
+                                styles.statusButton,
+                                item.live
+                                    ? styles.statusLive
+                                    : styles.statusOffline,
                             ]}
                         >
-                            {item.live ? "Live" : "Offline"}
-                        </Text>
-                    </View>
-                </TouchableOpacity>
-                {/* New "Add User" button */}
-                <TouchableOpacity
-                    style={styles.addUserButton}
-                    onPress={() => onAddUser(item)}
-                >
-                    <Text style={styles.addUserButtonText}>Add User</Text>
-                </TouchableOpacity>
+                            <Text
+                                style={[
+                                    styles.statusText,
+                                    item.live
+                                        ? styles.textLive
+                                        : styles.textOffline,
+                                ]}
+                            >
+                                {item.live ? "Live" : "Offline"}
+                            </Text>
+                        </View>
+                    </TouchableOpacity>
+                    {/* New "Add User" button */}
+                    <TouchableOpacity
+                        style={styles.addUserButton}
+                        onPress={() => onAddUser(item)}
+                    >
+                        <Feather name="plus" size={16} color="white" />
+                        <Text style={styles.addUserButtonText}>Add User</Text>
+                    </TouchableOpacity>
+                </View>
             </View>
         </TouchableOpacity>
     );
@@ -83,7 +91,8 @@ export default function SubscriptionList() {
     );
     const [loading, setLoading] = useState(true);
     const [isModalVisible, setModalVisible] = useState(false); // State for modal visibility
-    const [selectedCourse, setSelectedCourse] = useState<FarmingSubscriptionItem | null>(null); // State for selected course
+    const [selectedCourse, setSelectedCourse] =
+        useState<FarmingSubscriptionItem | null>(null); // State for selected course
     const router = useRouter();
 
     useEffect(() => {
@@ -260,12 +269,17 @@ const styles = StyleSheet.create({
         flex: 1,
         padding: 12,
         justifyContent: "space-around",
-        alignItems: "flex-start",
     },
     itemPrice: {
         fontSize: 22,
         color: "#059669",
         fontWeight: "bold",
+        marginBottom: 8,
+    },
+    actionsContainer: {
+        flexDirection: "row",
+        alignItems: "center",
+        justifyContent: "space-between",
     },
     statusButton: {
         paddingVertical: 8,
@@ -293,19 +307,19 @@ const styles = StyleSheet.create({
     textOffline: {
         color: "#4B5563",
     },
-    // New styles for the Add User button
     addUserButton: {
+        flexDirection: "row",
         backgroundColor: "#007AFF",
         paddingVertical: 8,
         paddingHorizontal: 12,
         borderRadius: 8,
-        marginTop: 8, // Adjust spacing as needed
-        alignSelf: "flex-start", // Align to the start of the itemDetails
+        alignItems: "center",
     },
     addUserButtonText: {
         color: "white",
         fontWeight: "bold",
         fontSize: 12,
+        marginLeft: 4,
     },
     fab: {
         position: "absolute",
