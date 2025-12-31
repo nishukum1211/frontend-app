@@ -131,10 +131,10 @@ export class CourseService {
     public static async listUserCourses(): Promise<CourseUser[] | null> {
         try {
             const token = await getLoginJwtToken();
-            if (!token) {
-                console.error("Authentication error. Please log in again.");
-                return null;
-            }
+            // if (!token) {
+            //     console.error("Authentication error. Please log in again.");
+            //     return null;
+            // }
 
             const response = await fetch(`${AppConfig.API_BASE_URL}/course/list/user`, {
                 headers: {

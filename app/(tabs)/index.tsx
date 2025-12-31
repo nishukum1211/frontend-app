@@ -2,7 +2,7 @@
 import { MaterialCommunityIcons } from "@expo/vector-icons";
 import { useFocusEffect, useNavigation } from "@react-navigation/native";
 import { useCallback, useEffect, useState } from "react";
-import { FlatList, Image, TouchableOpacity, View } from "react-native";
+import { ActivityIndicator, FlatList, Image, TouchableOpacity, View } from "react-native";
 import { getUserData } from "../auth/action";
 import { DecodedToken } from "../auth/auth";
 import CallCard from "../call/CallCard";
@@ -20,15 +20,22 @@ import VegetableSubscription from "../vegetableSubscription/vegetableSubscriptio
 export default function Home() {
   const navigation = useNavigation();
   const [user, setUser] = useState<DecodedToken | null>(null);
+  const [isLoading, setIsLoading] = useState(true);
 
   // Auth check each focus
   useFocusEffect(
     useCallback(() => {
       let mounted = true;
-      (async () => {
+      const fetchUser = async () => {
         const userData = await getUserData();
-        if (mounted) setUser(userData);
-      })();
+        if (mounted) {
+          setUser(userData);
+          setIsLoading(false);
+        }
+      };
+
+      fetchUser();
+
       return () => {
         mounted = false;
       };
@@ -63,6 +70,14 @@ export default function Home() {
       ),
     });
   }, [navigation, user]);
+
+  if (isLoading) {
+    return (
+      <View style={{ flex: 1, justifyContent: 'center', alignItems: 'center' }}>
+        <ActivityIndicator size="large" />
+      </View>
+    );
+  }
 
   return (
     <FlatList
