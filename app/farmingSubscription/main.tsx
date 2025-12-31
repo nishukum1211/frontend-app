@@ -1,6 +1,14 @@
 import { Stack, useRouter } from "expo-router";
-import { useEffect, useState } from "react";
-import { ActivityIndicator, FlatList, StyleSheet, Text, TouchableOpacity, View } from "react-native";
+import { useCallback, useEffect, useState } from "react";
+import {
+    ActivityIndicator,
+    FlatList,
+    RefreshControl,
+    StyleSheet,
+    Text,
+    TouchableOpacity,
+    View,
+} from "react-native";
 import { FarmingSubscriptionService } from "../api/farmingsubs";
 import { User } from "../api/user";
 import FarmingUserWidget from "./FarmingUserWidget";
@@ -10,15 +18,20 @@ export default function FarmingSubscription() {
     const [users, setUsers] = useState<User[]>([]);
     const [loading, setLoading] = useState<boolean>(true);
 
+    const fetchUsers = async () => {
+        setLoading(true);
+        const fetchedUsers = await FarmingSubscriptionService.getFarmingSubscriptionUsers();
+        if (fetchedUsers) {
+            setUsers(fetchedUsers);
+        }
+        setLoading(false);
+    };
+
     useEffect(() => {
-        const fetchUsers = async () => {
-            setLoading(true);
-            const fetchedUsers = await FarmingSubscriptionService.getFarmingSubscriptionUsers();
-            if (fetchedUsers) {
-                setUsers(fetchedUsers);
-            }
-            setLoading(false);
-        };
+        fetchUsers();
+    }, []);
+
+    const onRefresh = useCallback(() => {
         fetchUsers();
     }, []);
 
@@ -39,7 +52,7 @@ export default function FarmingSubscription() {
                 }}
             />
 
-            {loading ? (
+            {loading && users.length === 0 ? (
                 <View style={styles.loadingContainer}>
                     <ActivityIndicator size="large" color="#08b42dff" />
                     <Text style={styles.loadingText}>Loading subscribed users...</Text>
@@ -54,6 +67,7 @@ export default function FarmingSubscription() {
                     keyExtractor={(item) => item.id}
                     renderItem={({ item }) => <FarmingUserWidget user={item} />}
                     contentContainerStyle={styles.listContentContainer}
+                    refreshControl={<RefreshControl refreshing={loading} onRefresh={onRefresh} />}
                 />
             )}
         </View>

@@ -13,6 +13,7 @@ import {
     FarmingSubscriptionItem,
     FarmingSubscriptionService,
 } from "../api/farmingsubs";
+import AddSubscriberModal from "../components/AddSubscriberModal"; // Import AddSubscriberModal
 import { AppEvents } from "../utils/eventEmitter";
 
 const SubscriptionCard = ({
@@ -20,11 +21,13 @@ const SubscriptionCard = ({
     onPress,
     goLive,
     goDown,
+    onAddUser, // New prop for Add User button
 }: {
     item: FarmingSubscriptionItem;
     onPress: () => void;
     goLive: (id: string) => void;
     goDown: (id: string) => void;
+    onAddUser: (item: FarmingSubscriptionItem) => void; // New prop for Add User button
 }) => {
     const handleToggle = () => {
         if (item.live) {
@@ -62,6 +65,13 @@ const SubscriptionCard = ({
                         </Text>
                     </View>
                 </TouchableOpacity>
+                {/* New "Add User" button */}
+                <TouchableOpacity
+                    style={styles.addUserButton}
+                    onPress={() => onAddUser(item)}
+                >
+                    <Text style={styles.addUserButtonText}>Add User</Text>
+                </TouchableOpacity>
             </View>
         </TouchableOpacity>
     );
@@ -72,6 +82,8 @@ export default function SubscriptionList() {
         []
     );
     const [loading, setLoading] = useState(true);
+    const [isModalVisible, setModalVisible] = useState(false); // State for modal visibility
+    const [selectedCourse, setSelectedCourse] = useState<FarmingSubscriptionItem | null>(null); // State for selected course
     const router = useRouter();
 
     useEffect(() => {
@@ -148,6 +160,11 @@ export default function SubscriptionList() {
         });
     };
 
+    const handleAddUser = (item: FarmingSubscriptionItem) => {
+        setSelectedCourse(item);
+        setModalVisible(true);
+    };
+
     if (loading) {
         return (
             <View style={styles.center}>
@@ -167,6 +184,7 @@ export default function SubscriptionList() {
                         onPress={() => handlePress(item)}
                         goLive={goLive}
                         goDown={goDown}
+                        onAddUser={handleAddUser} // Pass the new handler
                     />
                 )}
                 contentContainerStyle={styles.listContainer}
@@ -177,6 +195,20 @@ export default function SubscriptionList() {
             >
                 <Text style={styles.fabIcon}>+</Text>
             </TouchableOpacity>
+
+            {/* Add Subscriber Modal */}
+            {selectedCourse && (
+                <AddSubscriberModal
+                    visible={isModalVisible}
+                    onClose={() => setModalVisible(false)}
+                    courseId={selectedCourse.id}
+                    price={selectedCourse.price}
+                    onSuccess={loadFarmingCourses} // Refresh list on success
+                    createSubscriptionMethod={
+                        FarmingSubscriptionService.createOfflineFarmingSubscription
+                    }
+                />
+            )}
         </View>
     );
 }
@@ -260,6 +292,20 @@ const styles = StyleSheet.create({
     },
     textOffline: {
         color: "#4B5563",
+    },
+    // New styles for the Add User button
+    addUserButton: {
+        backgroundColor: "#007AFF",
+        paddingVertical: 8,
+        paddingHorizontal: 12,
+        borderRadius: 8,
+        marginTop: 8, // Adjust spacing as needed
+        alignSelf: "flex-start", // Align to the start of the itemDetails
+    },
+    addUserButtonText: {
+        color: "white",
+        fontWeight: "bold",
+        fontSize: 12,
     },
     fab: {
         position: "absolute",

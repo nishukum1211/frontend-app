@@ -1,5 +1,6 @@
 import { getLoginJwtToken } from "../auth/auth";
 import { AppConfig } from "../config";
+import { SubscriptionCreate } from "./subscription";
 import { User } from "./user";
 
 /**
@@ -132,6 +133,44 @@ export class FarmingSubscriptionService {
             return true;
         } catch (error) {
             console.error(`Error in FarmingSubscriptionService.updateLiveStatus (${status}):`, error);
+            return false;
+        }
+    }
+
+    /**
+     * Creates an offline farming subscription for a user.
+     * @param {SubscriptionCreate} data - The subscription creation data.
+     * @param {string} user_id - The ID of the user.
+     * @returns {Promise<boolean>} True if successful, false otherwise.
+     */
+    public static async createOfflineFarmingSubscription(data: SubscriptionCreate, user_id: string): Promise<boolean> {
+        console.log(data);
+        console.log(user_id);
+        try {
+            const token = await getLoginJwtToken();
+            if (!token) {
+                console.error("Authentication error. Please log in again.");
+                return false;
+            }
+
+            const response = await fetch(`${AppConfig.API_BASE_URL}/subscription/farming/offline/create?user_id=${encodeURIComponent(user_id)}`, {
+                method: "POST",
+                headers: {
+                    Authorization: `Bearer ${token}`,
+                    "X-Token-Source": "password",
+                    "Content-Type": "application/json",
+                },
+                body: JSON.stringify(data),
+            });
+
+            if (!response.ok) {
+                console.error(`Failed to create offline farming subscription: ${response.status} ${response.statusText}`);
+                return false;
+            }
+
+            return true;
+        } catch (error) {
+            console.error("Error in FarmingSubscriptionService.createOfflineFarmingSubscription:", error);
             return false;
         }
     }
