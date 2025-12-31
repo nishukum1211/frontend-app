@@ -11,6 +11,7 @@ export interface User {
     email_id: string | null;
     mobile_number: string;
     role: string;
+    farming_subs_expiry: string | null;
 }
 
 /**
@@ -63,7 +64,7 @@ export class UserService {
      * @param {string} mobileNumber - The mobile number to send the OTP to.
      * @returns {Promise<{message: string} | null>} A message indicating success or null on failure.
      */
-    public static async sendOtp(mobileNumber: string): Promise<{message: string} | null> {
+    public static async sendOtp(mobileNumber: string): Promise<{ message: string } | null> {
         try {
             const response = await fetch(`${AppConfig.API_BASE_URL}/user/otp/send?mobile_number=${encodeURIComponent(mobileNumber)}`, {
                 method: 'POST',

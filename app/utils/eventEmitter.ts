@@ -11,6 +11,7 @@
 export type AppEventMap = {
   "refresh-screen": [targetScreen: string];
   "chat-list-update": []; // No payload needed, it's a general refresh signal
+  "refresh-subscriptions": [];
 };
 
 type EventKey = keyof AppEventMap;
