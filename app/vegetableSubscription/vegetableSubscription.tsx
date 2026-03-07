@@ -9,11 +9,11 @@ export default function VegetableSubscription() {
     <View style={styles.card}>
       <View style={styles.imageRow}>
         <Image
-          source={require("../../assets/images/chilli.webp")}
+          source={require("../../assets/images/green_chilli.jpg")}
           style={styles.vegImage}
         />
         <Image
-          source={require("../../assets/images/cucumber.jpg")}
+          source={require("../../assets/images/cucumber_12.webp")}
           style={styles.vegImage}
         />
         <Image

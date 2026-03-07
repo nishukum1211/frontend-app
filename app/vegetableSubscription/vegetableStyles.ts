@@ -27,6 +27,7 @@ export default StyleSheet.create({
   },
 
   vegImage: {
+    backgroundColor: "black",
     width: 70,
     height: 70,
     resizeMode: "cover",
