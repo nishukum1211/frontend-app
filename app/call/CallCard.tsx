@@ -29,7 +29,7 @@ export default function CallCard() {
 
               <View style={styles.textColumn}>
                 <Text style={styles.callMainText}>Call</Text>
-                <Text style={styles.callSubText}>मैं सलाह लें</Text>
+                <Text style={styles.callSubText}>में सलाह लें</Text>
               </View>
             </View>
           </View>
