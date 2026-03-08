@@ -1,6 +1,7 @@
 import { Alert } from "react-native";
 import { getLoginJwtToken } from "../auth/auth";
 import { AppConfig } from "../config";
+import { ItemInfo } from "./course";
 import { User } from "./user";
 
 /**
@@ -317,12 +318,12 @@ export class FarmingSubscriptionService {
 
 
     /**
-     * Order farming subscription content by IDs.
+     * Reorder and update all farming subscription content.
      * @param {string} courseId - The ID of the course.
-     * @param {string[]} ids - The array of content IDs in the desired order.
+     * @param {ItemInfo[]} content - The list of content items.
      * @returns {Promise<any | null>} The response or null if an error occurs.
      */
-    public static async orderFarmingSubscriptionContent(courseId: string, ids: string[]): Promise<any | null> {
+    public static async orderFarmingSubscriptionContent(courseId: string, content: ItemInfo[]): Promise<any | null> {
         try {
             const token = await getLoginJwtToken();
             if (!token) {
@@ -331,26 +332,26 @@ export class FarmingSubscriptionService {
                 return null;
             }
 
-            const response = await fetch(`${AppConfig.API_BASE_URL}/farming/${courseId}/content/order`, {
+            const response = await fetch(`${AppConfig.API_BASE_URL}/farming/${courseId}/content`, {
                 method: "PUT",
                 headers: {
                     Authorization: `Bearer ${token}`,
                     "Content-Type": "application/json",
                 },
-                body: JSON.stringify({ ids }),
+                body: JSON.stringify(content),
             });
 
             if (!response.ok) {
                 const errorData = await response.json().catch(() => ({}));
-                const errorMessage = errorData.detail || `Failed to order content: ${response.status} ${response.statusText}`;
+                const errorMessage = errorData.detail || `Failed to update content: ${response.status} ${response.statusText}`;
                 Alert.alert('Error', errorMessage);
-                console.error(`Failed to order content: ${response.status} ${response.statusText}`);
+                console.error(`Failed to update content: ${response.status} ${response.statusText}`);
                 return null;
             }
 
             return await response.json();
         } catch (error) {
-            Alert.alert('Error', 'An unexpected error occurred while ordering content.');
+            Alert.alert('Error', 'An unexpected error occurred while updating content.');
             console.error("Error in FarmingSubscriptionService.orderFarmingSubscriptionContent:", error);
             return null;
         }
