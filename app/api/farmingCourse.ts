@@ -98,6 +98,16 @@ export interface FarmingCourseResponse {
 }
 
 /**
+ * Defines the structure for farming subscription response.
+ */
+export interface FarmingSubscriptionResponse {
+    id: string;
+    cropName: string;
+    thumbnail?: string;
+    active: boolean;
+}
+
+/**
  * Defines the structure for text content payload.
  */
 export interface TextContentPayload {
@@ -141,38 +151,37 @@ export class FarmingCourseService {
     }
 
     /**
-     * Get farming courses for a specific user.
-     * @param {string} userId - The ID of the user.
-     * @returns {Promise<FarmingCourseResponse[] | null>} A list of farming courses for the user or null if an error occurs.
+     * Get farming subscriptions with optional user authentication.
+     * When authenticated, subscriptions are enriched with the user's active status.
+     * When not authenticated, all live subscriptions are returned with active=false.
+     * @returns {Promise<FarmingSubscriptionResponse[] | null>} A list of farming subscriptions or null if an error occurs.
      */
-    public static async getFarmingCoursesForUser(userId: string): Promise<FarmingCourseResponse[] | null> {
+    public static async getFarmingSubscriptionsForUser(): Promise<FarmingSubscriptionResponse[] | null> {
         try {
             const token = await getLoginJwtToken();
-            if (!token) {
-                Alert.alert("Authentication Error", "Please log in again.");
-                console.error("Authentication error. Please log in again.");
-                return null;
+
+            const headers: Record<string, string> = {};
+            if (token) {
+                headers['Authorization'] = `Bearer ${token}`;
+                headers['X-Token-Source'] = 'password';
             }
 
             const response = await fetch(`${AppConfig.API_BASE_URL}/farming/list/user`, {
-                headers: {
-                    Authorization: `Bearer ${token}`,
-                    "X-Token-Source": "password",
-                },
+                headers,
             });
 
             if (!response.ok) {
                 const errorData = await response.json().catch(() => ({}));
-                const errorMessage = errorData.detail || `Failed to get user farming courses: ${response.status} ${response.statusText}`;
+                const errorMessage = errorData.detail || `Failed to get farming subscriptions: ${response.status} ${response.statusText}`;
                 Alert.alert('Error', errorMessage);
-                console.error(`Failed to get user farming courses: ${response.status} ${response.statusText}`);
+                console.error(`Failed to get farming subscriptions: ${response.status} ${response.statusText}`);
                 return null;
             }
 
-            return await response.json() as FarmingCourseResponse[];
+            return await response.json() as FarmingSubscriptionResponse[];
         } catch (error) {
-            Alert.alert('Error', 'An unexpected error occurred while fetching user farming courses.');
-            console.error("Error in FarmingCourseService.getFarmingCoursesForUser:", error);
+            Alert.alert('Error', 'An unexpected error occurred while fetching farming subscriptions.');
+            console.error("Error in FarmingCourseService.getFarmingSubscriptionsForUser:", error);
             return null;
         }
     }
