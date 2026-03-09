@@ -1,53 +1,64 @@
 import { Alert } from "react-native";
 import { getLoginJwtToken } from "../auth/auth";
 import { AppConfig } from "../config";
-import { ItemInfo } from "./course";
 import { User } from "./user";
 
-/**
- * Defines the structure for subscription.
- */
-export interface Subscription {
-    subscription_id: string;
-    user_id: string;
-    course_id: string;
-    start_date: Date;
-    duration_days: number;
+export type FarmingContentType = "paragraph" | "bullet1" | "bullet2" | "image";
+
+export interface FarmingCourseContentItem {
+    id: string;
+    content_type: FarmingContentType;
+    data: string | string[];
+}
+
+export interface FarmingCourseListItem {
+    id: string;
+    cropName: string;
+    thumbnail?: string;
+    live?: boolean;
+    price?: number | string;
+    duration_days?: number;
+}
+
+export interface FarmingCourseDetailsResponse {
+    id: string;
+    cropName: string;
     price: number;
-    order_id: string;
-    expiry_date?: Date;
-    type: string;
+    duration_days: number;
+    live: boolean;
+    thumbnail?: string;
+    content: FarmingCourseContentItem[];
 }
 
 /**
- * Defines the structure for creating a subscription.
+ * Defines the structure for creating a farming course.
  */
-export interface SubscriptionCreate {
+export interface FarmingCourseCreate {
     course_id: string;
     order_id: string;
 }
 
 /**
- * Defines the structure for offline subscription creation.
+ * Defines the structure for offline farming course creation.
  */
-export interface SubscriptionOfflineCreate {
+export interface FarmingCourseOfflineCreate {
     course_id: string;
     order_id: string;
     price_paid: number;
 }
 
 /**
- * Defines the structure for subscription status response.
+ * Defines the structure for farming course status response.
  */
-export interface SubscriptionStatusResponse {
+export interface FarmingCourseStatusResponse {
     course_id?: string;
-    status: string; // Assuming SubscriptionStatus is a string enum
+    status: string; // Assuming FarmingCourseStatus is a string enum
 }
 
 /**
- * Defines the structure for sell item subscription response.
+ * Defines the structure for sell item farming course response.
  */
-export interface SellItemSubscriptionResponse {
+export interface SellItemFarmingCourseResponse {
     id: string;
     title: string;
     crop: string;
@@ -55,9 +66,9 @@ export interface SellItemSubscriptionResponse {
 }
 
 /**
- * Defines the structure for farming subscription form data.
+ * Defines the structure for farming course form data.
  */
-export interface FarmingSubscriptionFormData {
+export interface FarmingCourseFormData {
     cropName: string;
     price: number;
     duration_days: number;
@@ -65,9 +76,9 @@ export interface FarmingSubscriptionFormData {
 }
 
 /**
- * Defines the structure for updating farming subscription form data.
+ * Defines the structure for updating farming course form data.
  */
-export interface FarmingSubscriptionUpdateFormData {
+export interface FarmingCourseUpdateFormData {
     cropName?: string;
     price?: number;
     duration_days?: number;
@@ -75,9 +86,9 @@ export interface FarmingSubscriptionUpdateFormData {
 }
 
 /**
- * Defines the structure for farming subscription response.
+ * Defines the structure for farming course response.
  */
-export interface FarmingSubscriptionResponse {
+export interface FarmingCourseResponse {
     id: string;
     cropName: string;
     price: number;
@@ -98,43 +109,43 @@ export interface TextContentPayload {
  * Defines the structure for user response.
  */
 export interface UserResponse extends User {
-    subscriptionStatus?: string;
+    farmingCourseStatus?: string;
 }
 
 /**
- * Provides services related to farming subscriptions.
+ * Provides services related to farming courses.
  */
-export class FarmingSubscriptionService {
+export class FarmingCourseService {
     /**
-     * Get all farming subscriptions.
-     * @returns {Promise<any[] | null>} A list of all farming subscriptions or null if an error occurs.
+     * Get all farming courses.
+     * @returns {Promise<any[] | null>} A list of all farming courses or null if an error occurs.
      */
-    public static async getAllFarmingSubscriptions(): Promise<any[] | null> {
+    public static async getAllFarmingCourses(): Promise<FarmingCourseListItem[] | null> {
         try {
             const response = await fetch(`${AppConfig.API_BASE_URL}/farming/list`);
 
             if (!response.ok) {
                 const errorData = await response.json().catch(() => ({}));
-                const errorMessage = errorData.detail || `Failed to get farming subscriptions: ${response.status} ${response.statusText}`;
+                const errorMessage = errorData.detail || `Failed to get farming courses: ${response.status} ${response.statusText}`;
                 Alert.alert('Error', errorMessage);
-                console.error(`Failed to get farming subscriptions: ${response.status} ${response.statusText}`);
+                console.error(`Failed to get farming courses: ${response.status} ${response.statusText}`);
                 return null;
             }
 
-            return await response.json();
+            return await response.json() as FarmingCourseListItem[];
         } catch (error) {
-            Alert.alert('Error', 'An unexpected error occurred while fetching farming subscriptions.');
-            console.error("Error in FarmingSubscriptionService.getAllFarmingSubscriptions:", error);
+            Alert.alert('Error', 'An unexpected error occurred while fetching farming courses.');
+            console.error("Error in FarmingCourseService.getAllFarmingCourses:", error);
             return null;
         }
     }
 
     /**
-     * Get farming subscriptions for a specific user.
+     * Get farming courses for a specific user.
      * @param {string} userId - The ID of the user.
-     * @returns {Promise<FarmingSubscriptionResponse[] | null>} A list of farming subscriptions for the user or null if an error occurs.
+     * @returns {Promise<FarmingCourseResponse[] | null>} A list of farming courses for the user or null if an error occurs.
      */
-    public static async getFarmingSubscriptionsForUser(userId: string): Promise<FarmingSubscriptionResponse[] | null> {
+    public static async getFarmingCoursesForUser(userId: string): Promise<FarmingCourseResponse[] | null> {
         try {
             const token = await getLoginJwtToken();
             if (!token) {
@@ -152,51 +163,51 @@ export class FarmingSubscriptionService {
 
             if (!response.ok) {
                 const errorData = await response.json().catch(() => ({}));
-                const errorMessage = errorData.detail || `Failed to get user farming subscriptions: ${response.status} ${response.statusText}`;
+                const errorMessage = errorData.detail || `Failed to get user farming courses: ${response.status} ${response.statusText}`;
                 Alert.alert('Error', errorMessage);
-                console.error(`Failed to get user farming subscriptions: ${response.status} ${response.statusText}`);
+                console.error(`Failed to get user farming courses: ${response.status} ${response.statusText}`);
                 return null;
             }
 
-            return await response.json() as FarmingSubscriptionResponse[];
+            return await response.json() as FarmingCourseResponse[];
         } catch (error) {
-            Alert.alert('Error', 'An unexpected error occurred while fetching user farming subscriptions.');
-            console.error("Error in FarmingSubscriptionService.getFarmingSubscriptionsForUser:", error);
+            Alert.alert('Error', 'An unexpected error occurred while fetching user farming courses.');
+            console.error("Error in FarmingCourseService.getFarmingCoursesForUser:", error);
             return null;
         }
     }
 
     /**
-     * Get farming subscription details by course ID.
+     * Get farming course details by course ID.
      * @param {string} courseId - The ID of the course.
-     * @returns {Promise<any | null>} The farming subscription details or null if an error occurs.
+     * @returns {Promise<any | null>} The farming course details or null if an error occurs.
      */
-    public static async getFarmingSubscriptionDetails(courseId: string): Promise<any | null> {
+    public static async getFarmingCourseDetails(courseId: string): Promise<FarmingCourseDetailsResponse | null> {
         try {
-            const response = await fetch(`${AppConfig.API_BASE_URL}/farming/${courseId}/details`);
+            const response = await fetch(`${AppConfig.API_BASE_URL}/farming/details/${courseId}`);
 
             if (!response.ok) {
                 const errorData = await response.json().catch(() => ({}));
-                const errorMessage = errorData.detail || `Failed to get farming subscription details: ${response.status} ${response.statusText}`;
+                const errorMessage = errorData.detail || `Failed to get farming course details: ${response.status} ${response.statusText}`;
                 Alert.alert('Error', errorMessage);
-                console.error(`Failed to get farming subscription details: ${response.status} ${response.statusText}`);
+                console.error(`Failed to get farming course details: ${response.status} ${response.statusText}`);
                 return null;
             }
 
-            return await response.json();
+            return await response.json() as FarmingCourseDetailsResponse;
         } catch (error) {
-            Alert.alert('Error', 'An unexpected error occurred while fetching farming subscription details.');
-            console.error("Error in FarmingSubscriptionService.getFarmingSubscriptionDetails:", error);
+            Alert.alert('Error', 'An unexpected error occurred while fetching farming course details.');
+            console.error("Error in FarmingCourseService.getFarmingCourseDetails:", error);
             return null;
         }
     }
 
     /**
-     * Create a new farming subscription.
-     * @param {FarmingSubscriptionFormData} data - The subscription creation data.
-     * @returns {Promise<any | null>} The created farming subscription or null if an error occurs.
+     * Create a new farming course.
+     * @param {FarmingCourseFormData} data - The farming course creation data.
+     * @returns {Promise<any | null>} The created farming course or null if an error occurs.
      */
-    public static async createFarmingSubscription(data: FarmingSubscriptionFormData): Promise<any | null> {
+    public static async createFarmingCourse(data: FarmingCourseFormData): Promise<any | null> {
         try {
             const token = await getLoginJwtToken();
             if (!token) {
@@ -223,27 +234,27 @@ export class FarmingSubscriptionService {
 
             if (!response.ok) {
                 const errorData = await response.json().catch(() => ({}));
-                const errorMessage = errorData.detail || `Failed to create farming subscription: ${response.status} ${response.statusText}`;
+                const errorMessage = errorData.detail || `Failed to create farming course: ${response.status} ${response.statusText}`;
                 Alert.alert('Error', errorMessage);
-                console.error(`Failed to create farming subscription: ${response.status} ${response.statusText}`);
+                console.error(`Failed to create farming course: ${response.status} ${response.statusText}`);
                 return null;
             }
 
             return await response.json();
         } catch (error) {
-            Alert.alert('Error', 'An unexpected error occurred while creating the farming subscription.');
-            console.error("Error in FarmingSubscriptionService.createFarmingSubscription:", error);
+            Alert.alert('Error', 'An unexpected error occurred while creating the farming course.');
+            console.error("Error in FarmingCourseService.createFarmingCourse:", error);
             return null;
         }
     }
 
     /**
-     * Add text content to a farming subscription.
+     * Add text content to a farming course.
      * @param {string} courseId - The ID of the course.
      * @param {TextContentPayload[]} content - The text content to add.
      * @returns {Promise<any | null>} The response or null if an error occurs.
      */
-    public static async addFarmingSubscriptionTextContent(courseId: string, content: TextContentPayload[]): Promise<any | null> {
+    public static async addFarmingCourseTextContent(courseId: string, content: TextContentPayload[]): Promise<FarmingCourseContentItem[] | null> {
         try {
             const token = await getLoginJwtToken();
             if (!token) {
@@ -269,21 +280,21 @@ export class FarmingSubscriptionService {
                 return null;
             }
 
-            return await response.json();
+            return await response.json() as FarmingCourseContentItem[];
         } catch (error) {
             Alert.alert('Error', 'An unexpected error occurred while adding text content.');
-            console.error("Error in FarmingSubscriptionService.addFarmingSubscriptionTextContent:", error);
+            console.error("Error in FarmingCourseService.addFarmingCourseTextContent:", error);
             return null;
         }
     }
 
     /**
-     * Add image content to a farming subscription.
+     * Add image content to a farming course.
      * @param {string} courseId - The ID of the course.
      * @param {FormData} formData - The form data containing the image.
      * @returns {Promise<any | null>} The response with image ID or null if an error occurs.
      */
-    public static async addFarmingSubscriptionImageContent(courseId: string, formData: FormData): Promise<any | null> {
+    public static async addFarmingCourseImageContent(courseId: string, formData: FormData): Promise<FarmingCourseContentItem[] | null> {
         try {
             const token = await getLoginJwtToken();
             if (!token) {
@@ -308,22 +319,22 @@ export class FarmingSubscriptionService {
                 return null;
             }
 
-            return await response.json();
+            return await response.json() as FarmingCourseContentItem[];
         } catch (error) {
             Alert.alert('Error', 'An unexpected error occurred while adding image content.');
-            console.error("Error in FarmingSubscriptionService.addFarmingSubscriptionImageContent:", error);
+            console.error("Error in FarmingCourseService.addFarmingCourseImageContent:", error);
             return null;
         }
     }
 
 
     /**
-     * Reorder and update all farming subscription content.
+     * Reorder and update all farming course content.
      * @param {string} courseId - The ID of the course.
-     * @param {ItemInfo[]} content - The list of content items.
+    * @param {FarmingCourseContentItem[]} content - The list of content items.
      * @returns {Promise<any | null>} The response or null if an error occurs.
      */
-    public static async orderFarmingSubscriptionContent(courseId: string, content: ItemInfo[]): Promise<any | null> {
+    public static async orderFarmingCourseContent(courseId: string, content: FarmingCourseContentItem[]): Promise<any | null> {
         try {
             const token = await getLoginJwtToken();
             if (!token) {
@@ -352,17 +363,17 @@ export class FarmingSubscriptionService {
             return await response.json();
         } catch (error) {
             Alert.alert('Error', 'An unexpected error occurred while updating content.');
-            console.error("Error in FarmingSubscriptionService.orderFarmingSubscriptionContent:", error);
+            console.error("Error in FarmingCourseService.orderFarmingCourseContent:", error);
             return null;
         }
     }
 
     /**
-     * Make a farming subscription live.
+     * Make a farming course live.
      * @param {string} courseId - The ID of the course.
      * @returns {Promise<any | null>} The response or null if an error occurs.
      */
-    public static async makeFarmingSubscriptionLive(courseId: string): Promise<any | null> {
+    public static async makeFarmingCourseLive(courseId: string): Promise<any | null> {
         try {
             const token = await getLoginJwtToken();
             if (!token) {
@@ -372,7 +383,7 @@ export class FarmingSubscriptionService {
             }
 
             const response = await fetch(`${AppConfig.API_BASE_URL}/farming/${courseId}/live`, {
-                method: "GET",
+                method: "PUT",
                 headers: {
                     Authorization: `Bearer ${token}`,
                 },
@@ -380,26 +391,26 @@ export class FarmingSubscriptionService {
 
             if (!response.ok) {
                 const errorData = await response.json().catch(() => ({}));
-                const errorMessage = errorData.detail || `Failed to make subscription live: ${response.status} ${response.statusText}`;
+                const errorMessage = errorData.detail || `Failed to make farming course live: ${response.status} ${response.statusText}`;
                 Alert.alert('Error', errorMessage);
-                console.error(`Failed to make subscription live: ${response.status} ${response.statusText}`);
+                console.error(`Failed to make farming course live: ${response.status} ${response.statusText}`);
                 return null;
             }
 
-            return await response.json();
+            return true;
         } catch (error) {
-            Alert.alert('Error', 'An unexpected error occurred while making the subscription live.');
-            console.error("Error in FarmingSubscriptionService.makeFarmingSubscriptionLive:", error);
+            Alert.alert('Error', 'An unexpected error occurred while making the farming course live.');
+            console.error("Error in FarmingCourseService.makeFarmingCourseLive:", error);
             return null;
         }
     }
 
     /**
-     * Take a farming subscription down (offline).
+     * Take a farming course down (offline).
      * @param {string} courseId - The ID of the course.
      * @returns {Promise<any | null>} The response or null if an error occurs.
      */
-    public static async takeFarmingSubscriptionDown(courseId: string): Promise<any | null> {
+    public static async takeFarmingCourseDown(courseId: string): Promise<any | null> {
         try {
             const token = await getLoginJwtToken();
             if (!token) {
@@ -409,7 +420,7 @@ export class FarmingSubscriptionService {
             }
 
             const response = await fetch(`${AppConfig.API_BASE_URL}/farming/${courseId}/down`, {
-                method: "GET",
+                method: "PUT",
                 headers: {
                     Authorization: `Bearer ${token}`,
                 },
@@ -417,27 +428,27 @@ export class FarmingSubscriptionService {
 
             if (!response.ok) {
                 const errorData = await response.json().catch(() => ({}));
-                const errorMessage = errorData.detail || `Failed to take subscription down: ${response.status} ${response.statusText}`;
+                const errorMessage = errorData.detail || `Failed to take farming course down: ${response.status} ${response.statusText}`;
                 Alert.alert('Error', errorMessage);
-                console.error(`Failed to take subscription down: ${response.status} ${response.statusText}`);
+                console.error(`Failed to take farming course down: ${response.status} ${response.statusText}`);
                 return null;
             }
 
-            return await response.json();
+            return true;
         } catch (error) {
-            Alert.alert('Error', 'An unexpected error occurred while taking the subscription down.');
-            console.error("Error in FarmingSubscriptionService.takeFarmingSubscriptionDown:", error);
+            Alert.alert('Error', 'An unexpected error occurred while taking the farming course down.');
+            console.error("Error in FarmingCourseService.takeFarmingCourseDown:", error);
             return null;
         }
     }
 
     /**
-     * Update farming subscription details.
+     * Update farming course details.
      * @param {string} courseId - The ID of the course.
-     * @param {FarmingSubscriptionUpdateFormData} data - The updated subscription data.
+     * @param {FarmingCourseUpdateFormData} data - The updated farming course data.
      * @returns {Promise<any | null>} The response or null if an error occurs.
      */
-    public static async updateFarmingSubscription(courseId: string, data: FarmingSubscriptionUpdateFormData): Promise<any | null> {
+    public static async updateFarmingCourse(courseId: string, data: FarmingCourseUpdateFormData): Promise<any | null> {
         try {
             const token = await getLoginJwtToken();
             if (!token) {
@@ -470,27 +481,27 @@ export class FarmingSubscriptionService {
 
             if (!response.ok) {
                 const errorData = await response.json().catch(() => ({}));
-                const errorMessage = errorData.detail || `Failed to update farming subscription: ${response.status} ${response.statusText}`;
+                const errorMessage = errorData.detail || `Failed to update farming course: ${response.status} ${response.statusText}`;
                 Alert.alert('Error', errorMessage);
-                console.error(`Failed to update farming subscription: ${response.status} ${response.statusText}`);
+                console.error(`Failed to update farming course: ${response.status} ${response.statusText}`);
                 return null;
             }
 
             return await response.json();
         } catch (error) {
-            Alert.alert('Error', 'An unexpected error occurred while updating the farming subscription.');
-            console.error("Error in FarmingSubscriptionService.updateFarmingSubscription:", error);
+            Alert.alert('Error', 'An unexpected error occurred while updating the farming course.');
+            console.error("Error in FarmingCourseService.updateFarmingCourse:", error);
             return null;
         }
     }
 
     /**
-     * Create an offline farming subscription for a user.
+     * Create an offline farming course for a user.
      * @param {string} userId - The ID of the user.
-     * @param {SubscriptionOfflineCreate} data - The subscription creation data.
+     * @param {FarmingCourseOfflineCreate} data - The farming course creation data.
      * @returns {Promise<any | null>} The response or null if an error occurs.
      */
-    public static async createOfflineFarmingSubscription(userId: string, data: SubscriptionOfflineCreate): Promise<any | null> {
+    public static async createOfflineFarmingCourse(userId: string, data: FarmingCourseOfflineCreate): Promise<any | null> {
         try {
             const token = await getLoginJwtToken();
             if (!token) {
@@ -499,6 +510,7 @@ export class FarmingSubscriptionService {
                 return null;
             }
 
+            console.log("Creating offline farming course:", { userId, data });
             const response = await fetch(`${AppConfig.API_BASE_URL}/farming/offline/create?user_id=${encodeURIComponent(userId)}`, {
                 method: "POST",
                 headers: {
@@ -511,26 +523,26 @@ export class FarmingSubscriptionService {
 
             if (!response.ok) {
                 const errorData = await response.json().catch(() => ({}));
-                const errorMessage = errorData.detail || `Failed to create offline subscription: ${response.status} ${response.statusText}`;
-                Alert.alert('Error', errorMessage);
-                console.error(`Failed to create offline subscription: ${response.status} ${response.statusText}`);
+                const errorMessage = errorData.detail || `Failed to create offline farming course: ${response.status} ${response.statusText}`;
+                Alert.alert('Error', typeof errorMessage === 'string' ? errorMessage : JSON.stringify(errorMessage));
+                console.error(`Failed to create offline farming course: ${response.status}`, JSON.stringify(errorData));
                 return null;
             }
 
             return await response.json();
         } catch (error) {
-            Alert.alert('Error', 'An unexpected error occurred while creating the offline subscription.');
-            console.error("Error in FarmingSubscriptionService.createOfflineFarmingSubscription:", error);
+            Alert.alert('Error', 'An unexpected error occurred while creating the offline farming course.');
+            console.error("Error in FarmingCourseService.createOfflineFarmingCourse:", error);
             return null;
         }
     }
 
     /**
-     * Fetch users with farming subscriptions for a specific course.
+     * Fetch users with farming courses for a specific course.
      * @param {string} courseId - The ID of the course.
      * @returns {Promise<UserResponse[] | null>} A list of users or null if an error occurs.
      */
-    public static async fetchUsersFarmingSubscriptions(courseId: string): Promise<UserResponse[] | null> {
+    public static async fetchUsersFarmingCourses(courseId: string): Promise<UserResponse[] | null> {
         try {
             const token = await getLoginJwtToken();
             if (!token) {
@@ -556,7 +568,7 @@ export class FarmingSubscriptionService {
             return await response.json() as UserResponse[];
         } catch (error) {
             Alert.alert('Error', 'An unexpected error occurred while fetching users.');
-            console.error("Error in FarmingSubscriptionService.fetchUsersFarmingSubscriptions:", error);
+            console.error("Error in FarmingCourseService.fetchUsersFarmingCourses:", error);
             return null;
         }
     }

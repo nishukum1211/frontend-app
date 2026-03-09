@@ -1,5 +1,5 @@
 import React from 'react';
-import { ActivityIndicator, Modal, StyleSheet, Text, TouchableOpacity, View } from 'react-native';
+import { ActivityIndicator, KeyboardAvoidingView, Modal, Platform, ScrollView, StyleSheet, Text, TouchableOpacity, View } from 'react-native';
 import { ItemInfo } from '../../api/course';
 import EditBullets from './EditBullets';
 import EditImage from './EditImage';
@@ -47,24 +47,33 @@ const ContentEditModal: React.FC<ContentEditModalProps> = ({
             visible={visible}
             onRequestClose={onClose}
         >
-            <View style={styles.centeredView}>
-                <View style={styles.modalView}>
-                    <Text style={styles.modalTitle}>Edit {editingItem?.content_type}</Text>
+            <KeyboardAvoidingView
+                behavior={Platform.OS === 'ios' ? 'padding' : 'height'}
+                style={styles.keyboardAvoid}
+            >
+                <View style={styles.centeredView}>
+                    <View style={styles.modalView}>
+                        <Text style={styles.modalTitle}>Edit {editingItem?.content_type}</Text>
 
-                    <View style={styles.editorContainer}>
-                        {renderEditComponent()}
-                    </View>
+                        <ScrollView
+                            style={styles.editorContainer}
+                            keyboardShouldPersistTaps="handled"
+                            showsVerticalScrollIndicator={false}
+                        >
+                            {renderEditComponent()}
+                        </ScrollView>
 
-                    <View style={styles.buttonContainer}>
-                        <TouchableOpacity style={[styles.button, styles.cancelButton]} onPress={onClose}>
-                            <Text style={styles.buttonText}>Cancel</Text>
-                        </TouchableOpacity>
-                        <TouchableOpacity style={[styles.button, styles.saveButton]} onPress={onSave} disabled={uploading}>
-                            {uploading ? <ActivityIndicator color="white" /> : <Text style={styles.buttonText}>Save</Text>}
-                        </TouchableOpacity>
+                        <View style={styles.buttonContainer}>
+                            <TouchableOpacity style={[styles.button, styles.cancelButton]} onPress={onClose}>
+                                <Text style={styles.buttonText}>Cancel</Text>
+                            </TouchableOpacity>
+                            <TouchableOpacity style={[styles.button, styles.saveButton]} onPress={onSave} disabled={uploading}>
+                                {uploading ? <ActivityIndicator color="white" /> : <Text style={styles.buttonText}>Save</Text>}
+                            </TouchableOpacity>
+                        </View>
                     </View>
                 </View>
-            </View>
+            </KeyboardAvoidingView>
         </Modal>
     );
 };
@@ -75,6 +84,9 @@ const styles = StyleSheet.create({
         justifyContent: 'center',
         alignItems: 'center',
         backgroundColor: 'rgba(0,0,0,0.5)',
+    },
+    keyboardAvoid: {
+        flex: 1,
     },
     modalView: {
         margin: 20,
@@ -88,6 +100,7 @@ const styles = StyleSheet.create({
         shadowRadius: 4,
         elevation: 5,
         width: '90%',
+        maxHeight: '80%',
     },
     modalTitle: { fontSize: 20, fontWeight: 'bold', marginBottom: 20 },
     editorContainer: { width: '100%', marginBottom: 20 },

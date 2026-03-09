@@ -1,4 +1,4 @@
-import FarmingSubscription from "../farmingSubscription/main";
+import FarmingSubscription from "../farmingCourses/main";
 
 export default function SubscriptionScreen() {
   return <FarmingSubscription />;

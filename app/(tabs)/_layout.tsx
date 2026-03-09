@@ -1,22 +1,22 @@
 // TabsLayout.tsx
 import {
-  FontAwesome,
-  FontAwesome5,
-  Ionicons,
-  MaterialCommunityIcons,
+    FontAwesome,
+    FontAwesome5,
+    Ionicons,
+    MaterialCommunityIcons,
 } from "@expo/vector-icons";
 import { Tabs, useFocusEffect, useRouter } from "expo-router";
 import { useCallback, useEffect, useState } from "react";
 import {
-  Modal,
-  Platform,
-  View
+    Modal,
+    Platform,
+    View
 } from "react-native";
 import { useSafeAreaInsets } from "react-native-safe-area-context";
 import { getUserData } from "../auth/action";
 import { DecodedToken } from "../auth/auth";
 import CameraScreen from "../components/camera";
-import FarmingSubscription from "../farmingSubscription/main";
+import FarmingSubscription from "../farmingCourses/main";
 
 export function Subscription() {
   return <FarmingSubscription />;
