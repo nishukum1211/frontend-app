@@ -57,8 +57,8 @@ export default function FarmingCourseCard({ item, onEdit, onUsers, onToggleStatu
 
       <View style={styles.details}>
         <Text style={styles.title}>{item.cropName}</Text>
-        <Text style={styles.meta}>
-          {item.price != null && item.price !== "" ? `Rs ${item.price}` : "Price not set"}
+        <Text style={styles.price}>
+          {item.price != null && item.price !== "" ? `₹ ${item.price}` : "Price not set"}
         </Text>
 
         <View style={styles.actionsRow}>
@@ -127,6 +127,12 @@ const styles = StyleSheet.create({
   meta: {
     fontSize: 14,
     color: "#475569",
+    marginTop: 4,
+  },
+  price: {
+    fontSize: 16,
+    fontWeight: "700",
+    color: "#067728",
     marginTop: 4,
   },
   actionsRow: {
