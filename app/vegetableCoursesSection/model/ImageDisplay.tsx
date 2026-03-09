@@ -1,5 +1,6 @@
 import React, { useEffect, useState } from "react";
 import { ActivityIndicator, Image, StyleSheet, View } from "react-native";
+import { fetchAndCacheBlobFile } from "../../api/common";
 import { CourseService } from "../../api/course";
 
 interface ImageDisplayProps {
@@ -24,8 +25,12 @@ const ImageDisplay: React.FC<ImageDisplayProps> = ({ courseId, imageName }) => {
                 return;
             }
 
-            // Otherwise, resolve it using the CourseService (downloads if needed)
-            const uri = await CourseService.getCourseFileUrl(courseId, imageName);
+            // Try course file URL first, fall back to blob download
+            let uri = await CourseService.getCourseFileUrl(courseId, imageName);
+            if (!uri) {
+                uri = await fetchAndCacheBlobFile(imageName);
+            }
+
             if (isMounted) {
                 setImageUri(uri);
                 setLoading(false);
